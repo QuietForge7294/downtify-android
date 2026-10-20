@@ -23,7 +23,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -58,26 +60,29 @@ class LibraryViewModel @Inject constructor(
 
     private val tab = savedState.getStateFlow(KEY_TAB, LibraryTab.Songs.name)
 
-    /**
-     * The sorted lists, rebuilt only when the library, playlists, likes or settings change.
-     * Kept apart from the playing track: sorting thousands of songs on every play/pause was
-     * the costliest thing this screen did.
-     */
-    private val content = combine(
+    /** Only the catalog and sort order can change these sorted lists. */
+    private val sorted = combine(
         library.library,
-        library.playlists,
-        library.likedIds,
-        settings.settings,
-    ) { snapshot, playlists, liked, prefs ->
-        val sort = prefs.librarySort
-        LibraryUiState(
+        settings.settings.map { it.librarySort }.distinctUntilChanged(),
+    ) { snapshot, sort ->
+        snapshot to LibraryUiState(
             loading = snapshot == null,
-            layout = prefs.libraryLayout,
             sort = sort,
             albums = sortAlbums(snapshot?.albums.orEmpty(), sort),
             artists = sortArtists(snapshot?.artists.orEmpty(), sort),
-            playlists = playlistItems(snapshot, playlists, liked),
             songs = sortSongs(snapshot?.tracks.orEmpty(), sort),
+        )
+    }.flowOn(Dispatchers.Default)
+
+    private val content = combine(
+        sorted,
+        library.playlists,
+        library.likedIds,
+        settings.settings.map { it.libraryLayout }.distinctUntilChanged(),
+    ) { (snapshot, lists), playlists, liked, layout ->
+        lists.copy(
+            layout = layout,
+            playlists = playlistItems(snapshot, playlists, liked),
             likedIds = liked.toSet(),
         )
     }.flowOn(Dispatchers.Default)
