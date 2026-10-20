@@ -20,7 +20,6 @@ import javax.inject.Singleton
 import kotlin.math.min
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -46,7 +45,7 @@ class SyncCoordinator @Inject constructor(
     private val serverQueue: ServerQueueRepository,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
-    private val syncRequests = Channel<Boolean>(Channel.CONFLATED)
+    private val syncRequests = SyncRequests()
     private var started = false
 
     fun start() {
@@ -66,12 +65,12 @@ class SyncCoordinator @Inject constructor(
 
     /** Syncs as soon as possible ([refresh]: rescan the server's folder first). */
     fun requestSync(refresh: Boolean = false) {
-        syncRequests.trySend(refresh)
+        syncRequests.request(refresh)
     }
 
-    private suspend fun whilePaired(session: Session) = coroutineScope {
+    internal suspend fun whilePaired(session: Session) = coroutineScope {
         launch {
-            for (refresh in syncRequests) {
+            syncRequests.collect { refresh ->
                 if (library.sync(refresh)) server.markConnected() else server.markUnreachable()
             }
         }
@@ -80,18 +79,20 @@ class SyncCoordinator @Inject constructor(
             requestSync()
             listens.schedule()
         }
-        holdWebSocket(session)
+        holdWebSocket(session, initialSyncRequested = state == ConnectionState.Connected)
     }
 
-    private suspend fun holdWebSocket(session: Session) = coroutineScope {
+    private suspend fun holdWebSocket(session: Session, initialSyncRequested: Boolean) = coroutineScope {
         val clientId = settings.clientId()
         var attempt = 0
+        var connectedBefore = false
         while (isActive) {
             try {
                 live.events(session, clientId).collect { event ->
                     when (event) {
                         LiveEvent.Connected -> {
-                            if (attempt > 0) requestSync()
+                            if (!initialSyncRequested || connectedBefore || attempt > 0) requestSync()
+                            connectedBefore = true
                             attempt = 0
                             server.markConnected()
                             serverQueue.refresh()
