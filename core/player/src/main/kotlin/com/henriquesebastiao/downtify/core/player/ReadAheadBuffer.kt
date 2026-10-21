@@ -18,6 +18,7 @@ import com.henriquesebastiao.downtify.core.model.ReadAheadPolicy
 import com.henriquesebastiao.downtify.core.model.StreamPolicy
 import com.henriquesebastiao.downtify.core.model.StreamQuality
 import com.henriquesebastiao.downtify.core.model.Transcoding
+import com.henriquesebastiao.downtify.core.network.di.StreamingClient
 import com.henriquesebastiao.downtify.core.network.session.SessionStore
 import java.io.File
 import java.io.IOException
@@ -36,6 +37,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 
 data class ReadAheadStatus(val ready: Int = 0, val target: Int = 0)
 
@@ -45,7 +47,7 @@ data class ReadAheadStatus(val ready: Int = 0, val target: Int = 0)
 class ReadAheadBuffer @Inject constructor(
     private val store: AudioCacheStore,
     private val resolver: StreamResolver,
-    private val http: OkHttpDataSource.Factory,
+    @StreamingClient private val client: OkHttpClient,
     private val settings: SettingsRepository,
     private val network: NetworkMonitor,
     private val server: ServerRepository,
@@ -69,7 +71,7 @@ class ReadAheadBuffer @Inject constructor(
 
     @Volatile private var plan: Plan? = null
     private var prefs = UserSettings()
-    private val writer = AtomicReference<CacheWriter?>()
+    private var request: ReadAheadRequest? = null
     private data class Watching(val plan: Plan, val items: List<Resolved>)
     private val watching = AtomicReference<Watching?>()
     private val watchLock = Any()
@@ -104,8 +106,8 @@ class ReadAheadBuffer @Inject constructor(
 
     fun stop() {
         player?.removeListener(this)
-        writer.getAndSet(null)?.cancel()
         work?.cancel()
+        request?.cancel()
         observer?.cancel()
         plan = null
         unwatch()
@@ -163,15 +165,19 @@ class ReadAheadBuffer @Inject constructor(
         if (next == plan) return
         plan = next
         unwatch()
-        writer.getAndSet(null)?.cancel()
-        work?.cancel()
+        val previous = work
+        previous?.cancel()
+        request?.cancel()
         mutableState.value = ReadAheadStatus(target = entries.count { !it.current })
+        val pending = ReadAheadRequest(client)
+        request = pending
         work = scope?.launch {
-            withContext(Dispatchers.IO) { execute(next) }
+            previous?.join()
+            withContext(Dispatchers.IO) { execute(next, pending) }
         }
     }
 
-    private suspend fun execute(plan: Plan) {
+    private suspend fun execute(plan: Plan, pending: ReadAheadRequest) {
         val context = kotlinx.coroutines.currentCoroutineContext()
         if (!sameOwner(plan)) return
         val resolved = plan.entries.mapNotNull { entry ->
@@ -186,30 +192,26 @@ class ReadAheadBuffer @Inject constructor(
         for (item in resolved) {
             context.ensureActive()
             if (!sameOwner(plan)) return
-            preload(item, context)
+            preload(item, context, pending)
             context.ensureActive()
             publish(resolved)
         }
     }
 
-    private fun preload(item: Resolved, context: CoroutineContext) {
+    private fun preload(item: Resolved, context: CoroutineContext, pending: ReadAheadRequest) {
         val key = item.spec.key ?: return
         if (store.complete(key) || !store.canWrite(key)) return
-        val source = CacheDataSource.Factory().setCache(store.cache).setUpstreamDataSourceFactory(http)
+        val source = CacheDataSource.Factory().setCache(store.cache).setUpstreamDataSourceFactory(pending.http)
             .setCacheKeyFactory { it.key ?: store.uriKey(it.uri.toString()) }
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR).createDataSource()
-        val pending = CacheWriter(source, item.spec, null) { length, bytesCached, _ ->
-            if (!context.isActive) throw InterruptedIOException("Read-ahead cancelled")
-            val total = if (length >= 0) length else bytesCached
-            if (!store.fits(key, total)) throw IOException("Read-ahead quota reached")
-        }
-        writer.set(pending)
         try {
-            pending.cache()
+            pending.cache(source, item.spec) { length, bytesCached, _ ->
+                if (!context.isActive) throw InterruptedIOException("Read-ahead cancelled")
+                val total = if (length >= 0) length else bytesCached
+                if (!store.fits(key, total)) throw IOException("Read-ahead quota reached")
+            }
         } catch (_: IOException) {
             // Missing/partial data stays a normal streaming request; never claim offline readiness.
-        } finally {
-            writer.compareAndSet(pending, null)
         }
     }
 

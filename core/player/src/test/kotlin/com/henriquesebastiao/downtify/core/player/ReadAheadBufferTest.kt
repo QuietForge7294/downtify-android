@@ -82,7 +82,7 @@ class ReadAheadBufferTest {
             val buffer = ReadAheadBuffer(
                 store,
                 resolver,
-                OkHttpDataSource.Factory(OkHttpClient()),
+                OkHttpClient(),
                 settings,
                 network,
                 server,
