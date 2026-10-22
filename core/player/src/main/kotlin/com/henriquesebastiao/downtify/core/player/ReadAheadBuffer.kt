@@ -30,6 +30,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -74,13 +75,12 @@ class ReadAheadBuffer @Inject constructor(
     private var request: ReadAheadRequest? = null
     private data class Watching(val plan: Plan, val items: List<Resolved>)
     private val watching = AtomicReference<Watching?>()
-    private val watchLock = Any()
     private val cacheListener = object : Cache.Listener {
         override fun onSpanAdded(cache: Cache, span: CacheSpan) = Unit
         override fun onSpanTouched(cache: Cache, oldSpan: CacheSpan, newSpan: CacheSpan) = Unit
         override fun onSpanRemoved(cache: Cache, span: CacheSpan) {
             val observed = watching.get() ?: return
-            scope?.launch {
+            scope?.launch(Dispatchers.IO) {
                 if (plan === observed.plan) publish(observed.items)
             }
         }
@@ -122,6 +122,7 @@ class ReadAheadBuffer @Inject constructor(
                 Player.EVENT_TIMELINE_CHANGED,
                 Player.EVENT_MEDIA_ITEM_TRANSITION,
                 Player.EVENT_IS_PLAYING_CHANGED,
+                Player.EVENT_IS_LOADING_CHANGED,
                 Player.EVENT_PLAYBACK_STATE_CHANGED,
                 Player.EVENT_SHUFFLE_MODE_ENABLED_CHANGED,
                 Player.EVENT_REPEAT_MODE_CHANGED,
@@ -154,7 +155,8 @@ class ReadAheadBuffer @Inject constructor(
             }
         }
         val allowedNetwork = status.online && (!status.metered || policy.mobile)
-        val fetch = allowedNetwork && player.isPlaying && player.playbackState == Player.STATE_READY
+        val fetch =
+            allowedNetwork && player.isPlaying && player.playbackState == Player.STATE_READY && !player.isLoading
         val next = Plan(
             owner = owner(),
             policy = policy,
@@ -187,14 +189,26 @@ class ReadAheadBuffer @Inject constructor(
         if (!sameOwner(plan)) return
         store.prioritize(resolved.mapNotNull { it.spec.key })
         if (!watch(plan, resolved)) return
-        publish(resolved)
-        if (!plan.fetch) return
-        for (item in resolved) {
+        try {
+            publish(resolved)
+            if (plan.fetch) preloadAll(plan, resolved, context, pending)
+            // Keep observing evictions until this plan is cancelled. Registration and
+            // cleanup stay on this IO worker, never on a Player callback/UI thread.
+            awaitCancellation()
+        } finally {
+            resolved.mapNotNull { it.spec.key }.distinct().forEach {
+                store.cache.removeListener(it, cacheListener)
+            }
+        }
+    }
+
+    private fun preloadAll(plan: Plan, items: List<Resolved>, context: CoroutineContext, pending: ReadAheadRequest) {
+        for (item in items) {
             context.ensureActive()
             if (!sameOwner(plan)) return
             preload(item, context, pending)
             context.ensureActive()
-            publish(resolved)
+            publish(items)
         }
     }
 
@@ -219,17 +233,15 @@ class ReadAheadBuffer @Inject constructor(
 
     private fun owner(): String = sessions.current?.let { "${it.serverId}:${it.deviceId}" }.orEmpty()
 
-    private fun watch(expected: Plan, items: List<Resolved>): Boolean = synchronized(watchLock) {
-        if (plan !== expected) return@synchronized false
+    private fun watch(expected: Plan, items: List<Resolved>): Boolean {
+        if (plan !== expected) return false
         watching.set(Watching(expected, items))
         items.mapNotNull { it.spec.key }.distinct().forEach { store.cache.addListener(it, cacheListener) }
-        true
+        return true
     }
 
-    private fun unwatch() = synchronized(watchLock) {
-        watching.getAndSet(null)?.items?.mapNotNull { it.spec.key }?.distinct()?.forEach {
-            store.cache.removeListener(it, cacheListener)
-        }
+    private fun unwatch() {
+        watching.set(null)
     }
 
     private fun publish(items: List<Resolved>) {
