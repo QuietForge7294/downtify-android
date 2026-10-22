@@ -36,7 +36,7 @@ class PlaybackRepository @Inject constructor(
             sessions.ensureLoaded()
             sessions.session.map { it?.playbackOwner }.distinctUntilChanged().collect { owner ->
                 lock.withLock {
-                    if (owner == null || dao.read()?.owner?.let { it != owner } == true) {
+                    if (owner == null || dao.readOwner()?.let { it != owner } == true) {
                         dao.clear()
                         previous = null
                     }

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 
 /** One local session. The queue payload is only rewritten when its contents change. */
@@ -25,8 +26,34 @@ data class PlaybackStateEntity(
 
 @Dao
 interface PlaybackStateDao {
-    @Query("SELECT * FROM playback_state WHERE id = 0")
-    suspend fun read(): PlaybackStateEntity?
+    // Never put the whole queue in one CursorWindow row. Existing v3 databases
+    // may already contain several megabytes here; no destructive migration is needed.
+    @Query(
+        "SELECT id, owner, '' AS items, currentIndex, positionMs, shuffle, shuffleOrder, " +
+            "repeatMode, speed, contextType, contextId, contextTitle FROM playback_state WHERE id = 0",
+    )
+    suspend fun readHeader(): PlaybackStateEntity?
+
+    @Query("SELECT substr(items, :offset, 65536) FROM playback_state WHERE id = 0")
+    suspend fun readItemsChunk(offset: Int): String?
+
+    @Query("SELECT owner FROM playback_state WHERE id = 0")
+    suspend fun readOwner(): String?
+
+    @Transaction
+    suspend fun read(): PlaybackStateEntity? {
+        val header = readHeader() ?: return null
+        val payload = StringBuilder()
+        var offset = 1
+        while (true) {
+            val chunk = readItemsChunk(offset).orEmpty()
+            if (chunk.isEmpty()) break
+            payload.append(chunk)
+            // SQLite substr counts Unicode code points; String.length counts UTF-16 units.
+            offset += chunk.codePointCount(0, chunk.length)
+        }
+        return header.copy(items = payload.toString())
+    }
 
     @Upsert
     suspend fun write(state: PlaybackStateEntity)

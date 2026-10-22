@@ -18,6 +18,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -27,6 +28,32 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class PlaybackRepositoryTest {
+    @Test
+    fun `large existing queues are read in bounded Unicode-safe chunks`() = runBlocking {
+        val database = Room.inMemoryDatabaseBuilder(
+            RuntimeEnvironment.getApplication(),
+            DowntifyDatabase::class.java,
+        ).build()
+        try {
+            val state = PlaybackSnapshot(
+                List(7_000) { index -> SavedPlaybackItem("track-$index", "Titre 🎵漢字 ".repeat(40), "Artist") },
+                4_321,
+                12_345,
+            )
+            val encoded = PlaybackCodec.encode("same-owner", state)
+            assertTrue(encoded.items.toByteArray(Charsets.UTF_8).size > 2 * 1024 * 1024)
+            val dao = database.playback()
+            dao.write(encoded)
+            assertEquals("same-owner", dao.readOwner())
+            assertEquals("", dao.readHeader()!!.items)
+            assertEquals(encoded, dao.read())
+            dao.checkpoint("same-owner", 4_322, 23_456)
+            assertEquals(state.copy(index = 4_322, positionMs = 23_456), PlaybackCodec.decode(dao.read()!!))
+        } finally {
+            database.close()
+        }
+    }
+
     @Test
     fun `conflated checkpoints retain the newest queue and obsolete owners cannot overwrite it`() = runBlocking {
         val database = Room.inMemoryDatabaseBuilder(

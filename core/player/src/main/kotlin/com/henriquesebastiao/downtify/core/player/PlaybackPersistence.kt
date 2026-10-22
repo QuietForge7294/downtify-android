@@ -2,6 +2,7 @@ package com.henriquesebastiao.downtify.core.player
 
 import android.database.sqlite.SQLiteException
 import android.util.Log
+import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -31,9 +32,11 @@ internal class PlaybackPersistence(
 ) : Player.Listener {
     private val ready = CompletableDeferred<Unit>()
     private var items: List<SavedPlaybackItem> = emptyList()
+    private var mediaItems: List<MediaItem> = emptyList()
     private var order: List<Int> = emptyList()
     private var ticker: Job? = null
     private var owner: String? = null
+    private var observing = false
 
     fun start() {
         scope.launch {
@@ -61,6 +64,7 @@ internal class PlaybackPersistence(
                 }
                 captureQueue()
                 player.addListener(this@PlaybackPersistence)
+                observing = true
                 ticker = scope.launch {
                     while (isActive) {
                         delay(CHECKPOINT_MS)
@@ -78,7 +82,8 @@ internal class PlaybackPersistence(
     suspend fun awaitReady() = ready.await()
 
     fun stop() {
-        if (ready.isCompleted) checkpoint()
+        if (observing) checkpoint()
+        observing = false
         player.removeListener(this)
         ticker?.cancel()
     }
@@ -89,8 +94,16 @@ internal class PlaybackPersistence(
     }
 
     private fun captureQueue() {
-        items = (0 until player.mediaItemCount).map { MediaItems.saved(player.getMediaItemAt(it)) }
-        order = PlayOrder.shuffled(player.currentTimeline)
+        val current = (0 until player.mediaItemCount).map(player::getMediaItemAt)
+        val saved = current.mapIndexed { index, item ->
+            if (mediaItems.getOrNull(index) === item) items[index] else MediaItems.saved(item)
+        }
+        // Local cover publication changes the timeline, but not its logical queue.
+        // Preserve references so the repository keeps doing a small position UPDATE.
+        if (items != saved) items = saved
+        mediaItems = current
+        val shuffled = PlayOrder.shuffled(player.currentTimeline)
+        if (order != shuffled) order = shuffled
     }
 
     private fun checkpoint() {
