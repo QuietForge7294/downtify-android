@@ -46,7 +46,7 @@ class HomeViewModel @Inject constructor(
 
     val uiState: StateFlow<HomeUiState> = combine(
         combine(library.library, library.likedIds, library.playlists, ::Triple),
-        recents.recents(),
+        recents.recents(RECENT_CONTEXT_LIMIT),
         library.syncStatus,
         combine(server.connection, server.session, server.serverInfo, ::Triple),
     ) { (snapshot, likedIds, playlists), recentList, syncStatus, (connection, session, info) ->
@@ -68,7 +68,7 @@ class HomeViewModel @Inject constructor(
                 connection == ConnectionState.Unreachable || syncStatus is SyncStatus.Failed -> ServerStatus.Unreachable
                 else -> ServerStatus.Streaming
             },
-            jumpBackIn = jump.take(JUMP_BACK_IN_SIZE),
+            jumpBackIn = jump.take(RECENT_CONTEXT_LIMIT),
             recentlyAdded = newest.take(RECENTLY_ADDED_SIZE),
             favoritePlaylists = playlists.filter { it.favorite && !it.liked }.sortedBy { it.title.lowercase() },
             refreshing = syncStatus == SyncStatus.Syncing,
@@ -83,6 +83,7 @@ class HomeViewModel @Inject constructor(
 
     private companion object {
         const val JUMP_BACK_IN_SIZE = 6
+        const val RECENT_CONTEXT_LIMIT = 12
         const val RECENTLY_ADDED_SIZE = 12
         const val STOP_TIMEOUT_MS = 5_000L
     }
