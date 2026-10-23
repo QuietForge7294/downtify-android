@@ -56,11 +56,13 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 import com.henriquesebastiao.downtify.core.model.Album
 import com.henriquesebastiao.downtify.core.model.PlaybackContextType
+import com.henriquesebastiao.downtify.core.model.Playlist
 import com.henriquesebastiao.downtify.core.model.RecentContext
 import com.henriquesebastiao.downtify.ui.common.CoverCard
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
 import com.henriquesebastiao.downtify.ui.common.PreviewData
 import com.henriquesebastiao.downtify.ui.common.albumSubtitle
+import com.henriquesebastiao.downtify.ui.common.songsCount
 import java.time.LocalTime
 
 @Composable
@@ -136,6 +138,9 @@ fun HomeScreen(
         ) {
             LazyColumn(contentPadding = PaddingValues(bottom = Spacing.xl), modifier = Modifier.fillMaxSize()) {
                 item { Greeting(state) }
+                if (state.favoritePlaylists.isNotEmpty()) {
+                    item { FavoritePlaylists(state.favoritePlaylists, onOpenRecent) }
+                }
                 when {
                     state.loading -> item {
                         Box(Modifier.fillMaxWidth().padding(Spacing.xxl), contentAlignment = Alignment.Center) {
@@ -250,6 +255,40 @@ private fun Shortcut(icon: Int, title: String, body: String, onClick: () -> Unit
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+@Composable
+private fun FavoritePlaylists(playlists: List<Playlist>, onOpen: (RecentContext) -> Unit) {
+    val covers = LocalCoverUrls.current
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        SectionHeader(stringResource(R.string.favorite_playlists))
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = Spacing.screen),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            items(playlists, key = { it.name }) { playlist ->
+                CoverCard(
+                    title = playlist.title,
+                    subtitle = songsCount(playlist.trackIds.size),
+                    coverUrl = covers.playlist(playlist, playlist.trackIds.firstOrNull()),
+                    onClick = {
+                        onOpen(
+                            RecentContext(
+                                PlaybackContextType.Playlist,
+                                playlist.name,
+                                playlist.title,
+                                playlist.trackIds.firstOrNull(),
+                                0,
+                            ),
+                        )
+                    },
+                    shape = MaterialTheme.shapes.extraLarge,
+                    titleColor = Color.Unspecified,
+                    modifier = Modifier.width(172.dp),
+                )
+            }
         }
     }
 }
