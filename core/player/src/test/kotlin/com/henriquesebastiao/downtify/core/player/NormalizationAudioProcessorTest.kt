@@ -12,9 +12,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @UnstableApi
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 class NormalizationAudioProcessorTest {
     private val gains = mutableMapOf("one" to -6.020599913, "two" to 6.020599913)
     private var enabled = true
