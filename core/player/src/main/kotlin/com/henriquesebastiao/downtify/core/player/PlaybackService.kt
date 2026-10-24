@@ -27,6 +27,8 @@ import com.henriquesebastiao.downtify.core.data.activity.PlaybackActivityReporte
 import com.henriquesebastiao.downtify.core.data.catalog.CatalogRepository
 import com.henriquesebastiao.downtify.core.data.library.LibraryRepository
 import com.henriquesebastiao.downtify.core.data.listens.ListenReporter
+import com.henriquesebastiao.downtify.core.data.playback.PlaybackRepository
+import com.henriquesebastiao.downtify.core.data.playback.playbackOwner
 import com.henriquesebastiao.downtify.core.data.podcasts.PodcastsRepository
 import com.henriquesebastiao.downtify.core.model.EpisodeIds
 import com.henriquesebastiao.downtify.core.model.PlayQueue
@@ -46,7 +48,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 
 /**
@@ -81,6 +85,8 @@ class PlaybackService : MediaSessionService() {
     @Inject lateinit var resolver: StreamResolver
 
     @Inject lateinit var readAhead: ReadAheadBuffer
+  
+    @Inject lateinit var playback: PlaybackRepository
 
     @Inject
     @StreamingClient
@@ -93,6 +99,7 @@ class PlaybackService : MediaSessionService() {
     private var episodes: EpisodeProgressTracker? = null
     private var prefetch: StreamPrefetchTracker? = null
     private var warmer: TranscodeWarmer? = null
+    private var persistence: PlaybackPersistence? = null
     private val likeCommand = SessionCommand(ACTION_TOGGLE_LIKE, Bundle.EMPTY)
     private val addToQueueCommand = SessionCommand(ACTION_ADD_TO_QUEUE, Bundle.EMPTY)
     private val moveInQueueCommand = SessionCommand(ACTION_MOVE_IN_QUEUE, Bundle.EMPTY)
@@ -138,17 +145,22 @@ class PlaybackService : MediaSessionService() {
         readAhead.start(player, scope)
         keepLikeButtonCurrent(player)
         stopWhenSignedOut(player)
+        persistence = PlaybackPersistence(player, playback, sessions, scope).also { it.start() }
     }
 
     /** Unpaired (here or from the web): the queue belongs to a server the app can't reach anymore. */
     private fun stopWhenSignedOut(player: Player) {
-        sessions.session
-            .filter { it == null }
-            .onEach {
-                player.stop()
-                player.clearMediaItems()
+        scope.launch {
+            withContext(Dispatchers.IO) { sessions.ensureLoaded() }
+            val expected = sessions.current?.playbackOwner
+            sessions.session.collect { paired ->
+                if (paired == null || paired.playbackOwner != expected) {
+                    player.stop()
+                    player.clearMediaItems()
+                    stopSelf()
+                }
             }
-            .launchIn(scope)
+        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
@@ -161,6 +173,7 @@ class PlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         readAhead.stop()
+        persistence?.stop()
         listens?.stop()
         activity?.stop()
         episodes?.stop()
@@ -261,6 +274,28 @@ class PlaybackService : MediaSessionService() {
             .build()
 
     private inner class SessionCallback : MediaSession.Callback {
+        override fun onConnectAsync(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+        ): ListenableFuture<MediaSession.ConnectionResult> = scope.future {
+            persistence?.awaitReady()
+            onConnect(session, controller)
+        }
+
+        override fun onPlaybackResumption(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            isForPlayback: Boolean,
+        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> = scope.future {
+            persistence?.awaitReady()
+            val player = mediaSession.player
+            MediaSession.MediaItemsWithStartPosition(
+                (0 until player.mediaItemCount).map(player::getMediaItemAt),
+                player.currentMediaItemIndex,
+                player.currentPosition.coerceAtLeast(0),
+            )
+        }
+
         override fun onConnect(
             session: MediaSession,
             controller: MediaSession.ControllerInfo,
