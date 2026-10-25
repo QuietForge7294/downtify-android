@@ -32,8 +32,10 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
  * A content row (song, album, file, download) as a card of a separated list: [leading] (a 64 dp
  * [Artwork] or a track number), a titleMedium title over a bodyLarge [subtitle], an optional
  * monospaced [meta] line (a size, a duration) and [trailing] controls (a [CircleButton] "more").
- * [active] is what's playing: the title in bold primary. Lines are one line, ellipsized; a status
- * that must be read whole may take [subtitleLines]. [extra] goes under them (a progress bar).
+ * [active] is what's playing: the title in bold primary; [dimmed] is something done with (an
+ * episode heard), its title in the muted color. Lines are one line, ellipsized; a title or status
+ * that must be read whole may take [titleLines] or [subtitleLines]. [extra] goes under them (a
+ * progress bar). [leading] is optional: an episode has no cover of its own.
  * [shape] comes from the list's [ListStyle]; the row looks the same pressed or not, but ripples.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -41,8 +43,8 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 fun MediaListItem(
     title: String,
     onClick: () -> Unit,
-    leading: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    leading: (@Composable () -> Unit)? = null,
     subtitle: String? = null,
     meta: String? = null,
     active: Boolean = false,
@@ -52,6 +54,8 @@ fun MediaListItem(
     onLongClickLabel: String? = null,
     supportingLeading: (@Composable () -> Unit)? = null,
     subtitleLines: Int = 1,
+    titleLines: Int = 1,
+    dimmed: Boolean = false,
     extra: (@Composable () -> Unit)? = null,
     trailing: (@Composable RowScope.() -> Unit)? = null,
 ) {
@@ -85,7 +89,13 @@ fun MediaListItem(
                         }
                     }
                     if (meta != null) {
-                        Text(meta, style = DowntifyType.dataSmall, color = scheme.onSurfaceVariant, maxLines = 1)
+                        Text(
+                            meta,
+                            style = DowntifyType.dataSmall,
+                            color = scheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                     extra?.invoke()
                 }
@@ -107,8 +117,12 @@ fun MediaListItem(
         Text(
             title,
             style = if (active) typography.titleMediumEmphasized else typography.titleMedium,
-            color = if (active) scheme.primary else Color.Unspecified,
-            maxLines = 1,
+            color = when {
+                active -> scheme.primary
+                dimmed -> scheme.onSurfaceVariant
+                else -> Color.Unspecified
+            },
+            maxLines = titleLines,
             overflow = TextOverflow.Ellipsis,
         )
     }

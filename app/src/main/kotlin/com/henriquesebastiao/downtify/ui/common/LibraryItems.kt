@@ -61,13 +61,6 @@ fun albumSubtitle(album: Album): String {
     return if (album.year.isBlank()) artist else stringResource(R.string.album_subtitle, artist, album.year)
 }
 
-/** "Kenji Aoki · 3:41" */
-@Composable
-fun trackSubtitle(track: Track): String {
-    val artist = track.displayArtist.ifBlank { stringResource(R.string.unknown_artist) }
-    return stringResource(R.string.album_subtitle, artist, formatDuration(track.duration))
-}
-
 @Composable
 fun artistSubtitle(artist: Artist): String {
     val albums = pluralStringResource(R.plurals.albums_count, artist.albums.size, artist.albums.size)
@@ -120,50 +113,6 @@ fun CoverCard(
             }
         }
     }
-}
-
-/** A list row with a cover: albums, artists, playlists in list layout and in search. */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun CoverRow(
-    title: String,
-    subtitle: String?,
-    coverUrl: String?,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    round: Boolean = false,
-    placeholderIcon: Int = DowntifyIcons.Album,
-    coverSize: Dp = 56.dp,
-    subtitleLines: Int = 1,
-    trailing: (@Composable () -> Unit)? = null,
-) {
-    ListItem(
-        headlineContent = {
-            Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.basicMarquee())
-        },
-        supportingContent = subtitle?.let {
-            {
-                Text(
-                    it,
-                    maxLines = subtitleLines,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.basicMarquee(),
-                )
-            }
-        },
-        leadingContent = {
-            Artwork(
-                url = coverUrl,
-                contentDescription = null,
-                shape = if (round) CircleShape else MaterialTheme.shapes.small,
-                placeholderIcon = placeholderIcon,
-                modifier = Modifier.size(coverSize),
-            )
-        },
-        trailingContent = trailing,
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = modifier.clickable(onClick = onClick),
-    )
 }
 
 /**
@@ -226,7 +175,7 @@ fun TrackItem(
             },
             trailing = {
                 if (isCurrent) PlayingBars(animate = isPlaying)
-                TrackMenu(track, isLiked, actions, round = true)
+                TrackMenu(track, isLiked, actions)
             },
         )
     }
@@ -253,6 +202,7 @@ fun CoverItem(
     placeholderIcon: Int = DowntifyIcons.Album,
     active: Boolean = false,
     meta: String? = null,
+    subtitleLines: Int = 1,
     shape: Shape = ListStyle.Separated.shapeOf(0, 1),
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     trailing: (@Composable RowScope.() -> Unit)? = null,
@@ -260,6 +210,7 @@ fun CoverItem(
     MediaListItem(
         title = title,
         subtitle = subtitle,
+        subtitleLines = subtitleLines,
         meta = meta,
         onClick = onClick,
         active = active,
@@ -291,135 +242,13 @@ data class TrackActions(
     val onFindSimilar: ((artist: String, title: String) -> Unit)? = null,
 )
 
-/**
- * A song row. [leading] is its number (albums), its cover (lists) or, when it
- * is the current track, bouncing bars. Long titles scroll as a marquee so
- * the full text stays readable.
- */
-@OptIn(ExperimentalFoundationApi::class)
+/** The track's "more" menu, behind the v3 rows' 48 dp tonal circle. */
 @Composable
-fun TrackRow(
-    track: Track,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    number: Int? = null,
-    coverUrl: String? = null,
-    showCover: Boolean = number == null,
-    isCurrent: Boolean = false,
-    isPlaying: Boolean = false,
-    isLiked: Boolean = false,
-    downloaded: Boolean = false,
-    actions: TrackActions = TrackActions(),
-    containerColor: Color = Color.Transparent,
-) {
-    val addToQueue = actions.onAddToQueue
-    if (addToQueue != null) {
-        // Opaque while it slides, so the swipe's color shows only beside it.
-        val opaque = if (containerColor == Color.Transparent) MaterialTheme.colorScheme.surface else containerColor
-        SwipeToQueue(onAddToQueue = { addToQueue(track) }, modifier = modifier) {
-            TrackListItem(
-                track, onClick, Modifier, number, coverUrl, showCover, isCurrent, isPlaying, isLiked, downloaded,
-                actions, opaque,
-            )
-        }
-    } else {
-        TrackListItem(
-            track, onClick, modifier, number, coverUrl, showCover, isCurrent, isPlaying, isLiked, downloaded,
-            actions, containerColor,
-        )
-    }
-}
-
-@Suppress("LongParameterList")
-@Composable
-private fun TrackListItem(
-    track: Track,
-    onClick: () -> Unit,
-    modifier: Modifier,
-    number: Int?,
-    coverUrl: String?,
-    showCover: Boolean,
-    isCurrent: Boolean,
-    isPlaying: Boolean,
-    isLiked: Boolean,
-    downloaded: Boolean,
-    actions: TrackActions,
-    containerColor: Color,
-) {
-    val highlight = if (isCurrent) MaterialTheme.colorScheme.primary else Color.Unspecified
-    ListItem(
-        headlineContent = {
-            Text(
-                track.displayTitle,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = highlight,
-                fontWeight = if (isCurrent) FontWeight.SemiBold else null,
-                modifier = Modifier.basicMarquee(),
-            )
-        },
-        supportingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (downloaded) {
-                    Icon(
-                        painterResource(DowntifyIcons.CheckCircle),
-                        contentDescription = stringResource(R.string.downloads_downloaded),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(end = 6.dp).size(14.dp),
-                    )
-                }
-                Text(
-                    trackSubtitle(track),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.basicMarquee(),
-                )
-            }
-        },
-        leadingContent = {
-            when {
-                showCover -> Box(contentAlignment = Alignment.Center) {
-                    Artwork(url = coverUrl, contentDescription = null, modifier = Modifier.size(48.dp))
-                    if (isCurrent) PlayingBars(animate = isPlaying)
-                }
-
-                isCurrent -> Box(Modifier.width(24.dp), contentAlignment = Alignment.Center) {
-                    PlayingBars(animate = isPlaying)
-                }
-
-                else -> Text(
-                    text = number?.toString().orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.width(24.dp),
-                )
-            }
-        },
-        trailingContent = { TrackMenu(track, isLiked, actions) },
-        colors = ListItemDefaults.colors(containerColor = containerColor),
-        modifier = modifier.clickable(onClick = onClick),
-    )
-}
-
-/** The track's "more" menu; [round] draws its button as the v3 rows' 48 dp tonal circle. */
-@Composable
-private fun TrackMenu(track: Track, isLiked: Boolean, actions: TrackActions, round: Boolean = false) {
+private fun TrackMenu(track: Track, isLiked: Boolean, actions: TrackActions) {
     if (actions == TrackActions()) return
     var open by remember { mutableStateOf(false) }
     Box {
-        val label = stringResource(R.string.track_more, track.displayTitle)
-        if (round) {
-            CircleButton(DowntifyIcons.MoreVert, label, onClick = { open = true })
-        } else {
-            IconButton(onClick = { open = true }) {
-                Icon(
-                    painterResource(DowntifyIcons.MoreVert),
-                    contentDescription = label,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
+        CircleButton(DowntifyIcons.MoreVert, stringResource(R.string.track_more, track.displayTitle), { open = true })
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             actions.onAddToQueue?.let { add ->
                 DropdownMenuItem(
