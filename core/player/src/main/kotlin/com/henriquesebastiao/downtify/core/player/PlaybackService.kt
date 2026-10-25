@@ -85,7 +85,7 @@ class PlaybackService : MediaSessionService() {
     @Inject lateinit var resolver: StreamResolver
 
     @Inject lateinit var readAhead: ReadAheadBuffer
-  
+
     @Inject lateinit var playback: PlaybackRepository
 
     @Inject
