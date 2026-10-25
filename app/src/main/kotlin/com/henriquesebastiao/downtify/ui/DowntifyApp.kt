@@ -12,7 +12,10 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -174,8 +177,16 @@ private fun MainShell() {
         }
     }
     val adaptiveLayout = NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
+    val phone = adaptiveLayout in PhoneBars
+    // An artist, an album or a playlist takes the phone's whole height: no bar, only the mini player.
+    val onDetail = destination?.hasRoute<AlbumRoute>() == true ||
+        destination?.hasRoute<PlaylistRoute>() == true ||
+        destination?.hasRoute<LikedRoute>() == true ||
+        destination?.hasRoute<ArtistDestination>() == true
     // On a phone the bar floats as a pill unless the user picked the full-width one; the rail stays.
-    val floatingBar = !onSettings && LocalFloatingNavBar.current && adaptiveLayout in PhoneBars
+    val floatingBar = !onSettings && !onDetail && LocalFloatingNavBar.current && phone
+    val noBar = onSettings || floatingBar || (onDetail && phone)
+    val miniPlayer = hasMedia && !onSettings
 
     Box(Modifier.fillMaxSize()) {
         NavigationSuiteScaffold(
@@ -195,22 +206,25 @@ private fun MainShell() {
                     )
                 }
             },
-            layoutType = if (onSettings || floatingBar) NavigationSuiteType.None else adaptiveLayout,
+            layoutType = if (noBar) NavigationSuiteType.None else adaptiveLayout,
         ) {
             Column(Modifier.fillMaxSize()) {
-                Box(Modifier.weight(1f)) {
+                // What sits at the bottom clears the system's navigation bar, unless the full-width bar
+                // under it already does; the screens above then leave no room for it themselves.
+                val fullWidthBar = !noBar && phone
+                val bottomStack = (miniPlayer || floatingBar) && !fullWidthBar
+                val content = if (bottomStack) Modifier.consumeWindowInsets(WindowInsets.navigationBars) else Modifier
+                Box(Modifier.weight(1f).then(content)) {
                     AppNavHost(navController)
                     SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
                 }
-                if (hasMedia && !onSettings) {
-                    MiniPlayerHost(
-                        player = player,
-                        onOpen = { nowPlayingOpen = true },
-                        onSimilar = { artist, title -> navController.navigate(SimilarRoute(artist, title)) },
-                    )
-                }
-                if (floatingBar) {
-                    FloatingNavBar(currentTab, openTab, Modifier.navigationBarsPadding())
+                if (miniPlayer || floatingBar) {
+                    Column(if (fullWidthBar) Modifier else Modifier.navigationBarsPadding()) {
+                        if (miniPlayer) {
+                            MiniPlayerHost(player = player, onOpen = { nowPlayingOpen = true }, attached = floatingBar)
+                        }
+                        if (floatingBar) FloatingNavBar(currentTab, openTab, attached = miniPlayer)
+                    }
                 }
             }
         }
@@ -340,18 +354,17 @@ private fun AppNavHost(navController: NavHostController) {
 
 /** The mini player collects the ticking state itself, so only it recomposes as the song plays. */
 @Composable
-private fun MiniPlayerHost(player: PlayerViewModel, onOpen: () -> Unit, onSimilar: (String, String) -> Unit) {
+private fun MiniPlayerHost(player: PlayerViewModel, onOpen: () -> Unit, attached: Boolean) {
     val state by player.state.collectAsStateWithLifecycle()
-    val downloadJob by player.streamJob.collectAsStateWithLifecycle()
-    val streamTrack by player.streamTrack.collectAsStateWithLifecycle()
     MiniPlayer(
         state = state,
         onOpen = onOpen,
         onTogglePlay = player::togglePlayPause,
-        onSimilar = onSimilar,
-        downloadJob = downloadJob,
-        onDownloadStream = player::downloadStream,
-        hasLibraryCopy = streamTrack != null,
+        onPrevious = player::previous,
+        onNext = player::next,
+        onSkipBack = player::skipBack,
+        onSkipForward = player::skipForward,
+        attached = attached,
     )
 }
 

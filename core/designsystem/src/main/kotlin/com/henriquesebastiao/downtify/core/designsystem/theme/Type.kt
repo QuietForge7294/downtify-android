@@ -48,6 +48,7 @@ val DmSans = family("DM Sans")
 private const val ROUNDNESS_AXIS = "ROND"
 
 // The rounded cut of Google Sans Flex, the one on Pixel phones: the variable font's ROND axis at 100.
+// The width is set too, at its normal 100: the hero's wide cut must never stand in for it.
 val GoogleSansFlex = FontFamily(
     weights.map { weight ->
         Font(
@@ -57,16 +58,22 @@ val GoogleSansFlex = FontFamily(
             variationSettings = FontVariation.Settings(
                 weight,
                 FontStyle.Normal,
+                FontVariation.width(100f),
                 FontVariation.Setting(ROUNDNESS_AXIS, 100f),
             ),
         )
     },
 )
 
-/** Google Sans Flex at its widest (wdth 151), rounded like the rest (ROND 100): the hero title only. */
+/**
+ * Google Sans Flex at its widest (wdth 151), rounded like the rest (ROND 100): the hero title only.
+ * Its request to the font provider must differ from the UI's SemiBold one: the provider tells
+ * fonts apart by name, weight and style only, so two SemiBold requests got the same font and a
+ * mini player title came out wide. Asking for the exact font (no best effort) makes it its own.
+ */
 private val GoogleSansFlexWide = FontFamily(
     Font(
-        googleFont = GoogleFont("Google Sans Flex"),
+        googleFont = GoogleFont("Google Sans Flex", bestEffort = false),
         fontProvider = provider,
         weight = FontWeight.SemiBold,
         variationSettings = FontVariation.Settings(

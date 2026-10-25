@@ -1,6 +1,7 @@
 package com.henriquesebastiao.downtify.core.designsystem.component
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -29,7 +30,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButtonShapes
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -64,89 +64,91 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyShape
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyType
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
+import kotlin.math.roundToInt
 
 // The player's pieces assume the content-tinted background of a CoverTheme: primaryContainer.
 
 /**
- * The collapsed player above the navigation bar: a primaryContainer card with 24 dp corners, the
- * cover in a circle, title and artist, then [actions] ([MiniPlayerButton]s), and the song's
- * [progress] as a thin line along the bottom. Tapping the cover or the text opens Now Playing.
+ * The collapsed player above the navigation bar: a primaryContainer card with the floating bar's
+ * corners ([DowntifyShape.BarCorner]), the cover in a circle, the title (sliding when it doesn't
+ * fit) over the artist, then [actions] ([MiniPlayerButton]s). Tapping the cover or the text opens
+ * Now Playing. [attached] is for when the floating navigation bar sits right under it: the two
+ * read as one group, so its bottom corners tighten (on the spatial spring) to the bar's top ones,
+ * [DowntifyShape.JoinedCorner].
  */
 @Composable
 fun MiniPlayerCard(
     title: String,
     subtitle: String,
     coverUrl: String?,
-    progress: () -> Float,
     onOpen: () -> Unit,
     openLabel: String,
     modifier: Modifier = Modifier,
+    attached: Boolean = false,
     actions: @Composable RowScope.() -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
+    val bottom by animateDpAsState(
+        if (attached) DowntifyShape.JoinedCorner else DowntifyShape.BarCorner,
+        MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "miniBottomCorners",
+    )
     Surface(
         color = scheme.primaryContainer,
         contentColor = scheme.onPrimaryContainer,
-        shape = DowntifyShape.MiniPlayer,
+        shape = RoundedCornerShape(
+            topStart = DowntifyShape.BarCorner,
+            topEnd = DowntifyShape.BarCorner,
+            // The spring overshoots; a negative corner would throw.
+            bottomEnd = bottom.coerceAtLeast(0.dp),
+            bottomStart = bottom.coerceAtLeast(0.dp),
+        ),
         modifier = modifier.fillMaxWidth(),
     ) {
-        Box {
+        Row(
+            Modifier.heightIn(min = MINI_PLAYER_HEIGHT).padding(start = Spacing.md, end = Spacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
             Row(
-                Modifier.heightIn(min = MINI_PLAYER_HEIGHT).padding(start = Spacing.md, end = 10.dp),
+                Modifier
+                    .weight(1f)
+                    .clickable(onClickLabel = openLabel, role = Role.Button, onClick = onOpen)
+                    .padding(vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
-                Row(
-                    Modifier
-                        .weight(1f)
-                        .clickable(onClickLabel = openLabel, role = Role.Button, onClick = onOpen)
-                        .padding(vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-                ) {
-                    Artwork(
-                        url = coverUrl,
-                        contentDescription = null,
-                        shape = CircleShape,
-                        modifier = Modifier.size(52.dp),
+                Artwork(
+                    url = coverUrl,
+                    contentDescription = null,
+                    shape = CircleShape,
+                    modifier = Modifier.size(52.dp),
+                )
+                Column(Modifier.weight(1f)) {
+                    MarqueeText(
+                        title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                     )
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            subtitle,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = scheme.onPrimaryContainer.copy(alpha = SUBTITLE_ALPHA),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = scheme.onPrimaryContainer.copy(alpha = SUBTITLE_ALPHA),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
-                actions()
             }
-            LinearProgressIndicator(
-                progress = progress,
-                color = scheme.primary,
-                trackColor = scheme.onPrimaryContainer.copy(alpha = TRACK_ALPHA),
-                strokeCap = StrokeCap.Round,
-                gapSize = 0.dp,
-                drawStopIndicator = {},
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(start = Spacing.xl, end = Spacing.xl, bottom = Spacing.xs)
-                    .fillMaxWidth()
-                    .height(3.dp),
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), content = actions)
         }
     }
 }
 
-/** A 48 dp round button of the [MiniPlayerCard]; [main] (play/pause) is filled with primary. */
+/**
+ * A 48 dp button of the [MiniPlayerCard]. Previous and next sit in a darker circle (onPrimary on
+ * the primaryContainer card); [main] (play/pause) is filled with primary, and while [playing] it
+ * is a squircle instead of a circle, as on Now Playing.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MiniPlayerButton(
@@ -155,13 +157,22 @@ fun MiniPlayerButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     main: Boolean = false,
+    playing: Boolean = false,
 ) {
     val scheme = MaterialTheme.colorScheme
+    val corner by animateFloatAsState(
+        if (main && playing) PLAYING_PERCENT else PILL_PERCENT,
+        MaterialTheme.motionScheme.fastSpatialSpec(),
+        label = "miniButtonCorner",
+    )
     FilledIconButton(
         onClick = onClick,
-        shapes = IconButtonShapes(shape = CircleShape, pressedShape = RoundedCornerShape(16.dp)),
+        shapes = IconButtonShapes(
+            shape = RoundedCornerShape(percent = corner.coerceIn(0f, PILL_PERCENT).roundToInt()),
+            pressedShape = RoundedCornerShape(16.dp),
+        ),
         colors = IconButtonDefaults.filledIconButtonColors(
-            containerColor = if (main) scheme.primary else scheme.onPrimaryContainer.copy(alpha = MINI_BUTTON_ALPHA),
+            containerColor = if (main) scheme.primary else scheme.onPrimary,
             contentColor = if (main) scheme.onPrimary else scheme.onPrimaryContainer,
         ),
         modifier = modifier.size(48.dp),
@@ -425,8 +436,10 @@ private val SEEK_THUMB = 24.dp
 private val SEEK_WAVELENGTH = 36.dp
 private val SEEK_WAVE_HEIGHT = 16.dp
 private const val SUBTITLE_ALPHA = 0.8f
-private const val TRACK_ALPHA = 0.18f
-private const val MINI_BUTTON_ALPHA = 0.12f
+
+// A mini player button's corners in percent of its side: a circle, or a squircle while playing.
+private const val PILL_PERCENT = 50f
+private const val PLAYING_PERCENT = 30f
 private const val SKIP_ALPHA = 0.16f
 private const val TOGGLE_ALPHA = 0.09f
 private const val TOGGLE_CHECKED_ALPHA = 0.28f
@@ -443,12 +456,12 @@ private fun PlayerPreview() {
                     title = "A song with a long title",
                     subtitle = "The Artist",
                     coverUrl = null,
-                    progress = { 0.3f },
                     onOpen = {},
                     openLabel = "Open player",
                 ) {
-                    MiniPlayerButton(DowntifyIcons.Explore, "Similar", {})
-                    MiniPlayerButton(DowntifyIcons.Pause, "Pause", {}, main = true)
+                    MiniPlayerButton(DowntifyIcons.Previous, "Previous", {})
+                    MiniPlayerButton(DowntifyIcons.Pause, "Pause", {}, main = true, playing = true)
+                    MiniPlayerButton(DowntifyIcons.Next, "Next", {})
                 }
                 WavySeekBar(
                     progress = 0.35f,

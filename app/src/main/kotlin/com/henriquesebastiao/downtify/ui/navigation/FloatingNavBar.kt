@@ -1,5 +1,6 @@
 package com.henriquesebastiao.downtify.ui.navigation
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -15,11 +17,13 @@ import androidx.compose.material3.ShortNavigationBarItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.henriquesebastiao.downtify.core.designsystem.component.PhonePreviews
@@ -30,18 +34,33 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 /**
  * The v3 navigation bar on phones: a pill floating 16 dp in from the screen's sides, with
  * Material's navigation items (the selected one's label in primary). The rail and the full-width
- * bar (Settings › Appearance) stay with NavigationSuiteScaffold.
+ * bar (Settings › Appearance) stay with NavigationSuiteScaffold. [attached] is for when the mini
+ * player sits right on top: the two read as one group, 8 dp apart, their facing corners tightened
+ * to [DowntifyShape.JoinedCorner] on the spatial spring.
  */
 @Composable
 fun FloatingNavBar(
     selected: TopLevelDestination,
     onSelect: (TopLevelDestination) -> Unit,
     modifier: Modifier = Modifier,
+    attached: Boolean = false,
 ) {
+    val spec = MaterialTheme.motionScheme.defaultSpatialSpec<Dp>()
+    val top by animateDpAsState(
+        if (attached) DowntifyShape.JoinedCorner else DowntifyShape.BarCorner,
+        spec,
+        label = "barTopCorners",
+    )
+    // The spring overshoots; a negative corner would throw.
+    val corner = CornerSize(top.coerceAtLeast(0.dp))
     Surface(
-        shape = DowntifyShape.FloatingNavBar,
+        shape = DowntifyShape.FloatingNavBar.copy(topStart = corner, topEnd = corner),
         color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = modifier.fillMaxWidth().padding(horizontal = Spacing.screen, vertical = Spacing.sm),
+        modifier = modifier
+            .fillMaxWidth()
+            // Under the mini player (4 dp below it) the gap between the two is 8 dp.
+            .padding(horizontal = Spacing.screen)
+            .padding(top = if (attached) Spacing.xs else Spacing.sm, bottom = Spacing.sm),
     ) {
         BoxWithConstraints {
             // The item measures its label without a width limit: give it the item's own, so it can shrink.

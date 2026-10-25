@@ -39,11 +39,20 @@ object DowntifyShape {
     /** Big cover art: Now Playing, an album's header. */
     val Artwork = RoundedCornerShape(28.dp)
 
-    /** The mini player above the navigation bar. */
-    val MiniPlayer = RoundedCornerShape(24.dp)
+    /**
+     * The floating bar's and the mini player's outer corners: the bar's bottom, the mini player's
+     * top, and all four of either when it's alone.
+     */
+    val BarCorner = 28.dp
+
+    /**
+     * Where the mini player meets the floating bar right under it: their facing corners (the
+     * mini player's bottom, the bar's top), so the two read as one group.
+     */
+    val JoinedCorner = 10.dp
 
     /** The floating navigation bar. */
-    val FloatingNavBar = RoundedCornerShape(28.dp)
+    val FloatingNavBar = RoundedCornerShape(BarCorner)
 
     /** The footer of a multi-step flow (connect): rounded on top, flush with the screen's bottom. */
     val OnboardingFooter = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
