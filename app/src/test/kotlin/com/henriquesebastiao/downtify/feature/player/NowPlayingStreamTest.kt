@@ -10,6 +10,7 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.player.PlayerState
 import com.henriquesebastiao.downtify.core.player.PlayingStream
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -161,7 +162,7 @@ class NowPlayingStreamTest {
     }
 
     @Test
-    fun transportEndsWithRepeatOnTheRight() {
+    fun theTransportAndTheTogglesKeepTheirOrder() {
         compose.setContent {
             DowntifyTheme {
                 NowPlayingScreen(
@@ -174,13 +175,10 @@ class NowPlayingStreamTest {
         }
         fun x(description: String): Float =
             compose.onNodeWithContentDescription(description).fetchSemanticsNode().positionInRoot.x
-        val order = listOf(
-            x("Shuffle, off"),
-            x("Previous"),
-            x("Pause"),
-            x("Next"),
-            x("Repeat, off"),
-        )
-        assertEquals(order.sorted(), order)
+        val transport = listOf(x("Previous"), x("Pause"), x("Next"))
+        assertEquals(transport.sorted(), transport)
+        // Under it, shuffle then repeat; a stream the library doesn't have yet has nothing to like.
+        assertTrue(x("Shuffle, off") < x("Repeat, off"))
+        compose.onNodeWithContentDescription("Add to Liked songs").assertDoesNotExist()
     }
 }

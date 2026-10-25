@@ -13,6 +13,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +56,7 @@ import androidx.navigation.compose.rememberNavController
 import com.henriquesebastiao.downtify.AppState
 import com.henriquesebastiao.downtify.MainViewModel
 import com.henriquesebastiao.downtify.R
+import com.henriquesebastiao.downtify.core.designsystem.theme.LocalFloatingNavBar
 import com.henriquesebastiao.downtify.core.model.PlaybackContext
 import com.henriquesebastiao.downtify.core.model.PlaybackContextType
 import com.henriquesebastiao.downtify.core.model.RecentContext
@@ -76,6 +78,7 @@ import com.henriquesebastiao.downtify.feature.player.NowPlayingScreen
 import com.henriquesebastiao.downtify.feature.player.PlayerViewModel
 import com.henriquesebastiao.downtify.feature.player.QueueActions
 import com.henriquesebastiao.downtify.feature.player.QueueScreen
+import com.henriquesebastiao.downtify.feature.player.playingCoverUrl
 import com.henriquesebastiao.downtify.feature.podcasts.PodcastsRoute
 import com.henriquesebastiao.downtify.feature.podcasts.ShowRoute
 import com.henriquesebastiao.downtify.feature.search.SearchNavigation
@@ -89,10 +92,12 @@ import com.henriquesebastiao.downtify.ui.navigation.AlbumRoute
 import com.henriquesebastiao.downtify.ui.navigation.ArtistRoute as ArtistDestination
 import com.henriquesebastiao.downtify.ui.navigation.DiscoverRoute as DiscoverDestination
 import com.henriquesebastiao.downtify.ui.navigation.DownloadsRoute as DownloadsDestination
+import com.henriquesebastiao.downtify.ui.navigation.FloatingNavBar
 import com.henriquesebastiao.downtify.ui.navigation.HomeRoute as HomeDestination
 import com.henriquesebastiao.downtify.ui.navigation.LibraryRoute as LibraryDestination
 import com.henriquesebastiao.downtify.ui.navigation.LicenseRoute as LicenseDestination
 import com.henriquesebastiao.downtify.ui.navigation.LikedRoute
+import com.henriquesebastiao.downtify.ui.navigation.NavLabel
 import com.henriquesebastiao.downtify.ui.navigation.PlaylistRoute
 import com.henriquesebastiao.downtify.ui.navigation.PodcastsRoute as PodcastsDestination
 import com.henriquesebastiao.downtify.ui.navigation.SearchQueryRoute
@@ -157,6 +162,21 @@ private fun MainShell() {
     TopLevelDestination.entries.firstOrNull { destination?.hasRoute(it.route::class) == true }?.let { currentTab = it }
     RequestNotificationPermission()
 
+    val openTab: (TopLevelDestination) -> Unit = { tab ->
+        if (tab == currentTab) {
+            // Re-tapping the open tab closes whatever was opened above it (Discover, an album, a
+            // search) and shows the tab's start view. Falls back to a plain switch when the tab
+            // has no entry in the stack.
+            if (!navController.popBackStack(tab.route, inclusive = false)) navController.navigateTopLevel(tab)
+        } else {
+            currentTab = tab
+            navController.navigateTopLevel(tab)
+        }
+    }
+    val adaptiveLayout = NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
+    // On a phone the bar floats as a pill unless the user picked the full-width one; the rail stays.
+    val floatingBar = !onSettings && LocalFloatingNavBar.current && adaptiveLayout in PhoneBars
+
     Box(Modifier.fillMaxSize()) {
         NavigationSuiteScaffold(
             navigationSuiteItems = {
@@ -164,36 +184,18 @@ private fun MainShell() {
                     val selected = tab == currentTab
                     item(
                         selected = selected,
-                        onClick = {
-                            if (selected) {
-                                // Re-tapping the open tab closes whatever was
-                                // opened above it (Discover, an album, a
-                                // search) and shows the tab's start view.
-                                // Falls back to a plain switch when the tab
-                                // has no entry in the stack.
-                                if (!navController.popBackStack(tab.route, inclusive = false)) {
-                                    navController.navigateTopLevel(tab)
-                                }
-                            } else {
-                                currentTab = tab
-                                navController.navigateTopLevel(tab)
-                            }
-                        },
+                        onClick = { openTab(tab) },
                         icon = {
                             Icon(
                                 painterResource(if (selected) tab.selectedIcon else tab.icon),
                                 contentDescription = null,
                             )
                         },
-                        label = { Text(stringResource(tab.label)) },
+                        label = { NavLabel(stringResource(tab.label)) },
                     )
                 }
             },
-            layoutType = if (onSettings) {
-                NavigationSuiteType.None
-            } else {
-                NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
-            },
+            layoutType = if (onSettings || floatingBar) NavigationSuiteType.None else adaptiveLayout,
         ) {
             Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f)) {
@@ -206,6 +208,9 @@ private fun MainShell() {
                         onOpen = { nowPlayingOpen = true },
                         onSimilar = { artist, title -> navController.navigate(SimilarRoute(artist, title)) },
                     )
+                }
+                if (floatingBar) {
+                    FloatingNavBar(currentTab, openTab, Modifier.navigationBarsPadding())
                 }
             }
         }
@@ -450,10 +455,13 @@ private fun NowPlayingOverlay(open: Boolean, player: PlayerViewModel, onClose: (
     when (sheet) {
         SHEET_LYRICS -> {
             LaunchedEffect(state.track?.id, streamTrack?.id) { player.loadLyrics() }
-            LyricsSheet(lyrics = lyrics, positionMs = state.positionMs, onSeek = player::seekTo, onDismiss = {
-                sheet =
-                    null
-            })
+            LyricsSheet(
+                lyrics = lyrics,
+                positionMs = state.positionMs,
+                onSeek = player::seekTo,
+                onDismiss = { sheet = null },
+                coverUrl = playingCoverUrl(state),
+            )
         }
     }
 }
@@ -500,3 +508,10 @@ private fun routeFor(context: PlaybackContext): Any? = when (context.type) {
 }
 
 private const val SHEET_LYRICS = "lyrics"
+
+/** The layouts NavigationSuiteScaffold picks for a phone: where the floating bar takes over. */
+private val PhoneBars = setOf(
+    NavigationSuiteType.NavigationBar,
+    NavigationSuiteType.ShortNavigationBarCompact,
+    NavigationSuiteType.ShortNavigationBarMedium,
+)

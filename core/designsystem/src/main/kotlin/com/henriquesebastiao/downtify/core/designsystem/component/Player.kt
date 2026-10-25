@@ -177,7 +177,8 @@ data class PlaybackLabels(val play: String, val pause: String, val previous: Str
 /**
  * Now Playing's transport (Material 3 Expressive button group): wide previous/next pills around
  * play/pause, which is a circle while paused and a 28 dp squircle while playing. The pressed
- * button widens and its neighbours make room. [compact] is 64 dp tall instead of 88.
+ * button widens and its neighbours make room. [compact] is 64 dp tall instead of 88. An episode
+ * swaps previous/next for its skips with [previousIcon] and [nextIcon] (and their [labels]).
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -189,6 +190,8 @@ fun PlaybackControls(
     labels: PlaybackLabels,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
+    previousIcon: Int = DowntifyIcons.Previous,
+    nextIcon: Int = DowntifyIcons.Next,
 ) {
     val height = if (compact) 64.dp else 88.dp
     val scheme = MaterialTheme.colorScheme
@@ -213,7 +216,7 @@ fun PlaybackControls(
             buttonGroupContent = {
                 val interaction = remember { MutableInteractionSource() }
                 TransportButton(
-                    DowntifyIcons.Previous,
+                    previousIcon,
                     labels.previous,
                     onPrevious,
                     skipShapes,
@@ -242,7 +245,7 @@ fun PlaybackControls(
             buttonGroupContent = {
                 val interaction = remember { MutableInteractionSource() }
                 TransportButton(
-                    DowntifyIcons.Next,
+                    nextIcon,
                     labels.next,
                     onNext,
                     skipShapes,
@@ -345,7 +348,7 @@ fun PlayerToggles(toggles: List<PlayerToggle>, modifier: Modifier = Modifier) {
  * The song's position as Material's slider over a wavy track that flows while [playing] and lies
  * flat when paused. [progress] follows the player except while the finger is on it; [onSeek]
  * gets the fraction where it lets go. [timeAt] spells a fraction as a time for the monospaced
- * labels below, which follow the finger.
+ * labels below, which follow the finger; [between] goes between them (the format, as a [Tag]).
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -358,6 +361,7 @@ fun WavySeekBar(
     contentDescription: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    between: (@Composable () -> Unit)? = null,
 ) {
     var dragging by remember { mutableStateOf<Float?>(null) }
     val value = dragging ?: progress.coerceIn(0f, 1f)
@@ -399,9 +403,14 @@ fun WavySeekBar(
                 stateDescription = "$position / $duration"
             },
         )
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(position, style = DowntifyType.dataSmall, color = scheme.onPrimaryContainer)
-            Text(duration, style = DowntifyType.dataSmall, color = scheme.onPrimaryContainer)
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(position, style = DowntifyType.dataSmall, color = scheme.onPrimaryContainer, maxLines = 1)
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { between?.invoke() }
+            Text(duration, style = DowntifyType.dataSmall, color = scheme.onPrimaryContainer, maxLines = 1)
         }
     }
 }
