@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Surface
@@ -17,9 +18,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
+import com.henriquesebastiao.downtify.core.designsystem.component.PhonePreviews
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
+import com.henriquesebastiao.downtify.core.designsystem.theme.ListStyle
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 
 /** What tapping a [GroupedRow] does, and what it shows at the end. */
@@ -42,33 +44,33 @@ data class GroupedRow(
 )
 
 /**
- * A group of rows as Material 3 Expressive draws a grouped list: each row its own surface, the first
- * and last with large outer corners, with a small gap between them. Rows never change shape or tint.
+ * A group of rows as Material 3 Expressive draws a grouped list: each row its own surface, the ends
+ * of the group with large outer corners, a small gap between rows. [style] sets the corners and the
+ * gap: segmented (settings, About), separated or compact. Rows never change shape or tint.
  */
 @Composable
-fun GroupedList(rows: List<GroupedRow>, modifier: Modifier = Modifier) {
+fun GroupedList(rows: List<GroupedRow>, modifier: Modifier = Modifier, style: ListStyle = ListStyle.Segmented) {
     Column(
         modifier.padding(horizontal = Spacing.screen),
-        verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
+        verticalArrangement = Arrangement.spacedBy(style.gap),
     ) {
-        rows.forEachIndexed { index, row -> GroupedListItem(row, index, rows.size) }
+        rows.forEachIndexed { index, row -> GroupedListItem(row, index, rows.size, style = style) }
     }
 }
 
 /** A row that is the [index]th of [count] in its group, which decides its corners. */
 @Composable
-fun GroupedListItem(row: GroupedRow, index: Int, count: Int, modifier: Modifier = Modifier) {
+fun GroupedListItem(
+    row: GroupedRow,
+    index: Int,
+    count: Int,
+    modifier: Modifier = Modifier,
+    style: ListStyle = ListStyle.Segmented,
+) {
     // A row looks the same on, off, pressed or focused: the stock item rounds a checked row all the
     // way and tints it, which made the switches stand out from the rest of the group.
-    val shapes = ListItemDefaults.segmentedShapes(index = index, count = count).let {
-        it.copy(
-            selectedShape = it.shape,
-            pressedShape = it.shape,
-            focusedShape = it.shape,
-            hoveredShape = it.shape,
-            draggedShape = it.shape,
-        )
-    }
+    val shape = style.shapeOf(index, count)
+    val shapes = ListItemShapes(shape, shape, shape, shape, shape, shape)
     val scheme = MaterialTheme.colorScheme
     val colors = ListItemDefaults.segmentedColors(
         containerColor = scheme.surfaceContainer,
@@ -132,7 +134,7 @@ fun GroupTitle(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-@PreviewLightDark
+@PhonePreviews
 @Composable
 private fun GroupedListPreview() {
     DowntifyTheme {

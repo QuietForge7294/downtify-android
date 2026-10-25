@@ -52,7 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.henriquesebastiao.downtify.R
-import com.henriquesebastiao.downtify.core.designsystem.component.CoverArt
+import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.EmptyState
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
@@ -173,7 +173,7 @@ private fun Header(show: PodcastShow) {
     var expanded by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().padding(horizontal = Spacing.screen, vertical = Spacing.sm)) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
-            CoverArt(
+            Artwork(
                 url = show.artworkUrl.ifBlank { null },
                 contentDescription = null,
                 shape = MaterialTheme.shapes.large,

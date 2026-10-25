@@ -54,7 +54,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.henriquesebastiao.downtify.R
-import com.henriquesebastiao.downtify.core.designsystem.component.CoverArt
+import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
 import com.henriquesebastiao.downtify.core.designsystem.component.CoverColors
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.PlayingBars
@@ -507,7 +507,7 @@ private fun QueueRow(
         },
         leadingContent = {
             Box(contentAlignment = Alignment.Center) {
-                CoverArt(url = artworkUrl, contentDescription = null, modifier = Modifier.size(48.dp))
+                Artwork(url = artworkUrl, contentDescription = null, modifier = Modifier.size(48.dp))
                 if (current) PlayingBars(animate = isPlaying)
             }
         },

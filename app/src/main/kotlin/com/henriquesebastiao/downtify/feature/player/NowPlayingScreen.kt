@@ -62,7 +62,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.henriquesebastiao.downtify.R
-import com.henriquesebastiao.downtify.core.designsystem.component.CoverArt
+import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
 import com.henriquesebastiao.downtify.core.designsystem.component.CoverColors
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.rememberCoverColors
@@ -161,7 +161,7 @@ fun NowPlayingScreen(
                     actions,
                 )
                 Spacer(Modifier.weight(0.3f))
-                CoverArt(
+                Artwork(
                     url = coverUrl,
                     contentDescription = null,
                     shape = MaterialTheme.shapes.extraLarge,

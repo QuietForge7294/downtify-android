@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -40,9 +41,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.henriquesebastiao.downtify.R
-import com.henriquesebastiao.downtify.core.designsystem.component.CoverArt
+import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
+import com.henriquesebastiao.downtify.core.designsystem.component.CircleButton
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
+import com.henriquesebastiao.downtify.core.designsystem.component.MediaListItem
 import com.henriquesebastiao.downtify.core.designsystem.component.PlayingBars
+import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyShape
+import com.henriquesebastiao.downtify.core.designsystem.theme.ListStyle
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 import com.henriquesebastiao.downtify.core.model.Album
 import com.henriquesebastiao.downtify.core.model.Artist
@@ -88,7 +93,7 @@ fun CoverCard(
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
     ) {
-        CoverArt(
+        Artwork(
             url = coverUrl,
             contentDescription = null,
             shape = shape,
@@ -147,7 +152,7 @@ fun CoverRow(
             }
         },
         leadingContent = {
-            CoverArt(
+            Artwork(
                 url = coverUrl,
                 contentDescription = null,
                 shape = if (round) CircleShape else MaterialTheme.shapes.small,
@@ -160,6 +165,118 @@ fun CoverRow(
         modifier = modifier.clickable(onClick = onClick),
     )
 }
+
+/**
+ * A song as a card of a separated list (v3): its 64 dp cover (or its number, in an album), the
+ * title over "artist · album", the bars while it plays and a round "more" button with its menu.
+ * Swipes right to queue when [actions] can. [shape] comes from the list's [ListStyle].
+ */
+@Composable
+fun TrackItem(
+    track: Track,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    number: Int? = null,
+    coverUrl: String? = null,
+    showCover: Boolean = number == null,
+    isCurrent: Boolean = false,
+    isPlaying: Boolean = false,
+    isLiked: Boolean = false,
+    downloaded: Boolean = false,
+    actions: TrackActions = TrackActions(),
+    shape: Shape = ListStyle.Separated.shapeOf(0, 1),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+) {
+    val item: @Composable (Modifier) -> Unit = { itemModifier ->
+        MediaListItem(
+            title = track.displayTitle,
+            subtitle = trackSubtitle(track),
+            onClick = onClick,
+            active = isCurrent,
+            shape = shape,
+            containerColor = containerColor,
+            modifier = itemModifier,
+            leading = {
+                if (showCover) {
+                    Artwork(url = coverUrl, contentDescription = null, modifier = Modifier.size(ITEM_COVER))
+                } else {
+                    Text(
+                        text = number?.toString().orEmpty(),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.width(32.dp),
+                    )
+                }
+            },
+            supportingLeading = if (downloaded) {
+                {
+                    Icon(
+                        painterResource(DowntifyIcons.CheckCircle),
+                        contentDescription = stringResource(R.string.downloads_downloaded),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(end = 6.dp).size(16.dp),
+                    )
+                }
+            } else {
+                null
+            },
+            trailing = {
+                if (isCurrent) PlayingBars(animate = isPlaying)
+                TrackMenu(track, isLiked, actions, round = true)
+            },
+        )
+    }
+    val addToQueue = actions.onAddToQueue
+    if (addToQueue != null) {
+        SwipeToQueue(onAddToQueue = { addToQueue(track) }, shape = shape, modifier = modifier) { item(Modifier) }
+    } else {
+        item(modifier)
+    }
+}
+
+/**
+ * An album, artist, playlist or show as a card of a separated list (v3): its 64 dp cover (round
+ * for an artist), title, one line of [subtitle] and optional [trailing] controls.
+ */
+@Composable
+fun CoverItem(
+    title: String,
+    subtitle: String?,
+    coverUrl: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    round: Boolean = false,
+    placeholderIcon: Int = DowntifyIcons.Album,
+    active: Boolean = false,
+    meta: String? = null,
+    shape: Shape = ListStyle.Separated.shapeOf(0, 1),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    trailing: (@Composable RowScope.() -> Unit)? = null,
+) {
+    MediaListItem(
+        title = title,
+        subtitle = subtitle,
+        meta = meta,
+        onClick = onClick,
+        active = active,
+        shape = shape,
+        containerColor = containerColor,
+        modifier = modifier,
+        leading = {
+            Artwork(
+                url = coverUrl,
+                contentDescription = null,
+                shape = if (round) CircleShape else DowntifyShape.ArtworkThumb,
+                placeholderIcon = placeholderIcon,
+                modifier = Modifier.size(ITEM_COVER),
+            )
+        },
+        trailing = trailing,
+    )
+}
+
+private val ITEM_COVER = 64.dp
 
 /** What a track row's menu can do. */
 data class TrackActions(
@@ -259,7 +376,7 @@ private fun TrackListItem(
         leadingContent = {
             when {
                 showCover -> Box(contentAlignment = Alignment.Center) {
-                    CoverArt(url = coverUrl, contentDescription = null, modifier = Modifier.size(48.dp))
+                    Artwork(url = coverUrl, contentDescription = null, modifier = Modifier.size(48.dp))
                     if (isCurrent) PlayingBars(animate = isPlaying)
                 }
 
@@ -282,17 +399,23 @@ private fun TrackListItem(
     )
 }
 
+/** The track's "more" menu; [round] draws its button as the v3 rows' 48 dp tonal circle. */
 @Composable
-private fun TrackMenu(track: Track, isLiked: Boolean, actions: TrackActions) {
+private fun TrackMenu(track: Track, isLiked: Boolean, actions: TrackActions, round: Boolean = false) {
     if (actions == TrackActions()) return
     var open by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { open = true }) {
-            Icon(
-                painterResource(DowntifyIcons.MoreVert),
-                contentDescription = stringResource(R.string.track_more, track.displayTitle),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        val label = stringResource(R.string.track_more, track.displayTitle)
+        if (round) {
+            CircleButton(DowntifyIcons.MoreVert, label, onClick = { open = true })
+        } else {
+            IconButton(onClick = { open = true }) {
+                Icon(
+                    painterResource(DowntifyIcons.MoreVert),
+                    contentDescription = label,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             actions.onAddToQueue?.let { add ->

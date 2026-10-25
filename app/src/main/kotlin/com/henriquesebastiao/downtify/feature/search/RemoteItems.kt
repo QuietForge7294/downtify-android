@@ -42,7 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.henriquesebastiao.downtify.R
-import com.henriquesebastiao.downtify.core.designsystem.component.CoverArt
+import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.PlayingBars
 import com.henriquesebastiao.downtify.core.designsystem.component.SourceBadge
@@ -266,7 +266,7 @@ private fun PlayCover(song: RemoteSong, playing: Boolean, isPlaying: Boolean, re
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        CoverArt(url = song.coverUrl.ifBlank { null }, contentDescription = null, modifier = Modifier.size(56.dp))
+        Artwork(url = song.coverUrl.ifBlank { null }, contentDescription = null, modifier = Modifier.size(56.dp))
         // Like a library row: the row that's playing shows the three bars (still when paused);
         // anything else is a bare cover, tapped to play.
         if (playing) PlayingBars(animate = isPlaying)
@@ -327,7 +327,7 @@ internal fun RemoteAlbumRow(
             )
         },
         leadingContent = {
-            CoverArt(url = album.coverUrl.ifBlank { null }, contentDescription = null, modifier = Modifier.size(56.dp))
+            Artwork(url = album.coverUrl.ifBlank { null }, contentDescription = null, modifier = Modifier.size(56.dp))
         },
         trailingContent = {
             when {
@@ -379,7 +379,7 @@ internal fun LinkHeader(
         horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CoverArt(
+        Artwork(
             url = link.coverUrl.ifBlank { null },
             contentDescription = null,
             shape = MaterialTheme.shapes.medium,

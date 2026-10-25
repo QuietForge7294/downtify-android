@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.henriquesebastiao.downtify.R
-import com.henriquesebastiao.downtify.core.designsystem.component.CoverArt
+import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.EmptyState
 import com.henriquesebastiao.downtify.core.designsystem.component.SectionHeader
@@ -131,7 +131,7 @@ fun ArtistScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(Spacing.md),
                     ) {
-                        CoverArt(
+                        Artwork(
                             url = covers.track(artist.coverTrackId, ServerUrls.COVER_LARGE),
                             contentDescription = null,
                             shape = CircleShape,

@@ -53,7 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.henriquesebastiao.downtify.R
-import com.henriquesebastiao.downtify.core.designsystem.component.CoverArt
+import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.EmptyState
 import com.henriquesebastiao.downtify.core.designsystem.component.rememberCoverColors
@@ -236,7 +236,7 @@ private fun Header(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.lg),
     ) {
-        CoverArt(
+        Artwork(
             url = coverUrl,
             contentDescription = null,
             shape = MaterialTheme.shapes.extraLarge,

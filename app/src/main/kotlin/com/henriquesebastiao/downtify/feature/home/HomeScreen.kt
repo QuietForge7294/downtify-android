@@ -53,7 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.henriquesebastiao.downtify.R
-import com.henriquesebastiao.downtify.core.designsystem.component.CoverArt
+import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyLogo
 import com.henriquesebastiao.downtify.core.designsystem.component.EmptyState
@@ -405,7 +405,7 @@ private fun QuickAccessTile(
         modifier = modifier.height(64.dp).clickable { onOpen(entry) },
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            CoverArt(
+            Artwork(
                 url = if (playlist !=
                     null
                 ) {

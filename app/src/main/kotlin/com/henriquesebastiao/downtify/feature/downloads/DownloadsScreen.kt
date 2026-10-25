@@ -57,7 +57,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.henriquesebastiao.downtify.R
 import com.henriquesebastiao.downtify.core.data.offline.DownloadActivity
-import com.henriquesebastiao.downtify.core.designsystem.component.CoverArt
+import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.EmptyState
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
@@ -278,7 +278,7 @@ private fun ServerJobRow(job: ServerJob) {
             }
         },
         leadingContent = {
-            CoverArt(url = job.coverUrl.ifBlank { null }, contentDescription = null, modifier = Modifier.size(56.dp))
+            Artwork(url = job.coverUrl.ifBlank { null }, contentDescription = null, modifier = Modifier.size(56.dp))
         },
         trailingContent = when {
             job.status == ServerJobStatus.Done -> {
@@ -418,7 +418,7 @@ private fun DownloadRow(item: DownloadItem, state: DownloadsUiState, onOpen: () 
             }
         },
         leadingContent = {
-            CoverArt(
+            Artwork(
                 url = LocalCoverUrls.current.track(item.coverTrackId),
                 contentDescription = null,
                 placeholderIcon = when (item.type) {

@@ -14,6 +14,8 @@ lifecycle = "2.11.0"
 coreKtx = "1.19.1"
 splashscreen = "1.2.0"
 palette = "1.0.0"
+# Kotlin port of material-color-utilities: Now Playing's scheme from the cover. Checked on Maven Central 2026-10-25.
+materialColorUtilities = "5.0.1"
 media3 = "1.11.1"
 room = "2.8.5"
 datastore = "1.2.1"
@@ -45,6 +47,7 @@ androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-ru
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle" }
 androidx-palette = { module = "androidx.palette:palette-ktx", version.ref = "palette" }
+material-color-utilities = { module = "com.materialkolor:material-color-utilities", version.ref = "materialColorUtilities" }
 
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui = { module = "androidx.compose.ui:ui" }

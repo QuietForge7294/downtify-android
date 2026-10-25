@@ -32,7 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import com.henriquesebastiao.downtify.R
-import com.henriquesebastiao.downtify.core.designsystem.component.CoverArt
+import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.rememberCoverColors
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
@@ -99,7 +99,7 @@ fun MiniPlayer(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                 ) {
-                    CoverArt(url = coverUrl, contentDescription = null, modifier = Modifier.size(48.dp))
+                    Artwork(url = coverUrl, contentDescription = null, modifier = Modifier.size(48.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
                             track?.displayTitle ?: stream?.title ?: episode?.title.orEmpty(),
