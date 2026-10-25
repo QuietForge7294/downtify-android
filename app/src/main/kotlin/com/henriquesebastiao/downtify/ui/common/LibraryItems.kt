@@ -83,7 +83,7 @@ fun CoverCard(
     coverUrl: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    shape: Shape = MaterialTheme.shapes.large,
+    shape: Shape = DowntifyShape.Section,
     placeholderIcon: Int = DowntifyIcons.Album,
     titleColor: Color = Color.Unspecified,
     centered: Boolean = false,
@@ -103,7 +103,7 @@ fun CoverCard(
         Column(horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start) {
             Text(
                 title,
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleMedium,
                 color = titleColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -112,7 +112,7 @@ fun CoverCard(
             if (subtitle != null) {
                 Text(
                     subtitle,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

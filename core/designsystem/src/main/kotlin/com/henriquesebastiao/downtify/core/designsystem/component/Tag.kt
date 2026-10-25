@@ -19,13 +19,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyType
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 
-/** A [Tag]'s colors: a raised surface, a container tone, or a wash of the content color on a tinted card. */
-enum class TagTone { Surface, Primary, Secondary, Tertiary, OnColor }
+/**
+ * A [Tag]'s colors: a raised surface, a container tone, the error container (a status that went
+ * wrong), or a wash of the content color on a tinted card.
+ */
+enum class TagTone { Surface, Primary, Secondary, Tertiary, Error, OnColor }
 
 /**
  * A static label in a pill: a version, a status, a value ("44.1 kHz", "FLAC"). [mono] sets it in
@@ -67,7 +71,7 @@ fun Tag(
                     modifier = Modifier.size(if (small) 16.dp else 20.dp),
                 )
             }
-            Text(label, style = style, maxLines = 1, softWrap = false)
+            Text(label, style = style, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -80,6 +84,7 @@ private fun TagTone.colors(): Pair<Color, Color> {
         TagTone.Primary -> scheme.primaryContainer to scheme.onPrimaryContainer
         TagTone.Secondary -> scheme.secondaryContainer to scheme.onSecondaryContainer
         TagTone.Tertiary -> scheme.tertiaryContainer to scheme.onTertiaryContainer
+        TagTone.Error -> scheme.errorContainer to scheme.onErrorContainer
         TagTone.OnColor -> LocalContentColor.current.let { it.copy(alpha = ON_COLOR_ALPHA) to it }
     }
 }

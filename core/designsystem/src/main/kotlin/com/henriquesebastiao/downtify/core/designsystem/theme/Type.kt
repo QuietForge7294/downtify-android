@@ -164,12 +164,13 @@ object DowntifyType {
         fontFamily = GoogleSansFlexWide,
         fontWeight = FontWeight.SemiBold,
         fontSize = 60.sp,
-        lineHeight = 57.sp,
+        // In em, so the line follows the size when a long word makes the title step down.
+        lineHeight = 0.95.em,
         letterSpacing = (-0.02).em,
     )
 
     /** [hero] for titles with a long word (more than ~8 letters). */
-    val heroSmall = hero.copy(fontSize = 44.sp, lineHeight = 42.sp)
+    val heroSmall = hero.copy(fontSize = 44.sp)
 
     // Technical values (durations, bitrates, sample rates, sizes, formats): monospaced, tabular figures.
     val dataLarge = mono(FontWeight.Medium, size = 22, line = 28)
