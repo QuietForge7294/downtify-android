@@ -71,20 +71,24 @@ fun OnboardingFooter(
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = DowntifyShape.OnboardingFooter,
     ) {
-        Row(
-            Modifier
-                .navigationBarsPadding()
-                .padding(start = Spacing.xxl, end = Spacing.lg, top = Spacing.lg, bottom = Spacing.lg),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
-        ) {
-            Text(
-                label,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            NextButton(step, nextLabel, icon, onNext, enabled, busy)
+        // On a tablet the step and its button stay over the content's column, not at the window's edges.
+        Box(Modifier.navigationBarsPadding(), contentAlignment = Alignment.TopCenter) {
+            Row(
+                Modifier
+                    .widthIn(max = CONTENT_WIDTH)
+                    .fillMaxWidth()
+                    .padding(start = Spacing.xxl, end = Spacing.lg, top = Spacing.lg, bottom = Spacing.lg),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                NextButton(step, nextLabel, icon, onNext, enabled, busy)
+            }
         }
     }
 }
@@ -220,6 +224,7 @@ private val StepCorners = listOf(
 private val PressedCorners = listOf(24f, 24f, 24f, 24f)
 private const val MAX_CORNER = 50f
 private val NEXT_SIZE = 96.dp
+private val CONTENT_WIDTH = 480.dp
 
 @PhonePreviews
 @Composable

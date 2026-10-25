@@ -21,7 +21,7 @@
     <string name="connect_found">Encontrados nesta rede</string>
     <string name="connect_searching">Procurando servidores…</string>
     <string name="connect_none_found">Nenhum encontrado. Digite o endereço — a rede padrão do Docker não anuncia o servidor.</string>
-    <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
+    <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Conectar</string>
     <string name="connect_step">Etapa %1$d de %2$d</string>
     <string name="connect_scan">Escaneie o código em Configurações › Apps</string>
@@ -40,7 +40,7 @@
     <string name="pair_scan">Escanear o código QR</string>
     <string name="pair_other_server">Usar outro servidor</string>
     <string name="pair_error_wrong_code">Esse código está errado, expirou ou já foi usado. Os códigos funcionam uma vez, por cinco minutos.</string>
-    <string name="pair_error_too_many">Muitas tentativas. Tente de novo em %1$d s.</string>
+    <string name="pair_error_too_many">Muitas tentativas. Tente de novo em %1$d\u00A0s.</string>
     <string name="pair_error_unreachable">Não foi possível alcançar o servidor. Verifique a conexão e tente novamente.</string>
     <string name="pair_error_failed">O servidor não conseguiu emparelhar este celular (erro %1$d).</string>
     <string name="pair_error_other_server">Este código é de um servidor diferente do que está nesse endereço.</string>
@@ -98,7 +98,7 @@
         <item quantity="many">%d de álbuns</item>
         <item quantity="other">%d álbuns</item>
     </plurals>
-    <string name="minutes_short">%d min</string>
+    <string name="minutes_short">%d\u00A0min</string>
     <string name="unknown_artist">Artista desconhecido</string>
     <string name="unknown_album">Álbum desconhecido</string>
 
@@ -308,8 +308,8 @@
     <string name="settings_quality_mobile">Qualidade da transmissão no plano de dados</string>
     <string name="settings_quality_no_transcoding">O servidor não consegue transcodificar (sem ffmpeg): os arquivos são transmitidos como estão.</string>
     <string name="settings_quality_original">Original · como foi baixado</string>
-    <string name="settings_quality_transcoded">%1$s · %2$d kbps · transcodificado pelo servidor</string>
-    <string name="settings_quality_label">%1$s · %2$d kbps</string>
+    <string name="settings_quality_transcoded">%1$s · %2$d\u00A0kbps · transcodificado pelo servidor</string>
+    <string name="settings_quality_label">%1$s · %2$d\u00A0kbps</string>
     <string name="settings_appearance">Aparência</string>
     <string name="settings_theme">Tema</string>
     <string name="settings_theme_system">Sistema</string>
@@ -361,7 +361,7 @@
     <string name="player_playing_from_playlist">Tocando da playlist</string>
     <string name="player_playing_from_library">Tocando da sua biblioteca</string>
     <string name="player_source_original_quality">Transmitindo de %1$s · Qualidade original</string>
-    <string name="player_format_bitrate">%1$s · %2$d kbps</string>
+    <string name="player_format_bitrate">%1$s · %2$d\u00A0kbps</string>
     <string name="player_source_unknown">Transmitindo de %1$s</string>
     <string name="player_playing_from_podcast">Podcast</string>
     <string name="player_go_to_show">Ir para o podcast</string>
@@ -460,7 +460,7 @@
     <string name="settings_read_ahead_off">Desativado</string>
     <string name="settings_read_ahead_count">Músicas antecipadas: %1$d</string>
     <string name="settings_stream_cache">Cache temporário de áudio</string>
-    <string name="settings_stream_cache_size">%1$d MB</string>
+    <string name="settings_stream_cache_size">%1$d\u00A0MB</string>
     <string name="settings_stream_cache_body">Espaço para áudio recente e pré-carregado. Downloads offline são separados. Músicas grandes podem exceder esse limite; apenas músicas completas contam como prontas.</string>
     <string name="settings_read_ahead_mobile">Pré-carregar usando dados móveis</string>
     <string name="settings_read_ahead_mobile_body">Permitir consumo adicional para preparar as próximas músicas.</string>

@@ -21,7 +21,7 @@
     <string name="connect_found">Ezen a hálózaton találhatók</string>
     <string name="connect_searching">Szerverek keresése…</string>
     <string name="connect_none_found">Nem található egy sem. Írd be inkább a címet — a Docker alapértelmezett hálózata nem hirdeti a szervert.</string>
-    <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
+    <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Csatlakozás</string>
     <string name="connect_step">%1$d/%2$d. lépés</string>
     <string name="connect_scan">Olvasd be a kódot a Beállítások › Alkalmazások oldalról</string>
@@ -40,7 +40,7 @@
     <string name="pair_scan">QR-kód beolvasása</string>
     <string name="pair_other_server">Másik szerver használata</string>
     <string name="pair_error_wrong_code">Ez a kód hibás, lejárt vagy már felhasználták. A kódok öt percig érvényesek, és csak egyszer használhatók.</string>
-    <string name="pair_error_too_many">Túl sok próbálkozás. Próbáld újra %1$d mp múlva.</string>
+    <string name="pair_error_too_many">Túl sok próbálkozás. Próbáld újra %1$d\u00A0mp múlva.</string>
     <string name="pair_error_unreachable">A szerver nem érhető el. Ellenőrizd a kapcsolatot, és próbáld újra.</string>
     <string name="pair_error_failed">A szerver nem tudta párosítani a telefont (hiba: %1$d).</string>
     <string name="pair_error_other_server">Ez a kód nem az ezen a címen lévő szerverhez tartozik.</string>
@@ -96,7 +96,7 @@
         <item quantity="one">%d album</item>
         <item quantity="other">%d album</item>
     </plurals>
-    <string name="minutes_short">%d perc</string>
+    <string name="minutes_short">%d\u00A0perc</string>
     <string name="unknown_artist">Ismeretlen előadó</string>
     <string name="unknown_album">Ismeretlen album</string>
 
@@ -299,8 +299,8 @@
     <string name="settings_quality_mobile">Streamelési minőség mobiladaton</string>
     <string name="settings_quality_no_transcoding">A szerver nem tud átkódolni (nincs ffmpeg): a fájlok eredeti formában streamelnek.</string>
     <string name="settings_quality_original">Eredeti · ahogy letöltötték</string>
-    <string name="settings_quality_transcoded">%1$s · %2$d kbps · a szerver átkódolja</string>
-    <string name="settings_quality_label">%1$s · %2$d kbps</string>
+    <string name="settings_quality_transcoded">%1$s · %2$d\u00A0kbps · a szerver átkódolja</string>
+    <string name="settings_quality_label">%1$s · %2$d\u00A0kbps</string>
     <string name="settings_appearance">Megjelenés</string>
     <string name="settings_theme">Téma</string>
     <string name="settings_theme_system">Rendszer</string>
@@ -352,7 +352,7 @@
     <string name="player_playing_from_playlist">Lejátszás lejátszási listából</string>
     <string name="player_playing_from_library">Lejátszás a könyvtáradból</string>
     <string name="player_source_original_quality">Streamelés innen: %1$s · Eredeti minőség</string>
-    <string name="player_format_bitrate">%1$s · %2$d kbps</string>
+    <string name="player_format_bitrate">%1$s · %2$d\u00A0kbps</string>
     <string name="player_source_unknown">Streamelés innen: %1$s</string>
     <string name="player_playing_from_podcast">Podcast</string>
     <string name="player_go_to_show">Ugrás a podcastra</string>
@@ -451,7 +451,7 @@
     <string name="settings_read_ahead_off">Kikapcsolva</string>
     <string name="settings_read_ahead_count">Előtöltött számok száma: %1$d</string>
     <string name="settings_stream_cache">Ideiglenes hanggyorsítótár</string>
-    <string name="settings_stream_cache_size">%1$d MB</string>
+    <string name="settings_stream_cache_size">%1$d\u00A0MB</string>
     <string name="settings_stream_cache_body">A nemrég játszott és előtöltött hang tárhelye. Az offline letöltések külön maradnak. A nagy számok túlléphetik a korlátot; csak a teljes számok számítanak késznek.</string>
     <string name="settings_read_ahead_mobile">Előtöltés mobiladattal</string>
     <string name="settings_read_ahead_mobile_body">Többlet adatforgalom engedélyezése a következő számokhoz.</string>

@@ -21,7 +21,7 @@
     <string name="connect_found">Bu ağda bulunanlar</string>
     <string name="connect_searching">Sunucular aranıyor…</string>
     <string name="connect_none_found">Hiçbiri bulunamadı. Bunun yerine adresi yaz — Docker\'ın varsayılan ağı sunucuyu duyurmaz.</string>
-    <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
+    <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Bağlan</string>
     <string name="connect_step">Adım %1$d/%2$d</string>
     <string name="connect_scan">Ayarlar › Uygulamalar\'daki kodu tara</string>
@@ -40,7 +40,7 @@
     <string name="pair_scan">QR kodunu tara</string>
     <string name="pair_other_server">Başka bir sunucu kullan</string>
     <string name="pair_error_wrong_code">Bu kod yanlış, süresi dolmuş ya da zaten kullanılmış. Kodlar beş dakika boyunca yalnızca bir kez çalışır.</string>
-    <string name="pair_error_too_many">Çok fazla deneme. %1$d sn sonra tekrar dene.</string>
+    <string name="pair_error_too_many">Çok fazla deneme. %1$d\u00A0sn sonra tekrar dene.</string>
     <string name="pair_error_unreachable">Sunucuya ulaşılamıyor. Bağlantını kontrol edip tekrar dene.</string>
     <string name="pair_error_failed">Sunucu bu telefonu eşleştiremedi (hata %1$d).</string>
     <string name="pair_error_other_server">Bu kod, o adresteki sunucudan farklı bir sunucuya ait.</string>
@@ -96,7 +96,7 @@
         <item quantity="one">%d albüm</item>
         <item quantity="other">%d albüm</item>
     </plurals>
-    <string name="minutes_short">%d dk</string>
+    <string name="minutes_short">%d\u00A0dk</string>
     <string name="unknown_artist">Bilinmeyen sanatçı</string>
     <string name="unknown_album">Bilinmeyen albüm</string>
 
@@ -299,8 +299,8 @@
     <string name="settings_quality_mobile">Mobil veride akış kalitesi</string>
     <string name="settings_quality_no_transcoding">Sunucu kod dönüştüremiyor (ffmpeg yok): dosyalar olduğu gibi akar.</string>
     <string name="settings_quality_original">Orijinal · indirildiği gibi</string>
-    <string name="settings_quality_transcoded">%1$s · %2$d kbps · sunucu tarafından dönüştürüldü</string>
-    <string name="settings_quality_label">%1$s · %2$d kbps</string>
+    <string name="settings_quality_transcoded">%1$s · %2$d\u00A0kbps · sunucu tarafından dönüştürüldü</string>
+    <string name="settings_quality_label">%1$s · %2$d\u00A0kbps</string>
     <string name="settings_appearance">Görünüm</string>
     <string name="settings_theme">Tema</string>
     <string name="settings_theme_system">Sistem</string>
@@ -352,7 +352,7 @@
     <string name="player_playing_from_playlist">Çalma listesinden çalıyor</string>
     <string name="player_playing_from_library">Kitaplığından çalıyor</string>
     <string name="player_source_original_quality">%1$s üzerinden akıyor · Orijinal kalite</string>
-    <string name="player_format_bitrate">%1$s · %2$d kbps</string>
+    <string name="player_format_bitrate">%1$s · %2$d\u00A0kbps</string>
     <string name="player_source_unknown">%1$s üzerinden akıyor</string>
     <string name="player_playing_from_podcast">Podcast</string>
     <string name="player_go_to_show">Podcast\'e git</string>
@@ -451,7 +451,7 @@
     <string name="settings_read_ahead_off">Kapalı</string>
     <string name="settings_read_ahead_count">Önceden yüklenecek şarkı: %1$d</string>
     <string name="settings_stream_cache">Geçici ses önbelleği</string>
-    <string name="settings_stream_cache_size">%1$d MB</string>
+    <string name="settings_stream_cache_size">%1$d\u00A0MB</string>
     <string name="settings_stream_cache_body">Son çalınan ve önceden yüklenen sesler için alan. Çevrimdışı indirmeler ayrıdır. Büyük şarkılar bu sınırı aşabilir; yalnızca tamamlanan şarkılar hazır sayılır.</string>
     <string name="settings_read_ahead_mobile">Mobil veriyle önceden yükle</string>
     <string name="settings_read_ahead_mobile_body">Sonraki şarkıları hazırlamak için ek veri kullanımına izin ver.</string>

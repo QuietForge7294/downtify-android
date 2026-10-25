@@ -21,7 +21,7 @@
     <string name="connect_found">Trouvés sur ce réseau</string>
     <string name="connect_searching">Recherche de serveurs…</string>
     <string name="connect_none_found">Aucun trouvé. Saisissez plutôt l’adresse : le réseau par défaut de Docker n’annonce pas le serveur.</string>
-    <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
+    <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Se connecter</string>
     <string name="connect_step">Étape %1$d sur %2$d</string>
     <string name="connect_scan">Scanner le code dans Paramètres › Apps</string>
@@ -40,7 +40,7 @@
     <string name="pair_scan">Scanner le code QR</string>
     <string name="pair_other_server">Utiliser un autre serveur</string>
     <string name="pair_error_wrong_code">Ce code est incorrect, expiré ou déjà utilisé. Un code ne fonctionne qu’une fois, pendant cinq minutes.</string>
-    <string name="pair_error_too_many">Trop de tentatives. Réessayez dans %1$d s.</string>
+    <string name="pair_error_too_many">Trop de tentatives. Réessayez dans %1$d\u00A0s.</string>
     <string name="pair_error_unreachable">Impossible de joindre le serveur. Vérifiez la connexion et réessayez.</string>
     <string name="pair_error_failed">Le serveur n’a pas pu associer ce téléphone (erreur %1$d).</string>
     <string name="pair_error_other_server">Ce code correspond à un autre serveur que celui de cette adresse.</string>
@@ -98,7 +98,7 @@
         <item quantity="many">%d d’albums</item>
         <item quantity="other">%d albums</item>
     </plurals>
-    <string name="minutes_short">%d min</string>
+    <string name="minutes_short">%d\u00A0min</string>
     <string name="unknown_artist">Artiste inconnu</string>
     <string name="unknown_album">Album inconnu</string>
 
@@ -308,8 +308,8 @@
     <string name="settings_quality_mobile">Qualité de diffusion en données mobiles</string>
     <string name="settings_quality_no_transcoding">Le serveur ne peut pas transcoder (pas de ffmpeg) : les fichiers sont diffusés tels quels.</string>
     <string name="settings_quality_original">Originale · telle que téléchargée</string>
-    <string name="settings_quality_transcoded">%1$s · %2$d kbit/s · transcodé par le serveur</string>
-    <string name="settings_quality_label">%1$s · %2$d kbit/s</string>
+    <string name="settings_quality_transcoded">%1$s · %2$d\u00A0kbit/s · transcodé par le serveur</string>
+    <string name="settings_quality_label">%1$s · %2$d\u00A0kbit/s</string>
     <string name="settings_appearance">Apparence</string>
     <string name="settings_theme">Thème</string>
     <string name="settings_theme_system">Système</string>
@@ -361,7 +361,7 @@
     <string name="player_playing_from_playlist">Lecture depuis la playlist</string>
     <string name="player_playing_from_library">Lecture depuis votre bibliothèque</string>
     <string name="player_source_original_quality">Diffusion depuis %1$s · Qualité originale</string>
-    <string name="player_format_bitrate">%1$s · %2$d kbit/s</string>
+    <string name="player_format_bitrate">%1$s · %2$d\u00A0kbit/s</string>
     <string name="player_source_unknown">Diffusion depuis %1$s</string>
     <string name="player_playing_from_podcast">Podcast</string>
     <string name="player_go_to_show">Aller au podcast</string>
@@ -460,7 +460,7 @@
     <string name="settings_read_ahead_off">Désactivé</string>
     <string name="settings_read_ahead_count">Morceaux en avance : %1$d</string>
     <string name="settings_stream_cache">Cache audio temporaire</string>
-    <string name="settings_stream_cache_size">%1$d Mo</string>
+    <string name="settings_stream_cache_size">%1$d\u00A0Mo</string>
     <string name="settings_stream_cache_body">Espace pour la musique récemment écoutée et préchargée. Les téléchargements hors ligne sont séparés. Les gros morceaux peuvent dépasser cette limite ; seuls les morceaux complets sont comptés comme prêts.</string>
     <string name="settings_read_ahead_mobile">Précharger avec les données mobiles</string>
     <string name="settings_read_ahead_mobile_body">Autoriser une consommation supplémentaire pour préparer les prochains morceaux.</string>

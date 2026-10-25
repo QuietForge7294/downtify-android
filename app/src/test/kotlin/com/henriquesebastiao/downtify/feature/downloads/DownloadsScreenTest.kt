@@ -61,9 +61,9 @@ class DownloadsScreenTest {
         compose.setContent {
             DowntifyTheme { DownloadsScreen(state(), onKeepLiked = {}, onOpen = {}, onRemove = {}) }
         }
-        compose.onNodeWithText("2.4 GB used").assertExists()
-        compose.onNodeWithText("of 8.0 GB limit").assertExists()
-        compose.onNodeWithText("10 songs · 412 MB").assertExists()
+        compose.onNodeWithText("2.4\u00A0GB used").assertExists()
+        compose.onNodeWithText("of 8.0\u00A0GB limit").assertExists()
+        compose.onNodeWithText("10 songs · 412\u00A0MB").assertExists()
         compose.onNodeWithText("Downloading 4 of 6 · waiting for Wi-Fi").assertExists()
     }
 

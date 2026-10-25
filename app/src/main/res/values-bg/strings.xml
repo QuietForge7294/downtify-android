@@ -21,7 +21,7 @@
     <string name="connect_found">Намерени в тази мрежа</string>
     <string name="connect_searching">Търсене на сървъри…</string>
     <string name="connect_none_found">Не е намерен нито един. Въведи адреса ръчно — мрежата по подразбиране на Docker не обявява сървъра.</string>
-    <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
+    <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Свързване</string>
     <string name="connect_step">Стъпка %1$d от %2$d</string>
     <string name="connect_scan">Сканирай кода от Настройки › Приложения</string>
@@ -40,7 +40,7 @@
     <string name="pair_scan">Сканирай QR кода</string>
     <string name="pair_other_server">Използвай друг сървър</string>
     <string name="pair_error_wrong_code">Този код е грешен, изтекъл или вече използван. Кодовете работят веднъж и за пет минути.</string>
-    <string name="pair_error_too_many">Твърде много опити. Опитай отново след %1$d с.</string>
+    <string name="pair_error_too_many">Твърде много опити. Опитай отново след %1$d\u00A0с.</string>
     <string name="pair_error_unreachable">Няма достъп до сървъра. Провери връзката и опитай отново.</string>
     <string name="pair_error_failed">Сървърът не успя да сдвои този телефон (грешка %1$d).</string>
     <string name="pair_error_other_server">Този код е за друг сървър, а не за този на въпросния адрес.</string>
@@ -96,7 +96,7 @@
         <item quantity="one">%d албум</item>
         <item quantity="other">%d албума</item>
     </plurals>
-    <string name="minutes_short">%d мин</string>
+    <string name="minutes_short">%d\u00A0мин</string>
     <string name="unknown_artist">Неизвестен изпълнител</string>
     <string name="unknown_album">Неизвестен албум</string>
 
@@ -299,8 +299,8 @@
     <string name="settings_quality_mobile">Качество на потока по мобилни данни</string>
     <string name="settings_quality_no_transcoding">Сървърът не може да прекодира (няма ffmpeg): файловете се възпроизвеждат както са.</string>
     <string name="settings_quality_original">Оригинално · както е изтеглено</string>
-    <string name="settings_quality_transcoded">%1$s · %2$d kbps · прекодирано от сървъра</string>
-    <string name="settings_quality_label">%1$s · %2$d kbps</string>
+    <string name="settings_quality_transcoded">%1$s · %2$d\u00A0kbps · прекодирано от сървъра</string>
+    <string name="settings_quality_label">%1$s · %2$d\u00A0kbps</string>
     <string name="settings_appearance">Външен вид</string>
     <string name="settings_theme">Тема</string>
     <string name="settings_theme_system">Системна</string>
@@ -352,7 +352,7 @@
     <string name="player_playing_from_playlist">Свири от плейлист</string>
     <string name="player_playing_from_library">Свири от библиотеката ти</string>
     <string name="player_source_original_quality">Възпроизвеждане от %1$s · Оригинално качество</string>
-    <string name="player_format_bitrate">%1$s · %2$d kbps</string>
+    <string name="player_format_bitrate">%1$s · %2$d\u00A0kbps</string>
     <string name="player_source_unknown">Възпроизвеждане от %1$s</string>
     <string name="player_playing_from_podcast">Подкаст</string>
     <string name="player_go_to_show">Към подкаста</string>
@@ -451,7 +451,7 @@
     <string name="settings_read_ahead_off">Изключено</string>
     <string name="settings_read_ahead_count">Песни напред: %1$d</string>
     <string name="settings_stream_cache">Временен аудио кеш</string>
-    <string name="settings_stream_cache_size">%1$d MB</string>
+    <string name="settings_stream_cache_size">%1$d\u00A0MB</string>
     <string name="settings_stream_cache_body">Място за наскоро слушано и предварително заредено аудио. Офлайн изтеглянията са отделни. Големите песни може да надвишат лимита; само целите песни се считат за готови.</string>
     <string name="settings_read_ahead_mobile">Зареждане през мобилни данни</string>
     <string name="settings_read_ahead_mobile_body">Разрешаване на допълнителни данни за подготовка на следващите песни.</string>
