@@ -17,9 +17,10 @@ import androidx.room.TypeConverters
         OfflineFileEntity::class,
         PlaybackStateEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
     // Offline collections are the user's choices, not a copy of the server's: migrate, never drop.
+    // 3 to 4 is MIGRATION_3_4, written by hand.
     autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 @TypeConverters(Converters::class)
