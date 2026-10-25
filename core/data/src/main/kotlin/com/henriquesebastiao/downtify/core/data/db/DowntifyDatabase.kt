@@ -15,6 +15,7 @@ import androidx.room.TypeConverters
         PendingListenEntity::class,
         OfflineCollectionEntity::class,
         OfflineFileEntity::class,
+        PlaybackStateEntity::class,
     ],
     version = 3,
     exportSchema = true,
@@ -29,4 +30,5 @@ abstract class DowntifyDatabase : RoomDatabase() {
     abstract fun recents(): RecentContextDao
     abstract fun pendingListens(): PendingListenDao
     abstract fun offline(): OfflineDao
+    abstract fun playback(): PlaybackStateDao
 }

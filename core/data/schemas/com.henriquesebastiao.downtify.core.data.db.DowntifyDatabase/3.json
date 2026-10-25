@@ -442,6 +442,87 @@
             "trackId"
           ]
         }
+      },
+      {
+        "tableName": "playback_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `owner` TEXT NOT NULL, `items` TEXT NOT NULL, `currentIndex` INTEGER NOT NULL, `positionMs` INTEGER NOT NULL, `shuffle` INTEGER NOT NULL, `shuffleOrder` TEXT NOT NULL, `repeatMode` INTEGER NOT NULL, `speed` REAL NOT NULL, `contextType` TEXT, `contextId` TEXT, `contextTitle` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "owner",
+            "columnName": "owner",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "items",
+            "columnName": "items",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentIndex",
+            "columnName": "currentIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "positionMs",
+            "columnName": "positionMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shuffle",
+            "columnName": "shuffle",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "shuffleOrder",
+            "columnName": "shuffleOrder",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "repeatMode",
+            "columnName": "repeatMode",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "speed",
+            "columnName": "speed",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contextType",
+            "columnName": "contextType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "contextId",
+            "columnName": "contextId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "contextTitle",
+            "columnName": "contextTitle",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
       }
     ],
     "setupQueries": [
