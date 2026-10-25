@@ -84,6 +84,8 @@ class PlaybackService : MediaSessionService() {
 
     @Inject lateinit var resolver: StreamResolver
 
+    @Inject lateinit var readAhead: ReadAheadBuffer
+
     @Inject lateinit var playback: PlaybackRepository
 
     @Inject
@@ -135,8 +137,12 @@ class PlaybackService : MediaSessionService() {
         listens = ListenTracker(player, reporter, scope).also { it.start() }
         activity = ActivityTracker(player, activityReporter, scope).also { it.start() }
         episodes = EpisodeProgressTracker(player, podcasts, scope).also { it.start() }
-        prefetch = StreamPrefetchTracker(player, catalog, scope).also { it.start() }
-        warmer = TranscodeWarmer(player, resolver, streamingClient, scope).also { it.start() }
+        prefetch = StreamPrefetchTracker(player, catalog, scope, enabled = { !readAhead.enabled }).also { it.start() }
+        warmer =
+            TranscodeWarmer(player, resolver, streamingClient, scope, enabled = {
+                !readAhead.enabled
+            }).also { it.start() }
+        readAhead.start(player, scope)
         keepLikeButtonCurrent(player)
         stopWhenSignedOut(player)
         persistence = PlaybackPersistence(player, playback, sessions, scope).also { it.start() }
@@ -166,6 +172,7 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        readAhead.stop()
         persistence?.stop()
         listens?.stop()
         activity?.stop()
