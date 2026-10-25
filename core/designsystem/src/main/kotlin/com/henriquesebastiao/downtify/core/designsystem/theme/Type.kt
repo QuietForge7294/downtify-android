@@ -63,7 +63,7 @@ val GoogleSansFlex = FontFamily(
     },
 )
 
-/** Google Sans Flex at its widest (wdth 151) with square ends: the hero title only. */
+/** Google Sans Flex at its widest (wdth 151), rounded like the rest (ROND 100): the hero title only. */
 private val GoogleSansFlexWide = FontFamily(
     Font(
         googleFont = GoogleFont("Google Sans Flex"),
@@ -72,7 +72,7 @@ private val GoogleSansFlexWide = FontFamily(
         variationSettings = FontVariation.Settings(
             FontVariation.weight(FontWeight.SemiBold.weight),
             FontVariation.width(151f),
-            FontVariation.Setting(ROUNDNESS_AXIS, 0f),
+            FontVariation.Setting(ROUNDNESS_AXIS, 100f),
         ),
     ),
 )
@@ -162,11 +162,11 @@ val DowntifyTypography = downtifyTypography(AppFont.Default)
 
 /** The styles Material 3's scale doesn't have. Their faces are fixed: they don't follow the font setting. */
 object DowntifyType {
-    /** The wide hero title (home, welcome): Google Sans Flex at wdth 151, whatever font the app uses. */
+    /** The wide, rounded hero title (home, welcome): Google Sans Flex at wdth 151, whatever font the app uses. */
     val hero = base.displayLarge.copy(
         fontFamily = GoogleSansFlexWide,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 60.sp,
+        fontSize = 52.sp,
         // In em, so the line follows the size when a long word makes the title step down.
         lineHeight = 0.95.em,
         letterSpacing = (-0.02).em,

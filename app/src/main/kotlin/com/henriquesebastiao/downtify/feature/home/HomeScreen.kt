@@ -56,7 +56,6 @@ import com.henriquesebastiao.downtify.core.designsystem.component.HeroHeader
 import com.henriquesebastiao.downtify.core.designsystem.component.PhonePreviews
 import com.henriquesebastiao.downtify.core.designsystem.component.SectionCard
 import com.henriquesebastiao.downtify.core.designsystem.component.SectionHeader
-import com.henriquesebastiao.downtify.core.designsystem.component.ShapeCollage
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyShape
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
@@ -69,7 +68,6 @@ import com.henriquesebastiao.downtify.ui.common.CoverCard
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
 import com.henriquesebastiao.downtify.ui.common.PreviewData
 import com.henriquesebastiao.downtify.ui.common.albumSubtitle
-import com.henriquesebastiao.downtify.ui.common.songsCount
 import java.time.LocalTime
 
 @Composable
@@ -163,7 +161,6 @@ fun HomeScreen(
                     }
 
                     else -> {
-                        item(key = "collage") { RecentCollage(state) }
                         if (state.jumpBackIn.isNotEmpty() || state.favoritePlaylists.isNotEmpty()) {
                             item(key = "access") { HomeAccess(state, onOpenRecent) }
                         }
@@ -227,26 +224,6 @@ private fun ServerStatusLine(state: HomeUiState, modifier: Modifier = Modifier) 
         Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
         Text(text, style = MaterialTheme.typography.bodyLarge, color = scheme.onSurfaceVariant)
     }
-}
-
-/**
- * The covers of what was played lately, in Material shapes. Only real covers: without any (a
- * server without covers, nothing played yet) there is no collage.
- */
-@Composable
-private fun RecentCollage(state: HomeUiState) {
-    val covers = LocalCoverUrls.current
-    val playlists = state.favoritePlaylists.associateBy { it.name }
-    val urls = state.jumpBackIn.mapNotNull { entry ->
-        val playlist = if (entry.type == PlaybackContextType.Playlist) playlists[entry.refId] else null
-        if (playlist != null) {
-            covers.playlist(playlist, playlist.trackIds.firstOrNull())
-        } else {
-            covers.track(entry.coverTrackId)
-        }
-    }.distinct().take(COLLAGE_COVERS)
-    if (urls.isEmpty()) return
-    ShapeCollage(urls, Modifier.padding(horizontal = Spacing.screen, vertical = Spacing.lg))
 }
 
 /** Where Discover, Podcasts and Similar live: the four tabs stay as designed. */
@@ -462,8 +439,6 @@ private fun RecentlyAdded(albums: List<Album>, onOpenAlbum: (String) -> Unit, on
         }
     }
 }
-
-private const val COLLAGE_COVERS = 5
 
 private val previewState = HomeUiState(
     loading = false,
