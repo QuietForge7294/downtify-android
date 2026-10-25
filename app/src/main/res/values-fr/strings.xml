@@ -73,6 +73,7 @@
     <string name="library_artists">Artistes</string>
     <string name="library_playlists">Playlists</string>
     <string name="library_songs">Titres</string>
+    <string name="library_sort">Trier par : %1$s</string>
     <string name="library_sort_recent">Ajoutés récemment</string>
     <string name="library_sort_alpha">Ordre alphabétique</string>
     <string name="library_sort_artist">Artiste</string>

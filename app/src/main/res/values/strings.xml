@@ -74,6 +74,7 @@
     <string name="library_artists">Artists</string>
     <string name="library_playlists">Playlists</string>
     <string name="library_songs">Songs</string>
+    <string name="library_sort">Sort by: %1$s</string>
     <string name="library_sort_recent">Recently added</string>
     <string name="library_sort_alpha">Alphabetical</string>
     <string name="library_sort_artist">Artist</string>

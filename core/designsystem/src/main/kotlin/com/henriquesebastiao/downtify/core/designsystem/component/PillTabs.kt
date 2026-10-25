@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
@@ -23,7 +25,10 @@ import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -69,6 +74,13 @@ fun PillTabs(
         pressedShape = ToggleButtonDefaults.pressedShape,
         checkedShape = CircleShape,
     )
+    // The selected tab is always on screen: a later one ("Artistas" in Portuguese) would start past the edge.
+    val requesters = remember(tabs.size) { List(tabs.size) { BringIntoViewRequester() } }
+    LaunchedEffect(selectedIndex) {
+        // After the first frame: before the row is laid out there is nothing to scroll to.
+        withFrameNanos { }
+        requesters.getOrNull(selectedIndex)?.bringIntoView()
+    }
     Row(
         modifier
             .horizontalScroll(rememberScrollState())
@@ -78,7 +90,10 @@ fun PillTabs(
     ) {
         tabs.forEachIndexed { index, label ->
             val checked = index == selectedIndex
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                Modifier.bringIntoViewRequester(requesters[index]),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 ToggleButton(
                     checked = checked,
                     onCheckedChange = { onSelect(index) },

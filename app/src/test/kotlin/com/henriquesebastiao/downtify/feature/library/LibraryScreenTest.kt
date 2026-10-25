@@ -1,12 +1,15 @@
 package com.henriquesebastiao.downtify.feature.library
 
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
+import com.henriquesebastiao.downtify.core.model.formatDuration
 import com.henriquesebastiao.downtify.ui.common.PreviewData
 import com.henriquesebastiao.downtify.ui.common.TrackActions
 import org.junit.Assert.assertEquals
@@ -45,9 +48,48 @@ class LibraryScreenTest {
                 )
             }
         }
-        compose.onNodeWithText("Songs").assertExists()
-        compose.onNodeWithContentDescription("Shuffle").assertIsEnabled().performClick()
+        compose.onNodeWithText("Songs").assertIsSelected()
+        compose.onNodeWithText("Shuffle").assertIsEnabled().performClick()
         assertEquals(true, shuffled)
+    }
+
+    @Test
+    fun theTabsSwitchTheLibrarysSection() {
+        var picked: LibraryTab? = null
+        compose.setContent {
+            DowntifyTheme {
+                LibraryScreen(
+                    state = songsState(),
+                    navigation = LibraryNavigation(),
+                    onSelectTab = { picked = it },
+                    onSort = {},
+                    onToggleLayout = {},
+                    onRefresh = {},
+                    onPlaySong = {},
+                )
+            }
+        }
+        compose.onNodeWithText("Albums").assertIsNotSelected().performClick()
+        assertEquals(LibraryTab.Albums, picked)
+    }
+
+    @Test
+    fun aSongsDurationIsShownOnItsOwnLine() {
+        compose.setContent {
+            DowntifyTheme {
+                LibraryScreen(
+                    state = songsState(),
+                    navigation = LibraryNavigation(),
+                    onSelectTab = {},
+                    onSort = {},
+                    onToggleLayout = {},
+                    onRefresh = {},
+                    onPlaySong = {},
+                )
+            }
+        }
+        val track = PreviewData.tracks.first()
+        compose.onNodeWithText(formatDuration(track.duration), useUnmergedTree = true).assertExists()
     }
 
     @Test

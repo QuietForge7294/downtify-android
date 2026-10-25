@@ -1,5 +1,6 @@
 package com.henriquesebastiao.downtify.feature.library
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,27 +10,30 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,9 +42,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -49,18 +56,24 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.henriquesebastiao.downtify.R
 import com.henriquesebastiao.downtify.core.data.settings.LibraryLayout
 import com.henriquesebastiao.downtify.core.data.settings.LibrarySort
+import com.henriquesebastiao.downtify.core.designsystem.component.CircleButton
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.EmptyState
+import com.henriquesebastiao.downtify.core.designsystem.component.PageHeader
+import com.henriquesebastiao.downtify.core.designsystem.component.PhonePreviews
+import com.henriquesebastiao.downtify.core.designsystem.component.PillTabs
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
+import com.henriquesebastiao.downtify.core.designsystem.theme.ListStyle
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 import com.henriquesebastiao.downtify.core.model.Track
+import com.henriquesebastiao.downtify.core.network.ServerUrls
 import com.henriquesebastiao.downtify.ui.common.ArtistCard
 import com.henriquesebastiao.downtify.ui.common.CoverCard
-import com.henriquesebastiao.downtify.ui.common.CoverRow
+import com.henriquesebastiao.downtify.ui.common.CoverItem
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
 import com.henriquesebastiao.downtify.ui.common.PreviewData
 import com.henriquesebastiao.downtify.ui.common.TrackActions
-import com.henriquesebastiao.downtify.ui.common.TrackRow
+import com.henriquesebastiao.downtify.ui.common.TrackItem
 import com.henriquesebastiao.downtify.ui.common.albumSubtitle
 import com.henriquesebastiao.downtify.ui.common.artistSubtitle
 import com.henriquesebastiao.downtify.ui.common.songsCount
@@ -102,7 +115,7 @@ fun LibraryRoute(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LibraryScreen(
     state: LibraryUiState,
@@ -116,43 +129,66 @@ fun LibraryScreen(
     modifier: Modifier = Modifier,
     trackActions: TrackActions = TrackActions(),
 ) {
+    val scheme = MaterialTheme.colorScheme
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(stringResource(R.string.library_title), style = MaterialTheme.typography.headlineMedium)
-                },
-                actions = {
-                    IconButton(onClick = navigation.onSearch) {
-                        Icon(
-                            painterResource(DowntifyIcons.Search),
-                            contentDescription = stringResource(R.string.library_search),
-                        )
-                    }
-                },
+            // One wash of primary behind the title and the tabs, fading into the surface.
+            val wash = Brush.verticalGradient(
+                listOf(scheme.primary.copy(alpha = TINT_ALPHA).compositeOver(scheme.surface), scheme.surface),
             )
+            Column(Modifier.background(wash)) {
+                PageHeader(
+                    title = stringResource(R.string.library_title),
+                    titleColor = scheme.primary,
+                    transparent = true,
+                    scrollBehavior = scrollBehavior,
+                    actions = {
+                        CircleButton(
+                            DowntifyIcons.Search,
+                            stringResource(R.string.library_search),
+                            navigation.onSearch,
+                            containerColor = scheme.primaryContainer,
+                            contentColor = scheme.onPrimaryContainer,
+                        )
+                    },
+                )
+                PillTabs(
+                    tabs = LibraryTab.entries.map { stringResource(it.label) },
+                    selectedIndex = LibraryTab.entries.indexOf(state.tab),
+                    onSelect = { onSelectTab(LibraryTab.entries[it]) },
+                )
+            }
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            TabChips(state.tab, onSelectTab)
-            SortRow(state, onSort, onToggleLayout, onShuffleSongs)
-            PullToRefreshBox(
-                isRefreshing = state.refreshing,
-                onRefresh = onRefresh,
-                modifier = Modifier.fillMaxSize(),
+            // The content sits on its own panel under the tinted header, as the v3 library draws it.
+            Surface(
+                color = scheme.surfaceContainerLowest,
+                shape = RoundedCornerShape(topStart = PANEL_CORNER, topEnd = PANEL_CORNER),
+                modifier = Modifier.fillMaxSize().padding(top = Spacing.xs),
             ) {
-                when {
-                    state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+                Column {
+                    Toolbar(state, onSort, onToggleLayout, onShuffleSongs)
+                    PullToRefreshBox(
+                        isRefreshing = state.refreshing,
+                        onRefresh = onRefresh,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        when {
+                            state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                LoadingIndicator()
+                            }
 
-                    else -> when (state.tab) {
-                        LibraryTab.Albums -> Albums(state, navigation)
-                        LibraryTab.Artists -> Artists(state, navigation)
-                        LibraryTab.Playlists -> Playlists(state, navigation)
-                        LibraryTab.Songs -> Songs(state, onPlaySong, trackActions)
+                            else -> when (state.tab) {
+                                LibraryTab.Albums -> Albums(state, navigation)
+                                LibraryTab.Artists -> Artists(state, navigation)
+                                LibraryTab.Playlists -> Playlists(state, navigation)
+                                LibraryTab.Songs -> Songs(state, onPlaySong, trackActions)
+                            }
+                        }
                     }
                 }
             }
@@ -160,51 +196,63 @@ fun LibraryScreen(
     }
 }
 
+/** Shuffle (songs), then the sort and, for covers, list or grid. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun TabChips(selected: LibraryTab, onSelect: (LibraryTab) -> Unit) {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = Spacing.screen),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-    ) {
-        items(LibraryTab.entries) { tab ->
-            val isSelected = tab == selected
-            FilterChip(
-                selected = isSelected,
-                onClick = { onSelect(tab) },
-                label = { Text(stringResource(tab.label)) },
-                leadingIcon = if (isSelected) {
-                    {
-                        Icon(
-                            painterResource(DowntifyIcons.Check),
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                } else {
-                    null
-                },
-            )
-        }
-    }
-}
-
-@Composable
-private fun SortRow(
+private fun Toolbar(
     state: LibraryUiState,
     onSort: (LibrarySort) -> Unit,
     onToggleLayout: () -> Unit,
     onShuffle: () -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
+    val scheme = MaterialTheme.colorScheme
     Row(
-        Modifier.fillMaxWidth().padding(start = Spacing.sm, end = Spacing.xs),
+        Modifier.fillMaxWidth().padding(start = Spacing.lg, end = Spacing.md, top = Spacing.lg, bottom = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        Box {
-            TextButton(onClick = { open = true }) {
-                Icon(painterResource(DowntifyIcons.Sort), contentDescription = null, modifier = Modifier.size(20.dp))
+        if (state.tab == LibraryTab.Songs) {
+            val height = ButtonDefaults.MediumContainerHeight
+            Button(
+                onClick = onShuffle,
+                enabled = state.songs.isNotEmpty(),
+                shapes = ButtonDefaults.shapesFor(height),
+                contentPadding = ButtonDefaults.contentPaddingFor(height),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = scheme.tertiaryContainer,
+                    contentColor = scheme.onTertiaryContainer,
+                ),
+                modifier = Modifier.heightIn(min = height),
+            ) {
+                Icon(painterResource(DowntifyIcons.Shuffle), contentDescription = null)
                 Spacer(Modifier.size(Spacing.sm))
-                Text(stringResource(state.sort.label))
+                Text(stringResource(R.string.collection_shuffle), style = MaterialTheme.typography.titleMedium)
+            }
+        }
+        Spacer(Modifier.weight(1f))
+        Box {
+            val sortLabel = stringResource(state.sort.label)
+            if (state.tab == LibraryTab.Songs) {
+                // Beside Shuffle the label doesn't fit a narrow phone: the button says it instead.
+                CircleButton(DowntifyIcons.Sort, stringResource(R.string.library_sort, sortLabel), { open = true })
+            } else {
+                FilledTonalButton(
+                    onClick = { open = true },
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = scheme.surfaceContainerHigh,
+                        contentColor = scheme.onSurface,
+                    ),
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) {
+                    Icon(
+                        painterResource(DowntifyIcons.Sort),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.size(Spacing.sm))
+                    Text(sortLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 LibrarySort.entries.forEach { sort ->
@@ -223,24 +271,13 @@ private fun SortRow(
                 }
             }
         }
-        Spacer(Modifier.weight(1f))
-        if (state.tab == LibraryTab.Songs) {
-            IconButton(onClick = onShuffle, enabled = state.songs.isNotEmpty()) {
-                Icon(
-                    painterResource(DowntifyIcons.Shuffle),
-                    contentDescription = stringResource(R.string.collection_shuffle),
-                )
-            }
-        } else {
+        if (state.tab != LibraryTab.Songs) {
             val grid = state.layout == LibraryLayout.Grid
-            IconButton(onClick = onToggleLayout) {
-                Icon(
-                    painterResource(if (grid) DowntifyIcons.ListView else DowntifyIcons.GridView),
-                    contentDescription = stringResource(
-                        if (grid) R.string.library_show_list else R.string.library_show_grid,
-                    ),
-                )
-            }
+            CircleButton(
+                if (grid) DowntifyIcons.ListView else DowntifyIcons.GridView,
+                stringResource(if (grid) R.string.library_show_list else R.string.library_show_grid),
+                onToggleLayout,
+            )
         }
     }
 }
@@ -265,7 +302,12 @@ internal class AtLeastTwoColumns(private val minSize: Dp) : GridCells {
 
 private val CoverGridMinSize = 160.dp
 private val gridCells = AtLeastTwoColumns(CoverGridMinSize)
-private val gridPadding = PaddingValues(start = Spacing.screen, end = Spacing.screen, bottom = Spacing.xl)
+private val gridPadding =
+    PaddingValues(start = Spacing.screen, end = Spacing.screen, top = Spacing.sm, bottom = Spacing.xl)
+private val listPadding = gridPadding
+private val listGap = Arrangement.spacedBy(ListStyle.Separated.gap)
+private val PANEL_CORNER = 32.dp
+private const val TINT_ALPHA = 0.18f
 
 @Composable
 private fun Albums(state: LibraryUiState, navigation: LibraryNavigation) {
@@ -286,9 +328,9 @@ private fun Albums(state: LibraryUiState, navigation: LibraryNavigation) {
             }
         }
     } else {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = Spacing.xl)) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = listPadding, verticalArrangement = listGap) {
             items(state.albums, key = { it.id }) { album ->
-                CoverRow(album.title, albumSubtitle(album), covers.track(album.coverTrackId, 150), {
+                CoverItem(album.title, albumSubtitle(album), covers.track(album.coverTrackId, ServerUrls.COVER_SMALL), {
                     navigation.onAlbum(album.id)
                 })
             }
@@ -315,12 +357,12 @@ private fun Artists(state: LibraryUiState, navigation: LibraryNavigation) {
             }
         }
     } else {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = Spacing.xl)) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = listPadding, verticalArrangement = listGap) {
             items(state.artists, key = { it.id }) { artist ->
-                CoverRow(
+                CoverItem(
                     artist.name,
                     artistSubtitle(artist),
-                    covers.track(artist.coverTrackId, 150),
+                    covers.track(artist.coverTrackId, ServerUrls.COVER_SMALL),
                     { navigation.onArtist(artist.id) },
                     round = true,
                     placeholderIcon = DowntifyIcons.Artist,
@@ -365,9 +407,9 @@ private fun Playlists(state: LibraryUiState, navigation: LibraryNavigation) {
             }
         }
     } else {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = Spacing.xl)) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = listPadding, verticalArrangement = listGap) {
             items(state.playlists, key = { it.playlist?.name ?: "" }) { item ->
-                CoverRow(
+                CoverItem(
                     title = item.playlist?.title ?: liked,
                     subtitle = songsCount(item.count),
                     coverUrl = cover(item, 150),
@@ -389,9 +431,9 @@ private fun Playlists(state: LibraryUiState, navigation: LibraryNavigation) {
 private fun Songs(state: LibraryUiState, onPlay: (Int) -> Unit, actions: TrackActions) {
     val covers = LocalCoverUrls.current
     if (state.songs.isEmpty()) return Empty(R.string.library_empty_songs)
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = Spacing.xl)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = listPadding, verticalArrangement = listGap) {
         itemsIndexed(state.songs, key = { _, track: Track -> track.id }) { index, track ->
-            TrackRow(
+            TrackItem(
                 track = track,
                 onClick = { onPlay(index) },
                 coverUrl = covers.track(track.id.takeIf { track.hasCover }, 150),
@@ -412,6 +454,7 @@ private fun Empty(title: Int) {
                 icon = DowntifyIcons.Library,
                 title = stringResource(title),
                 body = stringResource(R.string.library_empty_body),
+                hero = true,
             )
         }
     }
@@ -432,7 +475,7 @@ private val LibrarySort.label: Int
         LibrarySort.Artist -> R.string.library_sort_artist
     }
 
-@PreviewLightDark
+@PhonePreviews
 @Composable
 private fun LibraryAlbumsPreview() {
     DowntifyTheme {
@@ -448,7 +491,7 @@ private fun LibraryAlbumsPreview() {
     }
 }
 
-@PreviewLightDark
+@PhonePreviews
 @Composable
 private fun LibrarySongsPreview() {
     DowntifyTheme {

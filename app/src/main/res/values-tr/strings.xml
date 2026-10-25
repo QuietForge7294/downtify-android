@@ -73,6 +73,7 @@
     <string name="library_artists">Sanatçılar</string>
     <string name="library_playlists">Çalma listeleri</string>
     <string name="library_songs">Şarkılar</string>
+    <string name="library_sort">Sırala: %1$s</string>
     <string name="library_sort_recent">Son eklenenler</string>
     <string name="library_sort_alpha">Alfabetik</string>
     <string name="library_sort_artist">Sanatçı</string>

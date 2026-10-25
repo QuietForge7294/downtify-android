@@ -168,7 +168,8 @@ fun CoverRow(
 
 /**
  * A song as a card of a separated list (v3): its 64 dp cover (or its number, in an album), the
- * title over "artist · album", the bars while it plays and a round "more" button with its menu.
+ * title over the artist and the duration in mono, the bars while it plays and a round "more"
+ * button with its menu.
  * Swipes right to queue when [actions] can. [shape] comes from the list's [ListStyle].
  */
 @Composable
@@ -190,7 +191,9 @@ fun TrackItem(
     val item: @Composable (Modifier) -> Unit = { itemModifier ->
         MediaListItem(
             title = track.displayTitle,
-            subtitle = trackSubtitle(track),
+            subtitle = track.displayArtist.ifBlank { stringResource(R.string.unknown_artist) },
+            // The duration is a technical value: its own line, in the monospaced face.
+            meta = formatDuration(track.duration),
             onClick = onClick,
             active = isCurrent,
             shape = shape,

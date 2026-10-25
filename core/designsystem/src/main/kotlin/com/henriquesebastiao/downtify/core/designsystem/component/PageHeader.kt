@@ -35,7 +35,8 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
  * A screen's large header (v3): circular 48 dp buttons in the top row (back at the start,
  * [actions] at the end) over a bold 48 sp title that shrinks to fit one line. The title collapses
  * into the top row as the content scrolls under [scrollBehavior]. [tint] washes the header with a
- * soft gradient of that color, fading into the surface (the library's header).
+ * soft gradient of that color, fading into the surface. [transparent] leaves the background to
+ * the screen, for a wash that runs on below the header (the library's, behind its tabs).
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -47,6 +48,7 @@ fun PageHeader(
     backLabel: String? = null,
     titleColor: Color = MaterialTheme.colorScheme.onSurface,
     tint: Color? = null,
+    transparent: Boolean = false,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -89,7 +91,7 @@ fun PageHeader(
         collapsedHeight = COLLAPSED_HEIGHT,
         expandedHeight = if (subtitle == null) EXPANDED_HEIGHT else EXPANDED_HEIGHT_WITH_SUBTITLE,
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = if (tint == null) surface else Color.Transparent,
+            containerColor = if (tint == null && !transparent) surface else Color.Transparent,
             scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
         scrollBehavior = scrollBehavior,

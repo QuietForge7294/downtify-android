@@ -73,6 +73,7 @@
     <string name="library_artists">Előadók</string>
     <string name="library_playlists">Lejátszási listák</string>
     <string name="library_songs">Dalok</string>
+    <string name="library_sort">Rendezés: %1$s</string>
     <string name="library_sort_recent">Nemrég hozzáadott</string>
     <string name="library_sort_alpha">Betűrend</string>
     <string name="library_sort_artist">Előadó</string>

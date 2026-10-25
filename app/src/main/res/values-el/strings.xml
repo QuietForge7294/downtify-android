@@ -73,6 +73,7 @@
     <string name="library_artists">Καλλιτέχνες</string>
     <string name="library_playlists">Λίστες αναπαραγωγής</string>
     <string name="library_songs">Τραγούδια</string>
+    <string name="library_sort">Ταξινόμηση κατά: %1$s</string>
     <string name="library_sort_recent">Προστέθηκαν πρόσφατα</string>
     <string name="library_sort_alpha">Αλφαβητικά</string>
     <string name="library_sort_artist">Καλλιτέχνης</string>
