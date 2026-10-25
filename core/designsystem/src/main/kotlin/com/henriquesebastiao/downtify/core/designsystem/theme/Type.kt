@@ -2,7 +2,10 @@ package com.henriquesebastiao.downtify.core.designsystem.theme
 
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontVariation
@@ -186,3 +189,21 @@ object DowntifyType {
         fontFeatureSettings = "tnum",
     )
 }
+
+/**
+ * [text], a translated sentence with values in it ("2.4 GB used", "212 songs · 5.6 GB free"),
+ * with each of [values] set in the monospaced data face where it appears. The sentence keeps its
+ * language's word order; only the values change face.
+ */
+fun withDataValues(text: String, vararg values: String): AnnotatedString = buildAnnotatedString {
+    append(text)
+    values.filter { it.isNotEmpty() }.forEach { value ->
+        var from = text.indexOf(value)
+        while (from >= 0) {
+            addStyle(DataSpan, from, from + value.length)
+            from = text.indexOf(value, from + value.length)
+        }
+    }
+}
+
+private val DataSpan = SpanStyle(fontFamily = FontFamily.Monospace, fontFeatureSettings = "tnum")

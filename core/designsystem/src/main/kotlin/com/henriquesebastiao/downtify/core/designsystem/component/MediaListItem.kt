@@ -1,6 +1,7 @@
 package com.henriquesebastiao.downtify.core.designsystem.component
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -31,7 +32,8 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
  * A content row (song, album, file, download) as a card of a separated list: [leading] (a 64 dp
  * [Artwork] or a track number), a titleMedium title over a bodyLarge [subtitle], an optional
  * monospaced [meta] line (a size, a duration) and [trailing] controls (a [CircleButton] "more").
- * [active] is what's playing: the title in bold primary. Every line is one line, ellipsized.
+ * [active] is what's playing: the title in bold primary. Lines are one line, ellipsized; a status
+ * that must be read whole may take [subtitleLines]. [extra] goes under them (a progress bar).
  * [shape] comes from the list's [ListStyle]; the row looks the same pressed or not, but ripples.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -49,6 +51,8 @@ fun MediaListItem(
     onLongClick: (() -> Unit)? = null,
     onLongClickLabel: String? = null,
     supportingLeading: (@Composable () -> Unit)? = null,
+    subtitleLines: Int = 1,
+    extra: (@Composable () -> Unit)? = null,
     trailing: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -61,17 +65,21 @@ fun MediaListItem(
         colors = ListItemDefaults.segmentedColors(containerColor = containerColor),
         contentPadding = PaddingValues(start = 14.dp, end = 10.dp, top = 14.dp, bottom = 14.dp),
         leadingContent = leading,
-        supportingContent = if (subtitle != null || meta != null) {
+        supportingContent = if (subtitle != null || meta != null || extra != null) {
             {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     if (subtitle != null) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            supportingLeading?.invoke()
+                        // On a status of two lines the mark (a check, a badge) stays with the first.
+                        val multiline = subtitleLines > 1
+                        Row(verticalAlignment = if (multiline) Alignment.Top else Alignment.CenterVertically) {
+                            if (supportingLeading != null) {
+                                Box(if (multiline) Modifier.padding(top = 4.dp) else Modifier) { supportingLeading() }
+                            }
                             Text(
                                 subtitle,
                                 style = typography.bodyLarge,
                                 color = scheme.onSurfaceVariant,
-                                maxLines = 1,
+                                maxLines = subtitleLines,
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
@@ -79,6 +87,7 @@ fun MediaListItem(
                     if (meta != null) {
                         Text(meta, style = DowntifyType.dataSmall, color = scheme.onSurfaceVariant, maxLines = 1)
                     }
+                    extra?.invoke()
                 }
             }
         } else {

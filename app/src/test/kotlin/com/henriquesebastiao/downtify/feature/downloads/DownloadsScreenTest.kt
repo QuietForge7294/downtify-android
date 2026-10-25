@@ -1,7 +1,9 @@
 package com.henriquesebastiao.downtify.feature.downloads
 
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -125,7 +127,9 @@ class DownloadsScreenTest {
         compose.onNodeWithText("Nora Vale · Downloading · 42%").assertExists()
         compose.onNodeWithText("#1").assertExists()
         compose.onNodeWithText("#2").assertExists()
-        compose.onNodeWithText("On this phone").performClick()
+        // The two halves read as tabs, the open one selected.
+        compose.onNodeWithText("On the server").assertIsSelected()
+        compose.onNodeWithText("On this phone").assertIsNotSelected().performClick()
         assertEquals(DownloadsTab.Phone, tab)
     }
 }
