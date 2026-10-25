@@ -382,7 +382,7 @@
     <string name="settings_amoled">Preto puro</string>
     <string name="settings_amoled_body">Preto de verdade no tema escuro. Economiza bateria em telas OLED.</string>
     <string name="settings_font">Fonte</string>
-    <string name="settings_font_downtify">Downtify</string>
+    <string name="settings_font_downtify">Downtify clássico</string>
     <string name="settings_font_system">Fonte do sistema</string>
     <string name="settings_about_entry">Sobre o Downtify</string>
 

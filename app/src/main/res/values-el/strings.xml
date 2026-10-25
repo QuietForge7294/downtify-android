@@ -373,7 +373,7 @@
     <string name="settings_amoled">Καθαρό μαύρο</string>
     <string name="settings_amoled_body">Αληθινό μαύρο στο σκούρο θέμα. Εξοικονομεί μπαταρία σε οθόνες OLED.</string>
     <string name="settings_font">Γραμματοσειρά</string>
-    <string name="settings_font_downtify">Downtify</string>
+    <string name="settings_font_downtify">Κλασικό Downtify</string>
     <string name="settings_font_system">Γραμματοσειρά συστήματος</string>
     <string name="settings_about_entry">Σχετικά με το Downtify</string>
 

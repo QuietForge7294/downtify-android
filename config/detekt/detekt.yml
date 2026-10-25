@@ -52,7 +52,7 @@ Compose:
     active: true
   CompositionLocalAllowlist:
     active: true
-    allowedCompositionLocals: LocalDowntifyColors,LocalCoverColors
+    allowedCompositionLocals: LocalDowntifyColors,LocalCoverColors,LocalFloatingNavBar
   PreviewPublic:
     active: false
   ModifierNotUsedAtRoot:

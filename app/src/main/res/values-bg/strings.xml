@@ -373,7 +373,7 @@
     <string name="settings_amoled">Чисто черно</string>
     <string name="settings_amoled_body">Истинско черно в тъмната тема. Пести батерия на OLED екрани.</string>
     <string name="settings_font">Шрифт</string>
-    <string name="settings_font_downtify">Downtify</string>
+    <string name="settings_font_downtify">Класически Downtify</string>
     <string name="settings_font_system">Системен шрифт</string>
     <string name="settings_about_entry">Относно Downtify</string>
 

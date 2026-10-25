@@ -373,7 +373,7 @@
     <string name="settings_amoled">Tiszta fekete</string>
     <string name="settings_amoled_body">Valódi fekete a sötét témában. Energiát takarít meg OLED kijelzőn.</string>
     <string name="settings_font">Betűtípus</string>
-    <string name="settings_font_downtify">Downtify</string>
+    <string name="settings_font_downtify">Klasszikus Downtify</string>
     <string name="settings_font_system">Rendszer betűtípusa</string>
     <string name="settings_about_entry">A Downtifyról</string>
 

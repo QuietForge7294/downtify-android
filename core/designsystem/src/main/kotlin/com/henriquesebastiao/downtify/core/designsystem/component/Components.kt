@@ -46,7 +46,7 @@ fun DowntifyLogo(modifier: Modifier = Modifier, size: Dp = 32.dp) {
     Image(painter = painterResource(DowntifyIcons.Logo), contentDescription = null, modifier = modifier.size(size))
 }
 
-/** A section title (titleLarge, Sora) with an optional text action ("See all"). */
+/** A section title (titleLarge) with an optional text action ("See all"). */
 @Composable
 fun SectionHeader(
     title: String,

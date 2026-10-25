@@ -26,6 +26,7 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
             dynamicColor = prefs[DYNAMIC_COLOR] ?: defaults.dynamicColor,
             amoled = prefs[AMOLED] ?: defaults.amoled,
             font = AppFont.of(prefs[FONT]),
+            floatingNavBar = prefs[FLOATING_NAV_BAR] ?: defaults.floatingNavBar,
             wifiQuality = StreamQuality.decode(prefs[WIFI_QUALITY]) ?: defaults.wifiQuality,
             mobileQuality = StreamQuality.decode(prefs[MOBILE_QUALITY]) ?: defaults.mobileQuality,
             libraryLayout = enumOr(prefs[LIBRARY_LAYOUT], defaults.libraryLayout),
@@ -54,6 +55,10 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
 
     suspend fun setFont(value: AppFont) {
         store.edit { it[FONT] = value.name }
+    }
+
+    suspend fun setFloatingNavBar(value: Boolean) {
+        store.edit { it[FLOATING_NAV_BAR] = value }
     }
 
     suspend fun setWifiQuality(value: StreamQuality) {
@@ -108,6 +113,7 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val AMOLED = booleanPreferencesKey("amoled")
         val FONT = stringPreferencesKey("font")
+        val FLOATING_NAV_BAR = booleanPreferencesKey("floating_nav_bar")
         val WIFI_QUALITY = stringPreferencesKey("wifi_quality")
         val MOBILE_QUALITY = stringPreferencesKey("mobile_quality")
         val LIBRARY_LAYOUT = stringPreferencesKey("library_layout")

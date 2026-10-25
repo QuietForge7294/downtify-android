@@ -1,5 +1,6 @@
 package com.henriquesebastiao.downtify.core.designsystem.theme
 
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -14,9 +15,9 @@ import com.henriquesebastiao.downtify.core.designsystem.R
 import com.henriquesebastiao.downtify.core.model.AppFont
 
 // Three choices in Settings › Appearance:
-//  - Downtify: Sora for display, headline and titleLarge; DM Sans for everything else.
+//  - Google Sans Flex (the default): its rounded cut for everything.
+//  - Downtify classic: Sora for display, headline and titleLarge; DM Sans for everything else.
 //  - System: the phone's own font (FontFamily.Default).
-//  - Google Sans Flex: one family for everything.
 // Google downloadable fonts are fetched by Play services and shared between apps. Without
 // Play services (de-Googled phones) Compose falls back to the system font.
 
@@ -26,18 +27,26 @@ private val provider = GoogleFont.Provider(
     certificates = R.array.com_google_android_gms_fonts_certs,
 )
 
-private fun family(name: String, vararg weights: FontWeight) =
+private val weights = listOf(
+    FontWeight.Normal,
+    FontWeight.Medium,
+    FontWeight.SemiBold,
+    FontWeight.Bold,
+    FontWeight.ExtraBold,
+)
+
+private fun family(name: String) =
     FontFamily(weights.map { Font(googleFont = GoogleFont(name), fontProvider = provider, weight = it) })
 
-val Sora = family("Sora", FontWeight.Normal, FontWeight.SemiBold, FontWeight.Bold)
-val DmSans = family("DM Sans", FontWeight.Normal, FontWeight.Medium, FontWeight.SemiBold, FontWeight.Bold)
+val Sora = family("Sora")
+val DmSans = family("DM Sans")
 
 /** Google Sans Flex's roundness axis, 0 (square ends) to 100 (fully rounded). */
 private const val ROUNDNESS_AXIS = "ROND"
 
 // The rounded cut of Google Sans Flex, the one on Pixel phones: the variable font's ROND axis at 100.
 val GoogleSansFlex = FontFamily(
-    listOf(FontWeight.Normal, FontWeight.Medium, FontWeight.SemiBold, FontWeight.Bold).map { weight ->
+    weights.map { weight ->
         Font(
             googleFont = GoogleFont("Google Sans Flex"),
             fontProvider = provider,
@@ -51,55 +60,128 @@ val GoogleSansFlex = FontFamily(
     },
 )
 
+/** Google Sans Flex at its widest (wdth 151) with square ends: the hero title only. */
+private val GoogleSansFlexWide = FontFamily(
+    Font(
+        googleFont = GoogleFont("Google Sans Flex"),
+        fontProvider = provider,
+        weight = FontWeight.SemiBold,
+        variationSettings = FontVariation.Settings(
+            FontVariation.weight(FontWeight.SemiBold.weight),
+            FontVariation.width(151f),
+            FontVariation.Setting(ROUNDNESS_AXIS, 0f),
+        ),
+    ),
+)
+
 private val base = Typography()
 
-/** The family of headlines and of everything else, and whether the headline letter spacing applies. */
-private data class Faces(val heading: FontFamily, val body: FontFamily, val tightHeadings: Boolean)
+/** The family of headlines and of everything else. */
+private data class Faces(val heading: FontFamily, val body: FontFamily)
 
 private fun facesOf(font: AppFont) = when (font) {
-    AppFont.Downtify -> Faces(Sora, DmSans, tightHeadings = true)
-    AppFont.System -> Faces(FontFamily.Default, FontFamily.Default, tightHeadings = false)
-    AppFont.GoogleSansFlex -> Faces(GoogleSansFlex, GoogleSansFlex, tightHeadings = false)
+    AppFont.GoogleSansFlex -> Faces(GoogleSansFlex, GoogleSansFlex)
+    AppFont.Downtify -> Faces(Sora, DmSans)
+    AppFont.System -> Faces(FontFamily.Default, FontFamily.Default)
 }
 
-/** The design's type scale in [font]. Sizes and weights are the same for all three. */
+/**
+ * The v3 type scale in [font]: bold 48 sp page titles (displayLarge), semibold headlines, 18 sp
+ * titleMedium, 16/14 sp labels. Sizes, weights and line heights are the same for all three fonts.
+ * Each emphasized style is its role one weight step up.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 fun downtifyTypography(font: AppFont): Typography {
     val faces = facesOf(font)
 
-    fun TextStyle.heading(size: Int, line: Int, tracking: Double = 0.0) = copy(
-        fontFamily = faces.heading,
-        fontWeight = FontWeight.SemiBold,
+    fun TextStyle.role(heading: Boolean, weight: Int, size: Int, line: Int, tracking: Double = 0.0) = copy(
+        fontFamily = if (heading) faces.heading else faces.body,
+        fontWeight = FontWeight(weight),
         fontSize = size.sp,
         lineHeight = line.sp,
-        // The tracking was drawn for Sora; other typefaces keep their own spacing.
-        letterSpacing = if (faces.tightHeadings) tracking.em else 0.em,
+        letterSpacing = tracking.sp,
     )
 
-    fun TextStyle.body(size: Int, line: Int, weight: FontWeight = FontWeight.Normal) = copy(
-        fontFamily = faces.body,
-        fontWeight = weight,
-        fontSize = size.sp,
-        lineHeight = line.sp,
-    )
+    fun TextStyle.emphasized(weight: Int) = copy(fontWeight = FontWeight(weight))
+
+    val displayLarge = base.displayLarge.role(heading = true, weight = 700, size = 48, line = 56)
+    val displayMedium = base.displayMedium.role(heading = true, weight = 700, size = 36, line = 44)
+    val displaySmall = base.displaySmall.role(heading = true, weight = 400, size = 30, line = 38)
+    val headlineLarge = base.headlineLarge.role(heading = true, weight = 600, size = 32, line = 40)
+    val headlineMedium = base.headlineMedium.role(heading = true, weight = 600, size = 28, line = 36)
+    val headlineSmall = base.headlineSmall.role(heading = true, weight = 600, size = 24, line = 32)
+    val titleLarge = base.titleLarge.role(heading = true, weight = 400, size = 22, line = 28)
+    val titleMedium = base.titleMedium.role(heading = false, weight = 500, size = 18, line = 24, tracking = 0.15)
+    val titleSmall = base.titleSmall.role(heading = false, weight = 500, size = 14, line = 20, tracking = 0.1)
+    val bodyLarge = base.bodyLarge.role(heading = false, weight = 400, size = 16, line = 24, tracking = 0.5)
+    val bodyMedium = base.bodyMedium.role(heading = false, weight = 400, size = 14, line = 20, tracking = 0.25)
+    val bodySmall = base.bodySmall.role(heading = false, weight = 400, size = 12, line = 16, tracking = 0.4)
+    val labelLarge = base.labelLarge.role(heading = false, weight = 500, size = 16, line = 20, tracking = 0.1)
+    val labelMedium = base.labelMedium.role(heading = false, weight = 500, size = 14, line = 16, tracking = 0.5)
+    val labelSmall = base.labelSmall.role(heading = false, weight = 500, size = 11, line = 16, tracking = 0.5)
 
     return Typography(
-        displayLarge = base.displayLarge.copy(fontFamily = faces.heading, fontWeight = FontWeight.SemiBold),
-        displayMedium = base.displayMedium.copy(fontFamily = faces.heading, fontWeight = FontWeight.SemiBold),
-        displaySmall = base.displaySmall.copy(fontFamily = faces.heading, fontWeight = FontWeight.SemiBold),
-        headlineLarge = base.headlineLarge.heading(32, 40, -0.019),
-        headlineMedium = base.headlineMedium.heading(28, 36, -0.014),
-        headlineSmall = base.headlineSmall.heading(24, 32, -0.01),
-        titleLarge = base.titleLarge.heading(22, 28, -0.005),
-        titleMedium = base.titleMedium.body(16, 24, FontWeight.SemiBold),
-        titleSmall = base.titleSmall.body(14, 20, FontWeight.SemiBold),
-        bodyLarge = base.bodyLarge.body(16, 24),
-        bodyMedium = base.bodyMedium.body(14, 20),
-        bodySmall = base.bodySmall.body(12, 16),
-        labelLarge = base.labelLarge.body(14, 20, FontWeight.SemiBold),
-        labelMedium = base.labelMedium.body(12, 16, FontWeight.SemiBold),
-        labelSmall = base.labelSmall.body(11, 16, FontWeight.SemiBold),
+        displayLarge = displayLarge,
+        displayMedium = displayMedium,
+        displaySmall = displaySmall,
+        headlineLarge = headlineLarge,
+        headlineMedium = headlineMedium,
+        headlineSmall = headlineSmall,
+        titleLarge = titleLarge,
+        titleMedium = titleMedium,
+        titleSmall = titleSmall,
+        bodyLarge = bodyLarge,
+        bodyMedium = bodyMedium,
+        bodySmall = bodySmall,
+        labelLarge = labelLarge,
+        labelMedium = labelMedium,
+        labelSmall = labelSmall,
+        displayLargeEmphasized = displayLarge.emphasized(800),
+        displayMediumEmphasized = displayMedium.emphasized(800),
+        displaySmallEmphasized = displaySmall.emphasized(500),
+        headlineLargeEmphasized = headlineLarge.emphasized(700),
+        headlineMediumEmphasized = headlineMedium.emphasized(700),
+        headlineSmallEmphasized = headlineSmall.emphasized(700),
+        titleLargeEmphasized = titleLarge.emphasized(500),
+        titleMediumEmphasized = titleMedium.emphasized(700),
+        titleSmallEmphasized = titleSmall.emphasized(700),
+        bodyLargeEmphasized = bodyLarge.emphasized(500),
+        bodyMediumEmphasized = bodyMedium.emphasized(500),
+        bodySmallEmphasized = bodySmall.emphasized(500),
+        labelLargeEmphasized = labelLarge.emphasized(700),
+        labelMediumEmphasized = labelMedium.emphasized(700),
+        labelSmallEmphasized = labelSmall.emphasized(700),
     )
 }
 
-/** Downtify's own typeface: what previews and tests use. */
-val DowntifyTypography = downtifyTypography(AppFont.Downtify)
+/** The default font's type scale: what previews and tests use. */
+val DowntifyTypography = downtifyTypography(AppFont.Default)
+
+/** The styles Material 3's scale doesn't have. Their faces are fixed: they don't follow the font setting. */
+object DowntifyType {
+    /** The wide hero title (home, welcome): Google Sans Flex at wdth 151, whatever font the app uses. */
+    val hero = base.displayLarge.copy(
+        fontFamily = GoogleSansFlexWide,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 60.sp,
+        lineHeight = 57.sp,
+        letterSpacing = (-0.02).em,
+    )
+
+    /** [hero] for titles with a long word (more than ~8 letters). */
+    val heroSmall = hero.copy(fontSize = 44.sp, lineHeight = 42.sp)
+
+    // Technical values (durations, bitrates, sample rates, sizes, formats): monospaced, tabular figures.
+    val dataLarge = mono(FontWeight.Medium, size = 22, line = 28)
+    val dataMedium = mono(FontWeight.Medium, size = 14, line = 20)
+    val dataSmall = mono(FontWeight.Normal, size = 12, line = 16)
+
+    private fun mono(weight: FontWeight, size: Int, line: Int) = base.bodyMedium.copy(
+        fontFamily = FontFamily.Monospace,
+        fontWeight = weight,
+        fontSize = size.sp,
+        lineHeight = line.sp,
+        letterSpacing = 0.sp,
+        fontFeatureSettings = "tnum",
+    )
+}

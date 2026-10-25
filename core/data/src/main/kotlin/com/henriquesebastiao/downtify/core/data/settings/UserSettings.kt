@@ -18,6 +18,8 @@ data class UserSettings(
     /** True black instead of the dark gray in the dark theme, for OLED screens. Off by default. */
     val amoled: Boolean = false,
     val font: AppFont = AppFont.Default,
+    /** The navigation bar floats as a pill over the content; off, it spans the screen's width. */
+    val floatingNavBar: Boolean = true,
     val wifiQuality: StreamQuality = StreamQuality.Original,
     val mobileQuality: StreamQuality = StreamQuality.MobileDefault,
     val libraryLayout: LibraryLayout = LibraryLayout.Grid,

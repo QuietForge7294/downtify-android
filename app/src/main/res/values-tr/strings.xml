@@ -373,7 +373,7 @@
     <string name="settings_amoled">Saf siyah</string>
     <string name="settings_amoled_body">Koyu temada gerçek siyah. OLED ekranlarda pil tasarrufu sağlar.</string>
     <string name="settings_font">Yazı tipi</string>
-    <string name="settings_font_downtify">Downtify</string>
+    <string name="settings_font_downtify">Klasik Downtify</string>
     <string name="settings_font_system">Sistem yazı tipi</string>
     <string name="settings_about_entry">Downtify hakkında</string>
 

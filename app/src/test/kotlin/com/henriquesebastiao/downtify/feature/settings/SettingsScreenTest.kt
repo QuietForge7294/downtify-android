@@ -50,9 +50,9 @@ class SettingsScreenTest {
         // The row shows the current choice.
         compose.onNodeWithText("System font").performScrollTo().assertExists()
         compose.onNodeWithText("Font").performScrollTo().performClick()
-        compose.onNodeWithText("Downtify").assertExists()
-        compose.onNodeWithText("Google Sans Flex").performClick()
-        assertEquals(AppFont.GoogleSansFlex, font)
+        compose.onNodeWithText("Google Sans Flex").assertExists()
+        compose.onNodeWithText("Downtify classic").performClick()
+        assertEquals(AppFont.Downtify, font)
     }
 
     @Test

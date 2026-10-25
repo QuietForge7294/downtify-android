@@ -375,7 +375,7 @@
     <string name="settings_amoled">Pure black</string>
     <string name="settings_amoled_body">True black in the dark theme. Saves power on OLED screens.</string>
     <string name="settings_font">Font</string>
-    <string name="settings_font_downtify">Downtify</string>
+    <string name="settings_font_downtify">Downtify classic</string>
     <string name="settings_font_system">System font</string>
     <string name="settings_font_google_sans_flex" translatable="false">Google Sans Flex</string>
     <string name="settings_about_entry">About Downtify</string>
