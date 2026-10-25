@@ -302,9 +302,10 @@
     <string name="settings_quality_label">%1$s · %2$d kbps</string>
     <string name="settings_appearance">Εμφάνιση</string>
     <string name="settings_theme">Θέμα</string>
-    <string name="settings_theme_system">Ακολούθηση συστήματος</string>
+    <string name="settings_theme_system">Σύστημα</string>
     <string name="settings_theme_dark">Σκούρο</string>
     <string name="settings_theme_light">Φωτεινό</string>
+    <string name="settings_theme_body">Το «Σύστημα» ακολουθεί τη φωτεινή ή σκοτεινή λειτουργία της συσκευής.</string>
     <string name="settings_dynamic_color">Χρήση χρωμάτων ταπετσαρίας</string>
     <string name="settings_dynamic_color_body">Material You αντί για το πράσινο του Downtify</string>
     <string name="settings_about">Σχετικά</string>
@@ -373,6 +374,8 @@
     <string name="settings_language_summary">%1$s · ορίζεται στις ρυθμίσεις γλώσσας εφαρμογών του Android</string>
     <string name="settings_amoled">Καθαρό μαύρο</string>
     <string name="settings_amoled_body">Αληθινό μαύρο στο σκούρο θέμα. Εξοικονομεί μπαταρία σε οθόνες OLED.</string>
+    <string name="settings_floating_nav_bar">Αιωρούμενη γραμμή πλοήγησης</string>
+    <string name="settings_floating_nav_bar_body">Στο τηλέφωνο, η γραμμή γίνεται στρογγυλεμένη κάψουλα αντί να καλύπτει όλο το πλάτος της οθόνης</string>
     <string name="settings_font">Γραμματοσειρά</string>
     <string name="settings_font_downtify">Κλασικό Downtify</string>
     <string name="settings_font_system">Γραμματοσειρά συστήματος</string>

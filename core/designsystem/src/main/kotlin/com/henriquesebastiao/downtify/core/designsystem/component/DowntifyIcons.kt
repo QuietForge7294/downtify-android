@@ -141,6 +141,9 @@ object DowntifyIcons {
 
     @DrawableRes val Contrast = R.drawable.ic_contrast
 
+    /** The floating navigation bar setting: a pill near the bottom of a screen. */
+    @DrawableRes val FloatingBar = R.drawable.ic_call_to_action
+
     @DrawableRes val Copy = R.drawable.ic_content_copy
 
     @DrawableRes val OpenInNew = R.drawable.ic_open_in_new

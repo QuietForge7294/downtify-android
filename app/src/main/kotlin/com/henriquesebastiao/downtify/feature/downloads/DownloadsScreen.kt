@@ -61,6 +61,7 @@ import com.henriquesebastiao.downtify.R
 import com.henriquesebastiao.downtify.core.data.offline.DownloadActivity
 import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
 import com.henriquesebastiao.downtify.core.designsystem.component.ArtworkTone
+import com.henriquesebastiao.downtify.core.designsystem.component.ChoiceGroup
 import com.henriquesebastiao.downtify.core.designsystem.component.CircleButton
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.EmptyState
@@ -172,46 +173,27 @@ fun DownloadsScreen(
     }
 }
 
-/** Phone or server: a connected button group, the selected half filled. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+/** Phone or server: two views of one screen, read as tabs. */
 @Composable
 private fun Tabs(selected: DownloadsTab, onTab: (DownloadsTab) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = Spacing.screen, vertical = Spacing.sm).selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
-    ) {
-        val tabs = DownloadsTab.entries
-        tabs.forEachIndexed { index, tab ->
-            val checked = tab == selected
-            val label = stringResource(
-                if (tab == DownloadsTab.Phone) R.string.downloads_tab_phone else R.string.downloads_tab_server,
-            )
-            ToggleButton(
-                checked = checked,
-                onCheckedChange = { onTab(tab) },
-                shapes = when (index) {
-                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                    tabs.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+    ChoiceGroup(
+        options = DownloadsTab.entries,
+        selected = selected,
+        label = {
+            stringResource(
+                if (it ==
+                    DownloadsTab.Phone
+                ) {
+                    R.string.downloads_tab_phone
+                } else {
+                    R.string.downloads_tab_server
                 },
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 48.dp)
-                    // Two views of one screen: read as tabs, not as switches.
-                    .clearAndSetSemantics {
-                        role = Role.Tab
-                        this.selected = checked
-                        text = AnnotatedString(label)
-                        onClick {
-                            onTab(tab)
-                            true
-                        }
-                    },
-            ) {
-                Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-    }
+            )
+        },
+        onSelect = onTab,
+        role = Role.Tab,
+        modifier = Modifier.padding(horizontal = Spacing.screen, vertical = Spacing.sm),
+    )
 }
 
 @Composable

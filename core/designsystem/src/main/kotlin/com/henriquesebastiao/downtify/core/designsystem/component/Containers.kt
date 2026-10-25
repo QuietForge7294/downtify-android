@@ -21,9 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyShape
@@ -86,14 +89,18 @@ private fun SectionHeaderRow(
     val muted = if (tinted) LocalContentColor.current.copy(alpha = MUTED_ALPHA) else scheme.onSurfaceVariant
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
         if (icon != null) {
-            val avatar = if (tinted) LocalContentColor.current.copy(alpha = AVATAR_ALPHA) else scheme.primaryContainer
-            val onAvatar = if (tinted) LocalContentColor.current else scheme.onPrimaryContainer
-            Box(
-                Modifier.size(if (hero) 56.dp else 40.dp).background(avatar, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(painterResource(icon), contentDescription = null, tint = onAvatar)
-            }
+            IconAvatar(
+                icon,
+                container = if (tinted) {
+                    LocalContentColor.current.copy(
+                        alpha = AVATAR_ALPHA,
+                    )
+                } else {
+                    scheme.primaryContainer
+                },
+                content = if (tinted) LocalContentColor.current else scheme.onPrimaryContainer,
+                size = if (hero) 56.dp else 40.dp,
+            )
         }
         Column(Modifier.weight(1f)) {
             if (overline != null) {
@@ -111,10 +118,25 @@ private fun SectionHeaderRow(
                     style = if (hero) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.semantics { heading() },
                 )
             }
         }
         trailing?.invoke()
+    }
+}
+
+/** An icon in a tonal circle: what a card or a settings row is about. */
+@Composable
+fun IconAvatar(
+    icon: Int,
+    modifier: Modifier = Modifier,
+    container: Color = MaterialTheme.colorScheme.primaryContainer,
+    content: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    size: Dp = 40.dp,
+) {
+    Box(modifier.size(size).background(container, CircleShape), contentAlignment = Alignment.Center) {
+        Icon(painterResource(icon), contentDescription = null, tint = content)
     }
 }
 

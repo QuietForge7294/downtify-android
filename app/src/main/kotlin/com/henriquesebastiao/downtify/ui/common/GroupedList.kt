@@ -2,6 +2,7 @@ package com.henriquesebastiao.downtify.ui.common
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -14,15 +15,19 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import com.henriquesebastiao.downtify.core.designsystem.component.ChoiceGroup
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
+import com.henriquesebastiao.downtify.core.designsystem.component.IconAvatar
 import com.henriquesebastiao.downtify.core.designsystem.component.PhonePreviews
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.designsystem.theme.ListStyle
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
+import com.henriquesebastiao.downtify.core.designsystem.theme.withDataValues
 
 /** What tapping a [GroupedRow] does, and what it shows at the end. */
 sealed interface RowAction {
@@ -31,22 +36,30 @@ sealed interface RowAction {
 
     /** A switch: the whole row toggles it. */
     data class Toggle(val checked: Boolean, val onCheckedChange: (Boolean) -> Unit) : RowAction
+
+    /** A control the row holds under its text, as wide as the row (a button group); the row does nothing. */
+    data class Control(val content: @Composable () -> Unit) : RowAction
 }
 
-/** One row of a [GroupedList]. */
+/**
+ * One row of a [GroupedList]. [summaryValues] are the parts of [summary] that are technical values
+ * (a size, a version), set in the data face. A [destructive] row (unpair) is in the error colors.
+ */
 data class GroupedRow(
     val title: String,
     val action: RowAction,
     val summary: String? = null,
     @DrawableRes val icon: Int? = null,
     val enabled: Boolean = true,
-    val titleColor: Color = Color.Unspecified,
+    val destructive: Boolean = false,
+    val summaryValues: List<String> = emptyList(),
 )
 
 /**
  * A group of rows as Material 3 Expressive draws a grouped list: each row its own surface, the ends
  * of the group with large outer corners, a small gap between rows. [style] sets the corners and the
- * gap: segmented (settings, About), separated or compact. Rows never change shape or tint.
+ * gap: segmented (settings, About), separated or compact. Rows never change shape or tint. A row's
+ * icon sits in a tonal circle ([IconAvatar]).
  */
 @Composable
 fun GroupedList(rows: List<GroupedRow>, modifier: Modifier = Modifier, style: ListStyle = ListStyle.Segmented) {
@@ -81,10 +94,21 @@ fun GroupedListItem(
         selectedSupportingContentColor = scheme.onSurfaceVariant,
     )
     val leading: @Composable (() -> Unit)? = row.icon?.let { icon ->
-        { Icon(painterResource(icon), contentDescription = null) }
+        {
+            IconAvatar(
+                icon,
+                container = if (row.destructive) scheme.errorContainer else scheme.primaryContainer,
+                content = if (row.destructive) scheme.onErrorContainer else scheme.onPrimaryContainer,
+                modifier = if (row.enabled) Modifier else Modifier.alpha(DISABLED_ALPHA),
+            )
+        }
     }
-    val supporting: @Composable (() -> Unit)? = row.summary?.let { summary -> { Text(summary) } }
-    val title: @Composable () -> Unit = { Text(row.title, color = row.titleColor) }
+    val supporting: @Composable (() -> Unit)? = row.summary?.let { summary ->
+        { Text(withDataValues(summary, row.summaryValues)) }
+    }
+    val title: @Composable () -> Unit = {
+        Text(row.title, color = if (row.destructive) scheme.error else Color.Unspecified)
+    }
     when (val action = row.action) {
         is RowAction.Click -> SegmentedListItem(
             onClick = action.onClick,
@@ -118,21 +142,37 @@ fun GroupedListItem(
             colors = colors,
             content = title,
         )
+
+        is RowAction.Control -> Surface(shape = shape, color = scheme.surfaceContainer, modifier = modifier) {
+            Column {
+                SegmentedListItem(
+                    shapes = shapes,
+                    enabled = row.enabled,
+                    leadingContent = leading,
+                    supportingContent = supporting,
+                    colors = colors,
+                    content = title,
+                )
+                Box(Modifier.padding(start = Spacing.lg, end = Spacing.lg, bottom = Spacing.lg)) { action.content() }
+            }
+        }
     }
 }
 
-/** A group's title, in the accent color. */
+/** A group's title: titleMedium in the accent color, inset a little from the group's edge. */
 @Composable
 fun GroupTitle(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
-        style = MaterialTheme.typography.labelLarge,
+        style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.primary,
         modifier = modifier
-            .padding(start = Spacing.screen + Spacing.lg, end = Spacing.screen, top = Spacing.xl, bottom = Spacing.sm)
+            .padding(start = Spacing.screen + Spacing.md, end = Spacing.screen, top = Spacing.xl, bottom = Spacing.sm)
             .semantics { heading() },
     )
 }
+
+private const val DISABLED_ALPHA = 0.38f
 
 @PhonePreviews
 @Composable
@@ -143,7 +183,20 @@ private fun GroupedListPreview() {
                 GroupTitle("Appearance")
                 GroupedList(
                     listOf(
-                        GroupedRow("Theme", RowAction.Click({}), "Follow system", DowntifyIcons.DarkMode),
+                        GroupedRow(
+                            "Theme",
+                            RowAction.Control {
+                                ChoiceGroup(
+                                    listOf("System", "Light", "Dark"),
+                                    "System",
+                                    { it },
+                                    {},
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                )
+                            },
+                            "System follows your device's light or dark mode.",
+                            DowntifyIcons.DarkMode,
+                        ),
                         GroupedRow(
                             "Pure black",
                             RowAction.Toggle(true) {
@@ -151,7 +204,15 @@ private fun GroupedListPreview() {
                             "True black in the dark theme",
                             DowntifyIcons.Contrast,
                         ),
+                        GroupedRow(
+                            "Temporary audio cache",
+                            RowAction.Click({}),
+                            "50 MB",
+                            DowntifyIcons.Storage,
+                            summaryValues = listOf("50 MB"),
+                        ),
                         GroupedRow("About", RowAction.Click({}, DowntifyIcons.ChevronRight), null, DowntifyIcons.Info),
+                        GroupedRow("Unpair", RowAction.Click({}), icon = DowntifyIcons.Unpair, destructive = true),
                     ),
                 )
             }

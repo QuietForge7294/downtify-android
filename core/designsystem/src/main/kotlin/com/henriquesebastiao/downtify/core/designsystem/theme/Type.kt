@@ -195,7 +195,10 @@ object DowntifyType {
  * with each of [values] set in the monospaced data face where it appears. The sentence keeps its
  * language's word order; only the values change face.
  */
-fun withDataValues(text: String, vararg values: String): AnnotatedString = buildAnnotatedString {
+fun withDataValues(text: String, vararg values: String): AnnotatedString = withDataValues(text, values.asList())
+
+/** [withDataValues] for values known only at run time (a row's, a dialog option's). */
+fun withDataValues(text: String, values: List<String>): AnnotatedString = buildAnnotatedString {
     append(text)
     values.filter { it.isNotEmpty() }.forEach { value ->
         var from = text.indexOf(value)

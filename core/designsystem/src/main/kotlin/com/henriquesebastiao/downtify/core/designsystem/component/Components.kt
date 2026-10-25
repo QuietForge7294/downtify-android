@@ -152,27 +152,6 @@ fun PlayingBars(
     }
 }
 
-/** A small pill: "Connected", a source label. */
-@Composable
-fun StatusPill(
-    text: String,
-    modifier: Modifier = Modifier,
-    container: Color = MaterialTheme.colorScheme.primaryContainer,
-    content: Color = MaterialTheme.colorScheme.onPrimaryContainer,
-    dot: Color? = MaterialTheme.colorScheme.primary,
-) {
-    Surface(color = container, contentColor = content, shape = RoundedCornerShape(50), modifier = modifier) {
-        Row(
-            Modifier.height(28.dp).padding(horizontal = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            if (dot != null) Box(Modifier.size(6.dp).background(dot, RoundedCornerShape(50)))
-            Text(text, style = MaterialTheme.typography.labelMedium)
-        }
-    }
-}
-
 /** Where a search result comes from, in its brand's color (the Search board's badges). */
 enum class SourceBrand { Spotify, YouTube, Neutral }
 
@@ -221,7 +200,6 @@ private fun ComponentsPreview() {
                 ) {
                     DowntifyLogo(size = 40.dp)
                     PlayingBars(animate = false)
-                    StatusPill("Connected")
                 }
                 SectionHeader("Recently added", actionLabel = "See all", onAction = {})
                 EmptyState(

@@ -311,9 +311,10 @@
     <string name="settings_quality_label">%1$s · %2$d kbps</string>
     <string name="settings_appearance">Apariencia</string>
     <string name="settings_theme">Tema</string>
-    <string name="settings_theme_system">Seguir el sistema</string>
+    <string name="settings_theme_system">Sistema</string>
     <string name="settings_theme_dark">Oscuro</string>
     <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_body">Sistema sigue el modo claro u oscuro del dispositivo.</string>
     <string name="settings_dynamic_color">Usar los colores del fondo de pantalla</string>
     <string name="settings_dynamic_color_body">Material You en lugar del verde de Downtify</string>
     <string name="settings_about">Acerca de</string>
@@ -382,6 +383,8 @@
     <string name="settings_language_summary">%1$s · se cambia en los ajustes de idioma de apps de Android</string>
     <string name="settings_amoled">Negro puro</string>
     <string name="settings_amoled_body">Negro de verdad en el tema oscuro. Ahorra batería en pantallas OLED.</string>
+    <string name="settings_floating_nav_bar">Barra de navegación flotante</string>
+    <string name="settings_floating_nav_bar_body">En el teléfono, la barra es una píldora redondeada en lugar de ocupar todo el ancho de la pantalla</string>
     <string name="settings_font">Fuente</string>
     <string name="settings_font_downtify">Downtify clásico</string>
     <string name="settings_font_system">Fuente del sistema</string>
