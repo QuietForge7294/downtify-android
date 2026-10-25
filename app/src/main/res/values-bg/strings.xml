@@ -23,6 +23,7 @@
     <string name="connect_none_found">Не е намерен нито един. Въведи адреса ръчно — мрежата по подразбиране на Docker не обявява сървъра.</string>
     <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
     <string name="connect_action">Свързване</string>
+    <string name="connect_step">Стъпка %1$d от %2$d</string>
     <string name="connect_scan">Сканирай кода от Настройки › Приложения</string>
     <string name="connect_cleartext_warning">Този адрес не е в домашната ти мрежа и не използва HTTPS: ключът на телефона би пътувал некриптиран. Сложи Downtify зад HTTPS обратен прокси, за да го ползваш отвън.</string>
     <string name="connect_revoked">Този телефон беше разкачен от сървъра. Свържи го отново, за да продължиш да слушаш.</string>

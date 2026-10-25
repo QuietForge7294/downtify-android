@@ -43,6 +43,8 @@ object DowntifyIcons {
 
     @DrawableRes val Back = R.drawable.ic_arrow_back
 
+    @DrawableRes val Forward = R.drawable.ic_arrow_forward
+
     @DrawableRes val Collapse = R.drawable.ic_keyboard_arrow_down
 
     @DrawableRes val Lyrics = R.drawable.ic_lyrics

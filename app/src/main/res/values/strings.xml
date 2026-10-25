@@ -24,6 +24,7 @@
     <string name="connect_none_found">None found. Type the address instead — Docker\'s default network doesn\'t announce the server.</string>
     <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
     <string name="connect_action">Connect</string>
+    <string name="connect_step">Step %1$d of %2$d</string>
     <string name="connect_scan">Scan the code from Settings › Apps</string>
     <string name="connect_cleartext_warning">This address isn\'t on your home network and doesn\'t use HTTPS: the phone\'s key would travel unencrypted. Put Downtify behind an HTTPS reverse proxy to use it from outside.</string>
     <string name="connect_revoked">This phone was unpaired from the server. Pair it again to keep listening.</string>

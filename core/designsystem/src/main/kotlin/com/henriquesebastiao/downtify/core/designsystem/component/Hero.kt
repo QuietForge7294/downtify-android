@@ -35,7 +35,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -48,14 +51,16 @@ import kotlinx.coroutines.delay
 
 /**
  * The hero of the home and welcome screens: the wide display title (break its lines with "\n"),
- * a subtitle and an optional [action] at the end of the subtitle's row. [small] starts from the
- * smaller size. Either way the title steps down until no word breaks. One per screen.
+ * a subtitle and an optional [action] at the end of the subtitle's row. [accent] is a last line in
+ * the primary color ("from your server."). [small] starts from the smaller size. Either way the
+ * title steps down until no word breaks. One per screen.
  */
 @Composable
 fun HeroHeader(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    accent: String? = null,
     small: Boolean = false,
     titleColor: Color = MaterialTheme.colorScheme.onSurface,
     action: (@Composable () -> Unit)? = null,
@@ -65,8 +70,15 @@ fun HeroHeader(
         verticalArrangement = Arrangement.spacedBy(Spacing.lg),
     ) {
         val style = if (small) DowntifyType.heroSmall else DowntifyType.hero
+        val primary = MaterialTheme.colorScheme.primary
         Text(
-            title,
+            buildAnnotatedString {
+                append(title)
+                if (accent != null) {
+                    append('\n')
+                    withStyle(SpanStyle(color = primary)) { append(accent) }
+                }
+            },
             style = style,
             color = titleColor,
             autoSize = remember(style) { WholeWords(style.fontSize) },

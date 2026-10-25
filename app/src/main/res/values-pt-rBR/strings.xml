@@ -23,6 +23,7 @@
     <string name="connect_none_found">Nenhum encontrado. Digite o endereço — a rede padrão do Docker não anuncia o servidor.</string>
     <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
     <string name="connect_action">Conectar</string>
+    <string name="connect_step">Etapa %1$d de %2$d</string>
     <string name="connect_scan">Escaneie o código em Configurações › Apps</string>
     <string name="connect_cleartext_warning">Este endereço não está na sua rede local e não usa HTTPS: a chave do celular trafegaria sem criptografia. Coloque o Downtify atrás de um proxy reverso HTTPS para usá-lo de fora.</string>
     <string name="connect_revoked">Este celular foi desemparelhado do servidor. Emparelhe-o de novo para continuar ouvindo.</string>

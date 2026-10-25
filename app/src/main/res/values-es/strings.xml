@@ -23,6 +23,7 @@
     <string name="connect_none_found">No se encontró ninguno. Escribe la dirección: la red predeterminada de Docker no anuncia el servidor.</string>
     <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
     <string name="connect_action">Conectar</string>
+    <string name="connect_step">Paso %1$d de %2$d</string>
     <string name="connect_scan">Escanea el código en Ajustes › Apps</string>
     <string name="connect_cleartext_warning">Esta dirección no está en tu red doméstica y no usa HTTPS: la clave del teléfono viajaría sin cifrar. Pon Downtify detrás de un proxy inverso con HTTPS para usarlo desde fuera.</string>
     <string name="connect_revoked">Este teléfono se desvinculó del servidor. Vuelve a vincularlo para seguir escuchando.</string>

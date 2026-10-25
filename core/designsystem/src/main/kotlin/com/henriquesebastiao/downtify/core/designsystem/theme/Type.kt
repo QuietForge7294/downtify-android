@@ -180,6 +180,9 @@ object DowntifyType {
     val dataMedium = mono(FontWeight.Medium, size = 14, line = 20)
     val dataSmall = mono(FontWeight.Normal, size = 12, line = 16)
 
+    /** A technical value being typed (a server address): the text field's size, in the data face. */
+    val dataInput = mono(FontWeight.Normal, size = 16, line = 24)
+
     private fun mono(weight: FontWeight, size: Int, line: Int) = base.bodyMedium.copy(
         fontFamily = FontFamily.Monospace,
         fontWeight = weight,

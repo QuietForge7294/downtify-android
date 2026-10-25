@@ -23,6 +23,7 @@
     <string name="connect_none_found">Hiçbiri bulunamadı. Bunun yerine adresi yaz — Docker\'ın varsayılan ağı sunucuyu duyurmaz.</string>
     <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
     <string name="connect_action">Bağlan</string>
+    <string name="connect_step">Adım %1$d/%2$d</string>
     <string name="connect_scan">Ayarlar › Uygulamalar\'daki kodu tara</string>
     <string name="connect_cleartext_warning">Bu adres ev ağında değil ve HTTPS kullanmıyor: telefonun anahtarı şifresiz iletilir. Dışarıdan kullanmak için Downtify\'ı HTTPS\'li bir ters vekil sunucunun arkasına koy.</string>
     <string name="connect_revoked">Bu telefonun sunucuyla eşleşmesi kaldırıldı. Dinlemeye devam etmek için yeniden eşleştir.</string>

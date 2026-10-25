@@ -44,6 +44,9 @@ object DowntifyShape {
 
     /** The floating navigation bar. */
     val FloatingNavBar = RoundedCornerShape(28.dp)
+
+    /** The footer of a multi-step flow (connect): rounded on top, flush with the screen's bottom. */
+    val OnboardingFooter = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
 }
 
 /**

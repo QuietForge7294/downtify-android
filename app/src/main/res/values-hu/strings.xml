@@ -23,6 +23,7 @@
     <string name="connect_none_found">Nem található egy sem. Írd be inkább a címet — a Docker alapértelmezett hálózata nem hirdeti a szervert.</string>
     <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
     <string name="connect_action">Csatlakozás</string>
+    <string name="connect_step">%1$d/%2$d. lépés</string>
     <string name="connect_scan">Olvasd be a kódot a Beállítások › Alkalmazások oldalról</string>
     <string name="connect_cleartext_warning">Ez a cím nem az otthoni hálózaton van, és nem használ HTTPS-t: a telefon kulcsa titkosítatlanul utazna. Tedd a Downtifyt HTTPS-es fordított proxy mögé, hogy kívülről is használhasd.</string>
     <string name="connect_revoked">Ezt a telefont leválasztották a szerverről. Párosítsd újra, hogy tovább hallgathass zenét.</string>
