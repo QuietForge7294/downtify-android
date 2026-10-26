@@ -58,12 +58,14 @@ fun CoverTheme(coverUrl: String?, content: @Composable () -> Unit) {
 /**
  * The color that seeds [coverUrl]'s scheme: the Palette API's vibrant swatch, or the dominant one
  * when the cover has none. Null without a cover or when it can't be read. While a new cover is
- * read, the previous seed stays, so the scheme goes straight from one cover to the next.
+ * read, the previous seed stays, so the scheme goes straight from one cover to the next. A cover
+ * read lately has its seed from the first frame: a surface that appears in its colors (Now Playing
+ * growing out of the mini player) doesn't flash the app's on the way.
  */
 @Composable
 fun rememberCoverSeed(coverUrl: String?): Int? {
     val context = LocalContext.current
-    var seed by remember { mutableStateOf<Int?>(null) }
+    var seed by remember { mutableStateOf(coverUrl?.let(seeds::get)) }
     LaunchedEffect(coverUrl) {
         seed = coverUrl?.let { url -> seeds.get(url) ?: readSeed(context, url)?.also { seeds.put(url, it) } }
     }

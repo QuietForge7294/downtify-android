@@ -20,8 +20,9 @@ import com.henriquesebastiao.downtify.ui.common.PreviewData
 /**
  * Sits above the navigation bar while something is loaded, in the cover's colors; tapping it
  * opens Now Playing. Its buttons are the transport only, as on Now Playing: previous, play/pause
- * and next, or an episode's skips back and forward. Similar tracks and saving a stream to the
- * server live on Now Playing. [attached] joins it to the floating bar right under it.
+ * and next, or an episode's skips back and forward. Saving a stream to the server lives on Now
+ * Playing. [attached] joins it to the floating bar right under it. [modifier] is the card's (the
+ * caller sets its margins), [coverModifier] its cover's.
  */
 @Composable
 fun MiniPlayer(
@@ -34,6 +35,7 @@ fun MiniPlayer(
     onSkipBack: () -> Unit = {},
     onSkipForward: () -> Unit = {},
     attached: Boolean = false,
+    coverModifier: Modifier = Modifier,
 ) {
     val track = state.track
     val episode = state.episode
@@ -48,7 +50,8 @@ fun MiniPlayer(
             onOpen = onOpen,
             openLabel = stringResource(R.string.player_open),
             attached = attached,
-            modifier = modifier.padding(horizontal = Spacing.screen, vertical = Spacing.xs),
+            coverModifier = coverModifier,
+            modifier = modifier,
         ) {
             if (episode != null) {
                 MiniPlayerButton(DowntifyIcons.SkipBack, stringResource(R.string.player_skip_back), onSkipBack)
@@ -85,6 +88,7 @@ private fun MiniPlayerPreview() {
                 ),
                 onOpen = {},
                 onTogglePlay = {},
+                modifier = Modifier.padding(Spacing.screen),
             )
         }
     }
@@ -100,6 +104,7 @@ private fun MiniPlayerStreamPreview() {
                 onOpen = {},
                 onTogglePlay = {},
                 attached = true,
+                modifier = Modifier.padding(Spacing.screen),
             )
         }
     }

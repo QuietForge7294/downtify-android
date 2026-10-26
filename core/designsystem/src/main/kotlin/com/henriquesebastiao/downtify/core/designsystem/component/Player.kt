@@ -73,7 +73,8 @@ import kotlin.math.roundToInt
  * fit) over the artist, then [actions] ([MiniPlayerButton]s). Tapping the cover or the text opens
  * Now Playing. [attached] is for when the floating navigation bar sits right under it: the two
  * read as one group, so its bottom corners tighten (on the spatial spring) to the bar's top ones,
- * [DowntifyShape.JoinedCorner].
+ * [DowntifyShape.JoinedCorner]. [coverModifier] goes on the cover (Now Playing's cover flies from
+ * it).
  */
 @Composable
 fun MiniPlayerCard(
@@ -84,6 +85,7 @@ fun MiniPlayerCard(
     openLabel: String,
     modifier: Modifier = Modifier,
     attached: Boolean = false,
+    coverModifier: Modifier = Modifier,
     actions: @Composable RowScope.() -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -121,7 +123,7 @@ fun MiniPlayerCard(
                     url = coverUrl,
                     contentDescription = null,
                     shape = CircleShape,
-                    modifier = Modifier.size(52.dp),
+                    modifier = Modifier.size(52.dp).then(coverModifier),
                 )
                 Column(Modifier.weight(1f)) {
                     MarqueeText(

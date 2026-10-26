@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -32,19 +32,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,9 +58,11 @@ import com.henriquesebastiao.downtify.AppState
 import com.henriquesebastiao.downtify.MainViewModel
 import com.henriquesebastiao.downtify.R
 import com.henriquesebastiao.downtify.core.designsystem.theme.LocalFloatingNavBar
+import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 import com.henriquesebastiao.downtify.core.model.PlaybackContext
 import com.henriquesebastiao.downtify.core.model.PlaybackContextType
 import com.henriquesebastiao.downtify.core.model.RecentContext
+import com.henriquesebastiao.downtify.core.network.ServerUrls
 import com.henriquesebastiao.downtify.core.player.PlayerEvent
 import com.henriquesebastiao.downtify.feature.about.AboutRoute
 import com.henriquesebastiao.downtify.feature.about.LicenseRoute
@@ -74,14 +74,18 @@ import com.henriquesebastiao.downtify.feature.downloads.DownloadsRoute
 import com.henriquesebastiao.downtify.feature.home.HomeRoute
 import com.henriquesebastiao.downtify.feature.library.LibraryNavigation
 import com.henriquesebastiao.downtify.feature.library.LibraryRoute
+import com.henriquesebastiao.downtify.feature.player.ExpandingPlayer
 import com.henriquesebastiao.downtify.feature.player.LyricsSheet
 import com.henriquesebastiao.downtify.feature.player.MiniPlayer
 import com.henriquesebastiao.downtify.feature.player.NowPlayingActions
 import com.henriquesebastiao.downtify.feature.player.NowPlayingScreen
+import com.henriquesebastiao.downtify.feature.player.PlayerExpansion
 import com.henriquesebastiao.downtify.feature.player.PlayerViewModel
 import com.henriquesebastiao.downtify.feature.player.QueueActions
 import com.henriquesebastiao.downtify.feature.player.QueueScreen
+import com.henriquesebastiao.downtify.feature.player.miniPlayerAnchor
 import com.henriquesebastiao.downtify.feature.player.playingCoverUrl
+import com.henriquesebastiao.downtify.feature.player.rememberPlayerExpansion
 import com.henriquesebastiao.downtify.feature.podcasts.PodcastsRoute
 import com.henriquesebastiao.downtify.feature.podcasts.ShowRoute
 import com.henriquesebastiao.downtify.feature.search.SearchNavigation
@@ -110,6 +114,7 @@ import com.henriquesebastiao.downtify.ui.navigation.ShowRoute as ShowDestination
 import com.henriquesebastiao.downtify.ui.navigation.SimilarRoute
 import com.henriquesebastiao.downtify.ui.navigation.TopLevelDestination
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.launch
 
 /** The app: the connect screen until the phone is paired, then the main shell. */
 @Composable
@@ -156,7 +161,10 @@ private fun MainShell() {
             }
         }
     }
-    var nowPlayingOpen by rememberSaveable { mutableStateOf(false) }
+    // Now Playing, open or closed or anywhere between: it grows out of the mini player and shrinks back into it.
+    val expansion = rememberPlayerExpansion()
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(hasMedia) { if (!hasMedia) expansion.snapTo(open = false) }
     var currentTab by rememberSaveable { mutableStateOf(TopLevelDestination.Home) }
     val onSettings = destination?.hasRoute<SettingsDestination>() == true ||
         destination?.hasRoute<AboutDestination>() == true ||
@@ -221,29 +229,31 @@ private fun MainShell() {
                 if (miniPlayer || floatingBar) {
                     Column(if (fullWidthBar) Modifier else Modifier.navigationBarsPadding()) {
                         if (miniPlayer) {
-                            MiniPlayerHost(player = player, onOpen = { nowPlayingOpen = true }, attached = floatingBar)
+                            MiniPlayerHost(
+                                player = player,
+                                expansion = expansion,
+                                onOpen = { scope.launch { expansion.expand() } },
+                                attached = floatingBar,
+                            )
                         }
                         if (floatingBar) FloatingNavBar(currentTab, openTab, attached = miniPlayer)
                     }
                 }
             }
         }
-        NowPlayingOverlay(
-            open = nowPlayingOpen && hasMedia,
-            player = player,
-            onClose = { nowPlayingOpen = false },
-            onNavigate = { route ->
-                nowPlayingOpen = false
-                // Similar opens per track: a fresh entry, so tapping it for
-                // another track while its page is already open still shows the
-                // new mix (single-top would keep the stale one).
-                if (route is SimilarRoute) {
-                    navController.navigate(route)
-                } else {
+        if (hasMedia) {
+            NowPlayingOverlay(
+                expansion = expansion,
+                player = player,
+                attached = floatingBar,
+                onOpen = { scope.launch { expansion.expand() } },
+                onClose = { scope.launch { expansion.collapse() } },
+                onNavigate = { route ->
+                    scope.launch { expansion.collapse() }
                     navController.navigate(route) { launchSingleTop = true }
-                }
-            },
-        )
+                },
+            )
+        }
     }
 }
 
@@ -352,9 +362,12 @@ private fun AppNavHost(navController: NavHostController) {
     }
 }
 
-/** The mini player collects the ticking state itself, so only it recomposes as the song plays. */
+/**
+ * The mini player collects the ticking state itself, so only it recomposes as the song plays. It's
+ * where Now Playing grows out of: a drag up on it opens Now Playing under the finger.
+ */
 @Composable
-private fun MiniPlayerHost(player: PlayerViewModel, onOpen: () -> Unit, attached: Boolean) {
+private fun MiniPlayerHost(player: PlayerViewModel, expansion: PlayerExpansion, onOpen: () -> Unit, attached: Boolean) {
     val state by player.state.collectAsStateWithLifecycle()
     MiniPlayer(
         state = state,
@@ -365,35 +378,49 @@ private fun MiniPlayerHost(player: PlayerViewModel, onOpen: () -> Unit, attached
         onSkipBack = player::skipBack,
         onSkipForward = player::skipForward,
         attached = attached,
+        coverModifier = Modifier.onGloballyPositioned { expansion.miniCover = it },
+        modifier = Modifier
+            .padding(horizontal = Spacing.screen, vertical = Spacing.xs)
+            .miniPlayerAnchor(expansion),
     )
 }
 
-/** Now Playing slides up over everything and collapses back into the mini player, following predictive back. */
+/**
+ * Now Playing: it grows out of the mini player ([attached] to the floating bar or not) and shrinks
+ * back into it, under a finger, a tap or predictive back. Closed, only the light part of it stays
+ * composed, off screen (see [ExpandingPlayer]); Now Playing itself is composed while it shows.
+ */
 @Composable
-private fun NowPlayingOverlay(open: Boolean, player: PlayerViewModel, onClose: () -> Unit, onNavigate: (Any) -> Unit) {
+private fun NowPlayingOverlay(
+    expansion: PlayerExpansion,
+    player: PlayerViewModel,
+    attached: Boolean,
+    onOpen: () -> Unit,
+    onClose: () -> Unit,
+    onNavigate: (Any) -> Unit,
+) {
     val state by player.state.collectAsStateWithLifecycle()
     val isLiked by player.isLiked.collectAsStateWithLifecycle()
     val streamJob by player.streamJob.collectAsStateWithLifecycle()
     val streamTrack by player.streamTrack.collectAsStateWithLifecycle()
     val serverName by player.serverName.collectAsStateWithLifecycle()
     val lyrics by player.lyrics.collectAsStateWithLifecycle()
-    var backProgress by remember { mutableFloatStateOf(0f) }
     var sheet by rememberSaveable { mutableStateOf<String?>(null) }
     var queueOpen by rememberSaveable { mutableStateOf(false) }
-    val density = LocalDensity.current
+    val open = expansion.expanded
 
     LaunchedEffect(open) { if (!open) queueOpen = false }
     BackHandler(enabled = open && queueOpen) { queueOpen = false }
+    // Back folds the player towards the mini player as the gesture goes, then closes it or springs back open.
     PredictiveBackHandler(enabled = open && sheet == null && !queueOpen) { progress ->
         try {
-            progress.collect { backProgress = it.progress }
+            expansion.foldBack { fold -> progress.collect { fold(it.progress) } }
             onClose()
         } catch (e: CancellationException) {
-            backProgress = 0f
+            onOpen()
             throw e
         }
     }
-    LaunchedEffect(open) { if (open) backProgress = 0f }
 
     val controls = remember(player, onClose, onNavigate) {
         NowPlayingActions(
@@ -420,29 +447,38 @@ private fun NowPlayingOverlay(open: Boolean, player: PlayerViewModel, onClose: (
         )
     }
 
-    AnimatedVisibility(
-        visible = open,
-        enter = slideInVertically { it },
-        exit = slideOutVertically { it },
-    ) {
-        NowPlayingScreen(
-            state = state,
-            isLiked = isLiked,
-            serverName = serverName,
-            downloadJob = streamJob,
-            hasLibraryCopy = streamTrack != null,
-            libraryTrack = streamTrack,
-            actions = controls,
-            modifier = Modifier.graphicsLayer {
-                val p = backProgress
-                translationY = with(density) { (p * 96.dp.toPx()) }
-                scaleX = 1f - p * 0.08f
-                scaleY = 1f - p * 0.08f
-                shape = RoundedCornerShape((p * 28).dp)
-                clip = p > 0f
-            },
-        )
-    }
+    ExpandingPlayer(
+        expansion = expansion,
+        coverUrl = playingCoverUrl(state),
+        largeCoverUrl = playingCoverUrl(state, ServerUrls.COVER_LARGE),
+        attached = attached,
+        dragEnabled = sheet == null && !queueOpen,
+        mini = { coverModifier ->
+            MiniPlayer(
+                state = state,
+                onOpen = onOpen,
+                onTogglePlay = player::togglePlayPause,
+                onPrevious = player::previous,
+                onNext = player::next,
+                onSkipBack = player::skipBack,
+                onSkipForward = player::skipForward,
+                attached = attached,
+                coverModifier = coverModifier,
+            )
+        },
+        full = { coverModifier ->
+            NowPlayingScreen(
+                state = state,
+                isLiked = isLiked,
+                serverName = serverName,
+                downloadJob = streamJob,
+                hasLibraryCopy = streamTrack != null,
+                libraryTrack = streamTrack,
+                actions = controls,
+                coverModifier = coverModifier,
+            )
+        },
+    )
 
     // The queue unfolds over Now Playing from its queue button, as in Spotify.
     AnimatedVisibility(

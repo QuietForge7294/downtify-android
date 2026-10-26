@@ -108,7 +108,8 @@ data class NowPlayingActions(
  * matches it, passed as [libraryTrack]): the stream keeps playing, but the buttons switch to
  * the library set (like, lyrics, the artist link) and the download button goes away. A finished
  * server job ([ServerJobStatus.Done]) hides the download button at once; like and lyrics appear
- * with the library sync, when there is a track id behind them to act on.
+ * with the library sync, when there is a track id behind them to act on. [coverModifier] goes on
+ * the cover (it flies from and to the mini player's).
  */
 @Composable
 fun NowPlayingScreen(
@@ -120,6 +121,7 @@ fun NowPlayingScreen(
     downloadJob: ServerJob? = null,
     hasLibraryCopy: Boolean = false,
     libraryTrack: Track? = null,
+    coverModifier: Modifier = Modifier,
 ) {
     val track = state.track
     val episode = state.episode
@@ -161,7 +163,8 @@ fun NowPlayingScreen(
                             modifier = Modifier
                                 .widthIn(max = MAX_COVER)
                                 .fillMaxWidth()
-                                .aspectRatio(1f, matchHeightConstraintsFirst = true),
+                                .aspectRatio(1f, matchHeightConstraintsFirst = true)
+                                .then(coverModifier),
                         )
                     }
                     TitleBlock(
