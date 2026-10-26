@@ -62,7 +62,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyShape
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
-import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyType
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 import kotlin.math.roundToInt
 
@@ -358,8 +357,10 @@ fun PlayerToggles(toggles: List<PlayerToggle>, modifier: Modifier = Modifier) {
 /**
  * The song's position as Material's slider over a wavy track that flows while [playing] and lies
  * flat when paused. [progress] follows the player except while the finger is on it; [onSeek]
- * gets the fraction where it lets go. [timeAt] spells a fraction as a time for the monospaced
- * labels below, which follow the finger; [between] goes between them (the format, as a [Tag]).
+ * gets the fraction where it lets go. [timeAt] spells a fraction as a time for the labels below,
+ * which follow the finger; [between] goes between them (the format, as a [Tag]). The times are in
+ * the UI font, not the data face (the owner's choice for the player), with tabular figures so
+ * they don't jitter as they count.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -419,9 +420,10 @@ fun WavySeekBar(
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(position, style = DowntifyType.dataSmall, color = scheme.onPrimaryContainer, maxLines = 1)
+            val time = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum")
+            Text(position, style = time, color = scheme.onPrimaryContainer, maxLines = 1)
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { between?.invoke() }
-            Text(duration, style = DowntifyType.dataSmall, color = scheme.onPrimaryContainer, maxLines = 1)
+            Text(duration, style = time, color = scheme.onPrimaryContainer, maxLines = 1)
         }
     }
 }

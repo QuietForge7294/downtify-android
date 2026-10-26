@@ -1,5 +1,6 @@
 package com.henriquesebastiao.downtify.core.designsystem.theme
 
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Immutable
@@ -53,6 +54,13 @@ object DowntifyShape {
 
     /** The floating navigation bar. */
     val FloatingNavBar = RoundedCornerShape(BarCorner)
+
+    /**
+     * Two buttons side by side as a pair (Now Playing's lyrics and queue): round on the outside,
+     * 6 dp where they face each other.
+     */
+    val PairStart = RoundedCornerShape(CornerSize(50), CornerSize(6.dp), CornerSize(6.dp), CornerSize(50))
+    val PairEnd = RoundedCornerShape(CornerSize(6.dp), CornerSize(50), CornerSize(50), CornerSize(6.dp))
 
     /** The footer of a multi-step flow (connect): rounded on top, flush with the screen's bottom. */
     val OnboardingFooter = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)

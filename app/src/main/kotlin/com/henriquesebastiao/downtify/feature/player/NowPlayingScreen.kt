@@ -1,7 +1,5 @@
 package com.henriquesebastiao.downtify.feature.player
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,12 +16,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.IconButtonShapes
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -37,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -49,6 +53,7 @@ import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
 import com.henriquesebastiao.downtify.core.designsystem.component.CircleButton
 import com.henriquesebastiao.downtify.core.designsystem.component.CoverTheme
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
+import com.henriquesebastiao.downtify.core.designsystem.component.MarqueeText
 import com.henriquesebastiao.downtify.core.designsystem.component.PhonePreviews
 import com.henriquesebastiao.downtify.core.designsystem.component.PlaybackControls
 import com.henriquesebastiao.downtify.core.designsystem.component.PlaybackLabels
@@ -100,9 +105,10 @@ data class NowPlayingActions(
 )
 
 /**
- * Now Playing (v3), in the cover's colors: the cover as large as the controls leave room for,
- * the title, the wavy seek bar with the format between its times, the expressive transport and
- * the shuffle / repeat / like toggles, then similar, lyrics and the queue.
+ * Now Playing (v3), in the cover's colors: lyrics and the queue as a pair at the top end, the
+ * cover as large as the controls leave room for, the title, the wavy seek bar with the format
+ * between its times, the expressive transport, and the shuffle / repeat / like toggles between
+ * similar tracks and the menu (or the stream's download).
  *
  * [hasLibraryCopy] is true when the playing stream has since been downloaded (a library track
  * matches it, passed as [libraryTrack]): the stream keeps playing, but the buttons switch to
@@ -144,7 +150,13 @@ fun NowPlayingScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(if (compact) Spacing.sm else Spacing.md),
                 ) {
-                    Header(state.context, menuTrack?.albumId.orEmpty(), menuTrack?.artistId.orEmpty(), episode, actions)
+                    Header(
+                        context = state.context,
+                        episode = episode,
+                        actions = actions,
+                        lyrics = episode == null && (stream == null || hasLibraryCopy),
+                        queue = episode == null,
+                    )
                     // The cover takes whatever the rest leaves, square.
                     Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Artwork(
@@ -168,17 +180,31 @@ fun NowPlayingScreen(
                         },
                     )
                     SeekBar(state, actions.onSeek, formatOf(track, state))
+                    val menu: @Composable () -> Unit = {
+                        MoreMenu(menuTrack?.albumId.orEmpty(), menuTrack?.artistId.orEmpty(), episode, actions)
+                    }
                     if (episode != null) {
-                        EpisodeTransport(state, actions, compact)
+                        EpisodeTransport(state, actions, compact, menu)
                     } else {
                         TrackTransport(
                             state = state,
                             actions = actions,
                             compact = compact,
                             isLiked = isLiked.takeIf { stream == null || hasLibraryCopy },
+                            leading = { SimilarButton(state, actions) },
+                            trailing = if (stream != null && !downloaded) {
+                                {
+                                    StreamDownloadButton(
+                                        job = downloadJob,
+                                        title = stream.title,
+                                        onDownload = actions.onDownloadStream,
+                                    )
+                                }
+                            } else {
+                                menu
+                            },
                         )
                     }
-                    ActionsRow(state, actions, downloadJob, downloaded, hasLibraryCopy)
                     SourceLines(state, track, serverName)
                 }
             }
@@ -186,25 +212,29 @@ fun NowPlayingScreen(
     }
 }
 
+/**
+ * The top row: collapse, where it plays from (tap to go there), and lyrics and the queue as a pair
+ * of buttons, round outside, at the end. A stream with no library copy has no lyrics: the queue
+ * stands alone. An episode has neither.
+ */
 @Composable
 private fun Header(
     context: PlaybackContext?,
-    albumId: String,
-    artistId: String,
     episode: PlayingEpisode?,
     actions: NowPlayingActions,
+    lyrics: Boolean,
+    queue: Boolean,
 ) {
-    val tint = playerTint()
     Row(
         Modifier.fillMaxWidth().height(64.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
         CircleButton(
             DowntifyIcons.Collapse,
             stringResource(R.string.player_close),
             actions.onCollapse,
-            containerColor = tint,
+            containerColor = playerTint(),
             contentColor = playerContent(),
         )
         Column(
@@ -217,7 +247,6 @@ private fun Header(
                         else -> Modifier
                     },
                 ),
-            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val (overline, title) = when {
                 episode != null -> stringResource(R.string.player_playing_from_podcast) to episode.showName
@@ -242,77 +271,121 @@ private fun Header(
                 )
             }
         }
-        // A stream with no library copy goes nowhere: no album, no artist, no show.
-        if (episode == null && albumId.isEmpty() && artistId.isEmpty()) {
-            Spacer(Modifier.size(48.dp))
-            return@Row
-        }
-        var menu by remember { mutableStateOf(false) }
-        Box {
-            CircleButton(
-                DowntifyIcons.MoreVert,
-                stringResource(R.string.action_more),
-                { menu = true },
-                containerColor = tint,
-                contentColor = playerContent(),
-            )
-            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                if (episode != null) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.player_go_to_show)) },
-                        leadingIcon = { Icon(painterResource(DowntifyIcons.Podcasts), contentDescription = null) },
-                        onClick = {
-                            menu = false
-                            actions.onGoToShow(episode.showId)
-                        },
-                    )
-                }
-                if (albumId.isNotEmpty()) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.track_go_to_album)) },
-                        leadingIcon = { Icon(painterResource(DowntifyIcons.Album), contentDescription = null) },
-                        onClick = {
-                            menu = false
-                            actions.onGoToAlbum(albumId)
-                        },
-                    )
-                }
-                if (artistId.isNotEmpty()) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.track_go_to_artist)) },
-                        leadingIcon = { Icon(painterResource(DowntifyIcons.Artist), contentDescription = null) },
-                        onClick = {
-                            menu = false
-                            actions.onGoToArtist(artistId)
-                        },
-                    )
-                }
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            if (lyrics) {
+                HeaderButton(
+                    DowntifyIcons.Lyrics,
+                    stringResource(R.string.player_lyrics),
+                    actions.onOpenLyrics,
+                    if (queue) DowntifyShape.PairStart else CircleShape,
+                )
+            }
+            if (queue) {
+                HeaderButton(
+                    DowntifyIcons.Queue,
+                    stringResource(R.string.player_queue),
+                    actions.onOpenQueue,
+                    if (lyrics) DowntifyShape.PairEnd else CircleShape,
+                )
             }
         }
     }
 }
 
-/** The title and the artist (or the show), centred; long ones scroll so they stay readable. */
-@OptIn(ExperimentalFoundationApi::class)
+/** One of the header's pair: 56 × 48 dp, in the collapse button's tint, squarer while pressed. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun HeaderButton(icon: Int, label: String, onClick: () -> Unit, shape: Shape) {
+    FilledTonalIconButton(
+        onClick = onClick,
+        shapes = IconButtonShapes(shape = shape, pressedShape = RoundedCornerShape(12.dp)),
+        colors = IconButtonDefaults.filledTonalIconButtonColors(
+            containerColor = playerTint(),
+            contentColor = playerContent(),
+        ),
+        modifier = Modifier.size(width = 56.dp, height = 48.dp),
+    ) {
+        Icon(painterResource(icon), contentDescription = label)
+    }
+}
+
+/** Go to the show, the album or the artist; nothing for a stream with no library copy. */
+@Composable
+private fun MoreMenu(albumId: String, artistId: String, episode: PlayingEpisode?, actions: NowPlayingActions) {
+    if (episode == null && albumId.isEmpty() && artistId.isEmpty()) return
+    var menu by remember { mutableStateOf(false) }
+    Box {
+        CircleButton(
+            DowntifyIcons.MoreVert,
+            stringResource(R.string.action_more),
+            { menu = true },
+            containerColor = playerTint(),
+            contentColor = playerContent(),
+        )
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            if (episode != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.player_go_to_show)) },
+                    leadingIcon = { Icon(painterResource(DowntifyIcons.Podcasts), contentDescription = null) },
+                    onClick = {
+                        menu = false
+                        actions.onGoToShow(episode.showId)
+                    },
+                )
+            }
+            if (albumId.isNotEmpty()) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.track_go_to_album)) },
+                    leadingIcon = { Icon(painterResource(DowntifyIcons.Album), contentDescription = null) },
+                    onClick = {
+                        menu = false
+                        actions.onGoToAlbum(albumId)
+                    },
+                )
+            }
+            if (artistId.isNotEmpty()) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.track_go_to_artist)) },
+                    leadingIcon = { Icon(painterResource(DowntifyIcons.Artist), contentDescription = null) },
+                    onClick = {
+                        menu = false
+                        actions.onGoToArtist(artistId)
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** Tracks like this one; none for an episode. */
+@Composable
+private fun SimilarButton(state: PlayerState, actions: NowPlayingActions) {
+    val artist = state.track?.displayArtist ?: state.stream?.artist.orEmpty()
+    val title = state.track?.displayTitle ?: state.stream?.title.orEmpty()
+    if (state.episode != null || artist.isBlank() || title.isBlank()) return
+    CircleButton(
+        DowntifyIcons.Explore,
+        stringResource(R.string.search_similar, title),
+        { actions.onSimilar(artist, title) },
+        containerColor = playerTint(),
+        contentColor = playerContent(),
+    )
+}
+
+/**
+ * The title and the artist (or the show), centred. One that doesn't fit slides, fading in and out
+ * at both ends, so it stays readable.
+ */
 @Composable
 private fun TitleBlock(title: String, artist: String, onArtist: (() -> Unit)?) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            title,
-            style = MaterialTheme.typography.headlineMediumEmphasized,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            modifier = Modifier.basicMarquee(),
-        )
-        Text(
+        MarqueeText(title, style = MaterialTheme.typography.headlineMediumEmphasized)
+        MarqueeText(
             artist,
             style = MaterialTheme.typography.titleLarge,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
             modifier = Modifier
                 .alpha(SUBTITLE_ALPHA)
-                .then(if (onArtist != null) Modifier.clickable(onClick = onArtist) else Modifier)
-                .basicMarquee(),
+                .then(if (onArtist != null) Modifier.clickable(onClick = onArtist) else Modifier),
         )
     }
 }
@@ -327,7 +400,7 @@ private fun SeekBar(state: PlayerState, onSeek: (Long) -> Unit, format: String?)
         timeAt = { formatDuration((it * duration).toLong() / 1000.0) },
         duration = formatDuration(state.durationMs / 1000.0),
         contentDescription = stringResource(R.string.player_seek),
-        between = format?.let { { Tag(it, tone = TagTone.OnColor, small = true, mono = true) } },
+        between = format?.let { { Tag(it, tone = TagTone.OnColor, small = true) } },
     )
 }
 
@@ -342,10 +415,19 @@ private fun transportLabels(previous: Int, next: Int) = PlaybackLabels(
 
 /**
  * A song's transport and its toggles: shuffle, repeat and, when there is something to like
- * ([isLiked] not null: a library track), like. Now Playing and the queue share it.
+ * ([isLiked] not null: a library track), like. Now Playing and the queue share it. Now Playing
+ * puts a button on either side of the toggles ([leading], [trailing]), each in a 48 dp slot so the
+ * toggles stay centred when one is empty.
  */
 @Composable
-internal fun TrackTransport(state: PlayerState, actions: NowPlayingActions, compact: Boolean, isLiked: Boolean?) {
+internal fun TrackTransport(
+    state: PlayerState,
+    actions: NowPlayingActions,
+    compact: Boolean,
+    isLiked: Boolean?,
+    leading: (@Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
+) {
     PlaybackControls(
         playing = state.isPlaying,
         onTogglePlay = actions.onTogglePlay,
@@ -389,12 +471,29 @@ internal fun TrackTransport(state: PlayerState, actions: NowPlayingActions, comp
             )
         }
     }
-    PlayerToggles(toggles, Modifier.fillMaxWidth(TOGGLES_WIDTH))
+    if (leading == null && trailing == null) {
+        PlayerToggles(toggles, Modifier.fillMaxWidth(TOGGLES_WIDTH))
+    } else {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { leading?.invoke() }
+            PlayerToggles(toggles, Modifier.weight(1f))
+            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { trailing?.invoke() }
+        }
+    }
 }
 
-/** An episode: 10 s back, play, 30 s forward, and its speed — no shuffle, repeat or like. */
+/** An episode: 10 s back, play, 30 s forward, and its speed with the [menu] beside it — no shuffle, repeat or like. */
 @Composable
-private fun EpisodeTransport(state: PlayerState, actions: NowPlayingActions, compact: Boolean) {
+private fun EpisodeTransport(
+    state: PlayerState,
+    actions: NowPlayingActions,
+    compact: Boolean,
+    menu: @Composable () -> Unit,
+) {
     PlaybackControls(
         playing = state.isPlaying,
         onTogglePlay = actions.onTogglePlay,
@@ -407,74 +506,29 @@ private fun EpisodeTransport(state: PlayerState, actions: NowPlayingActions, com
     )
     val speedText = speedLabel(state.speed)
     val speedDescription = stringResource(R.string.player_speed, speedText)
-    FilledTonalButton(
-        onClick = actions.onCycleSpeed,
-        colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = playerTint(),
-            contentColor = playerContent(),
-        ),
-        modifier = Modifier.heightIn(min = 56.dp).semantics { contentDescription = speedDescription },
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        Text(speedText, style = DowntifyType.dataMedium)
+        // An empty slot as wide as the menu's keeps the speed in the middle.
+        Spacer(Modifier.size(48.dp))
+        FilledTonalButton(
+            onClick = actions.onCycleSpeed,
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = playerTint(),
+                contentColor = playerContent(),
+            ),
+            modifier = Modifier.heightIn(min = 56.dp).semantics { contentDescription = speedDescription },
+        ) {
+            Text(speedText, style = DowntifyType.dataMedium)
+        }
+        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { menu() }
     }
 }
 
 /** `1×`, `1.25×`: no trailing zeros. */
 private fun speedLabel(speed: Float): String =
     (if (speed % 1f == 0f) speed.toInt().toString() else speed.toString()) + "×"
-
-/** Similar, the stream's download, lyrics and the queue: round buttons, centred. */
-@Composable
-private fun ActionsRow(
-    state: PlayerState,
-    actions: NowPlayingActions,
-    downloadJob: ServerJob?,
-    downloaded: Boolean,
-    hasLibraryCopy: Boolean,
-) {
-    val episode = state.episode
-    val stream = state.stream
-    val tint = playerTint()
-    val content = playerContent()
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.md, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        val similarArtist = state.track?.displayArtist ?: stream?.artist.orEmpty()
-        val similarTitle = state.track?.displayTitle ?: stream?.title.orEmpty()
-        if (episode == null && similarArtist.isNotBlank() && similarTitle.isNotBlank()) {
-            CircleButton(
-                DowntifyIcons.Explore,
-                stringResource(R.string.search_similar, similarTitle),
-                { actions.onSimilar(similarArtist, similarTitle) },
-                containerColor = tint,
-                contentColor = content,
-            )
-        }
-        if (stream != null && !downloaded) {
-            StreamDownloadButton(job = downloadJob, title = stream.title, onDownload = actions.onDownloadStream)
-        }
-        if (episode == null && (stream == null || hasLibraryCopy)) {
-            CircleButton(
-                DowntifyIcons.Lyrics,
-                stringResource(R.string.player_lyrics),
-                actions.onOpenLyrics,
-                containerColor = tint,
-                contentColor = content,
-            )
-        }
-        if (episode == null) {
-            CircleButton(
-                DowntifyIcons.Queue,
-                stringResource(R.string.player_queue),
-                actions.onOpenQueue,
-                containerColor = tint,
-                contentColor = content,
-            )
-        }
-    }
-}
 
 /** Download the playing stream to the server, then what the server is doing with it. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
