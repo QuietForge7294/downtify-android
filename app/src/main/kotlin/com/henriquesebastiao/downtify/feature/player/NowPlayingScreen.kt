@@ -19,8 +19,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
@@ -32,10 +30,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -74,6 +68,8 @@ import com.henriquesebastiao.downtify.core.model.StreamQuality
 import com.henriquesebastiao.downtify.core.model.Track
 import com.henriquesebastiao.downtify.core.model.codecLabel
 import com.henriquesebastiao.downtify.core.model.formatDuration
+import com.henriquesebastiao.downtify.core.model.kilobits
+import com.henriquesebastiao.downtify.core.model.kilohertz
 import com.henriquesebastiao.downtify.core.network.ServerUrls
 import com.henriquesebastiao.downtify.core.player.PlaybackError
 import com.henriquesebastiao.downtify.core.player.PlayerState
@@ -91,7 +87,6 @@ data class NowPlayingActions(
     val onToggleShuffle: () -> Unit = {},
     val onCycleRepeat: () -> Unit = {},
     val onToggleLike: () -> Unit = {},
-    val onSimilar: (artist: String, title: String) -> Unit = { _, _ -> },
     val onOpenLyrics: () -> Unit = {},
     val onOpenQueue: () -> Unit = {},
     val onOpenContext: (PlaybackContext) -> Unit = {},
@@ -99,22 +94,21 @@ data class NowPlayingActions(
     val onSkipForward: () -> Unit = {},
     val onCycleSpeed: () -> Unit = {},
     val onGoToShow: (Long) -> Unit = {},
-    val onGoToAlbum: (String) -> Unit = {},
     val onGoToArtist: (String) -> Unit = {},
     val onDownloadStream: () -> Unit = {},
 )
 
 /**
  * Now Playing (v3), in the cover's colors: lyrics and the queue as a pair at the top end, the
- * cover as large as the controls leave room for, the title, the wavy seek bar with the format
- * between its times, the expressive transport, and the shuffle / repeat / like toggles between
- * similar tracks and the menu (or the stream's download).
+ * cover as large as the controls leave room for, the title, the wavy seek bar with the sample
+ * rate, bitrate and format between its times, the expressive transport, and the shuffle / repeat
+ * / like toggles (beside a stream's download button).
  *
  * [hasLibraryCopy] is true when the playing stream has since been downloaded (a library track
  * matches it, passed as [libraryTrack]): the stream keeps playing, but the buttons switch to
- * the library set (like, lyrics, the header menu) and the download button goes away. A finished
- * server job ([ServerJobStatus.Done]) hides the download button at once; like, lyrics and the
- * menu appear with the library sync, when there is a track id behind them to act on.
+ * the library set (like, lyrics, the artist link) and the download button goes away. A finished
+ * server job ([ServerJobStatus.Done]) hides the download button at once; like and lyrics appear
+ * with the library sync, when there is a track id behind them to act on.
  */
 @Composable
 fun NowPlayingScreen(
@@ -132,8 +126,8 @@ fun NowPlayingScreen(
     val stream = state.stream
     if (track == null && episode == null && stream == null) return
     val downloaded = hasLibraryCopy || downloadJob?.status == ServerJobStatus.Done
-    // What the header menu and the artist tap navigate to: the library copy behind a stream.
-    val menuTrack = track ?: libraryTrack.takeIf { stream != null }
+    // Where the artist tap goes: the track's artist, or that of the library copy behind a stream.
+    val artistId = (track ?: libraryTrack.takeIf { stream != null })?.artistId.orEmpty()
     val coverUrl = playingCoverUrl(state, ServerUrls.COVER_LARGE)
 
     CoverTheme(playingCoverUrl(state)) {
@@ -175,23 +169,19 @@ fun NowPlayingScreen(
                         artist = track?.displayArtist ?: stream?.artist ?: episode?.showName.orEmpty(),
                         onArtist = when {
                             episode != null -> ({ actions.onGoToShow(episode.showId) })
-                            menuTrack?.artistId?.isNotEmpty() == true -> ({ actions.onGoToArtist(menuTrack.artistId) })
+                            artistId.isNotEmpty() -> ({ actions.onGoToArtist(artistId) })
                             else -> null
                         },
                     )
                     SeekBar(state, actions.onSeek, formatOf(track, state))
-                    val menu: @Composable () -> Unit = {
-                        MoreMenu(menuTrack?.albumId.orEmpty(), menuTrack?.artistId.orEmpty(), episode, actions)
-                    }
                     if (episode != null) {
-                        EpisodeTransport(state, actions, compact, menu)
+                        EpisodeTransport(state, actions, compact)
                     } else {
                         TrackTransport(
                             state = state,
                             actions = actions,
                             compact = compact,
                             isLiked = isLiked.takeIf { stream == null || hasLibraryCopy },
-                            leading = { SimilarButton(state, actions) },
                             trailing = if (stream != null && !downloaded) {
                                 {
                                     StreamDownloadButton(
@@ -201,7 +191,7 @@ fun NowPlayingScreen(
                                     )
                                 }
                             } else {
-                                menu
+                                null
                             },
                         )
                     }
@@ -213,9 +203,10 @@ fun NowPlayingScreen(
 }
 
 /**
- * The top row: collapse, where it plays from (tap to go there), and lyrics and the queue as a pair
- * of buttons, round outside, at the end. A stream with no library copy has no lyrics: the queue
- * stands alone. An episode has neither.
+ * The top row: collapse, where it plays from (tap to go there) — or just "Now playing" when that's
+ * the whole library or nowhere in particular — and lyrics and the queue as a pair of buttons,
+ * round outside, at the end. A stream with no library copy has no lyrics: the queue stands alone.
+ * An episode has neither.
  */
 @Composable
 private fun Header(
@@ -237,21 +228,22 @@ private fun Header(
             containerColor = playerTint(),
             contentColor = playerContent(),
         )
+        val from = context?.type?.let(::playingFromLabel)
         Column(
             Modifier
                 .weight(1f)
                 .then(
                     when {
                         episode != null -> Modifier.clickable { actions.onGoToShow(episode.showId) }
-                        context != null -> Modifier.clickable { actions.onOpenContext(context) }
+                        context != null && from != null -> Modifier.clickable { actions.onOpenContext(context) }
                         else -> Modifier
                     },
                 ),
         ) {
             val (overline, title) = when {
                 episode != null -> stringResource(R.string.player_playing_from_podcast) to episode.showName
-                context != null -> stringResource(playingFromLabel(context.type)) to context.title
-                else -> null to null
+                context != null && from != null -> stringResource(from) to context.title
+                else -> null to stringResource(R.string.player_now_playing)
             }
             if (overline != null) {
                 Text(
@@ -262,14 +254,12 @@ private fun Header(
                     modifier = Modifier.alpha(MUTED_ALPHA),
                 )
             }
-            if (title != null) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             if (lyrics) {
@@ -307,69 +297,6 @@ private fun HeaderButton(icon: Int, label: String, onClick: () -> Unit, shape: S
     ) {
         Icon(painterResource(icon), contentDescription = label)
     }
-}
-
-/** Go to the show, the album or the artist; nothing for a stream with no library copy. */
-@Composable
-private fun MoreMenu(albumId: String, artistId: String, episode: PlayingEpisode?, actions: NowPlayingActions) {
-    if (episode == null && albumId.isEmpty() && artistId.isEmpty()) return
-    var menu by remember { mutableStateOf(false) }
-    Box {
-        CircleButton(
-            DowntifyIcons.MoreVert,
-            stringResource(R.string.action_more),
-            { menu = true },
-            containerColor = playerTint(),
-            contentColor = playerContent(),
-        )
-        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-            if (episode != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.player_go_to_show)) },
-                    leadingIcon = { Icon(painterResource(DowntifyIcons.Podcasts), contentDescription = null) },
-                    onClick = {
-                        menu = false
-                        actions.onGoToShow(episode.showId)
-                    },
-                )
-            }
-            if (albumId.isNotEmpty()) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.track_go_to_album)) },
-                    leadingIcon = { Icon(painterResource(DowntifyIcons.Album), contentDescription = null) },
-                    onClick = {
-                        menu = false
-                        actions.onGoToAlbum(albumId)
-                    },
-                )
-            }
-            if (artistId.isNotEmpty()) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.track_go_to_artist)) },
-                    leadingIcon = { Icon(painterResource(DowntifyIcons.Artist), contentDescription = null) },
-                    onClick = {
-                        menu = false
-                        actions.onGoToArtist(artistId)
-                    },
-                )
-            }
-        }
-    }
-}
-
-/** Tracks like this one; none for an episode. */
-@Composable
-private fun SimilarButton(state: PlayerState, actions: NowPlayingActions) {
-    val artist = state.track?.displayArtist ?: state.stream?.artist.orEmpty()
-    val title = state.track?.displayTitle ?: state.stream?.title.orEmpty()
-    if (state.episode != null || artist.isBlank() || title.isBlank()) return
-    CircleButton(
-        DowntifyIcons.Explore,
-        stringResource(R.string.search_similar, title),
-        { actions.onSimilar(artist, title) },
-        containerColor = playerTint(),
-        contentColor = playerContent(),
-    )
 }
 
 /**
@@ -416,8 +343,8 @@ private fun transportLabels(previous: Int, next: Int) = PlaybackLabels(
 /**
  * A song's transport and its toggles: shuffle, repeat and, when there is something to like
  * ([isLiked] not null: a library track), like. Now Playing and the queue share it. Now Playing
- * puts a button on either side of the toggles ([leading], [trailing]), each in a 48 dp slot so the
- * toggles stay centred when one is empty.
+ * puts a stream's download button after the toggles ([trailing]), in a 48 dp slot matched by an
+ * empty one before them so the toggles stay centred.
  */
 @Composable
 internal fun TrackTransport(
@@ -425,7 +352,6 @@ internal fun TrackTransport(
     actions: NowPlayingActions,
     compact: Boolean,
     isLiked: Boolean?,
-    leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     PlaybackControls(
@@ -471,7 +397,7 @@ internal fun TrackTransport(
             )
         }
     }
-    if (leading == null && trailing == null) {
+    if (trailing == null) {
         PlayerToggles(toggles, Modifier.fillMaxWidth(TOGGLES_WIDTH))
     } else {
         Row(
@@ -479,21 +405,16 @@ internal fun TrackTransport(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
-            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { leading?.invoke() }
+            Spacer(Modifier.size(48.dp))
             PlayerToggles(toggles, Modifier.weight(1f))
-            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { trailing?.invoke() }
+            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { trailing() }
         }
     }
 }
 
-/** An episode: 10 s back, play, 30 s forward, and its speed with the [menu] beside it — no shuffle, repeat or like. */
+/** An episode: 10 s back, play, 30 s forward, and its speed — no shuffle, repeat or like. */
 @Composable
-private fun EpisodeTransport(
-    state: PlayerState,
-    actions: NowPlayingActions,
-    compact: Boolean,
-    menu: @Composable () -> Unit,
-) {
+private fun EpisodeTransport(state: PlayerState, actions: NowPlayingActions, compact: Boolean) {
     PlaybackControls(
         playing = state.isPlaying,
         onTogglePlay = actions.onTogglePlay,
@@ -506,23 +427,15 @@ private fun EpisodeTransport(
     )
     val speedText = speedLabel(state.speed)
     val speedDescription = stringResource(R.string.player_speed, speedText)
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+    FilledTonalButton(
+        onClick = actions.onCycleSpeed,
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = playerTint(),
+            contentColor = playerContent(),
+        ),
+        modifier = Modifier.heightIn(min = 56.dp).semantics { contentDescription = speedDescription },
     ) {
-        // An empty slot as wide as the menu's keeps the speed in the middle.
-        Spacer(Modifier.size(48.dp))
-        FilledTonalButton(
-            onClick = actions.onCycleSpeed,
-            colors = ButtonDefaults.filledTonalButtonColors(
-                containerColor = playerTint(),
-                contentColor = playerContent(),
-            ),
-            modifier = Modifier.heightIn(min = 56.dp).semantics { contentDescription = speedDescription },
-        ) {
-            Text(speedText, style = DowntifyType.dataMedium)
-        }
-        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { menu() }
+        Text(speedText, style = DowntifyType.dataMedium)
     }
 }
 
@@ -613,11 +526,12 @@ private fun SourceLines(state: PlayerState, track: Track?, serverName: String) {
     }
 }
 
-private fun playingFromLabel(type: PlaybackContextType): Int = when (type) {
+/** "Playing from album" and the like; nothing for the whole library (or search results). */
+private fun playingFromLabel(type: PlaybackContextType): Int? = when (type) {
     PlaybackContextType.Album -> R.string.player_playing_from_album
     PlaybackContextType.Artist -> R.string.player_playing_from_artist
     PlaybackContextType.Playlist, PlaybackContextType.Liked -> R.string.player_playing_from_playlist
-    PlaybackContextType.Songs -> R.string.player_playing_from_library
+    PlaybackContextType.Songs -> null
 }
 
 @Composable
@@ -628,22 +542,31 @@ private fun sourceLine(server: String, quality: StreamQuality?, fromPhone: Boole
 }
 
 /**
- * The format as the server sends it, for the tag between the times: the file's codec, or the
- * codec and bitrate it's converted to. Unknown (a stream, an episode, a codec the server didn't
- * name): no tag.
+ * What plays, for the tag between the times: `44.1 kHz · 941 kbps · FLAC` for the file (from the
+ * server or the phone's copy), or the bitrate and codec the server converts it to (its sample rate
+ * isn't known then). A value the library doesn't have is left out. Unknown (a stream, an episode,
+ * before the server says how it streams): no tag.
  */
 @Composable
 private fun formatOf(track: Track?, state: PlayerState): String? {
     if (track == null) return null
     val quality = state.quality
-    return when {
-        quality != null && !quality.isOriginal && !state.fromPhone ->
-            stringResource(R.string.player_format_bitrate, codecLabel(quality.format.wireName), quality.bitrate)
+    val (sampleRate, kbps, codec) = when {
+        quality != null && !quality.isOriginal && !state.fromPhone -> Triple(
+            0,
+            quality.bitrate,
+            quality.format.wireName,
+        )
 
-        track.codec.isNotBlank() && (state.fromPhone || quality != null) -> codecLabel(track.codec)
+        state.fromPhone || quality != null -> Triple(track.sampleRate, kilobits(track.bitrate), track.codec)
 
-        else -> null
+        else -> return null
     }
+    return listOfNotNull(
+        sampleRate.takeIf { it > 0 }?.let { stringResource(R.string.player_sample_rate, kilohertz(it)) },
+        kbps.takeIf { it > 0 }?.let { stringResource(R.string.player_bitrate, it) },
+        codec.takeIf { it.isNotBlank() }?.let(::codecLabel),
+    ).joinToString(" · ").ifEmpty { null }
 }
 
 @Composable

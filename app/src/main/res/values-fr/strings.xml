@@ -8,7 +8,6 @@
     <string name="nav_downloads">Téléchargements</string>
     <string name="action_back">Retour</string>
     <string name="action_settings">Paramètres</string>
-    <string name="action_more">Plus d’options</string>
     <string name="action_retry">Réessayer</string>
     <string name="action_cancel">Annuler</string>
 
@@ -359,12 +358,12 @@
     <string name="player_playing_from_album">Lecture depuis l’album</string>
     <string name="player_playing_from_artist">Lecture depuis l’artiste</string>
     <string name="player_playing_from_playlist">Lecture depuis la playlist</string>
-    <string name="player_playing_from_library">Lecture depuis votre bibliothèque</string>
+    <string name="player_now_playing">En cours de lecture</string>
     <string name="player_source_original_quality">Diffusion depuis %1$s · Qualité originale</string>
-    <string name="player_format_bitrate">%1$s · %2$d\u00A0kbit/s</string>
+    <string name="player_sample_rate">%1$s\u00A0kHz</string>
+    <string name="player_bitrate">%1$d\u00A0kbit/s</string>
     <string name="player_source_unknown">Diffusion depuis %1$s</string>
     <string name="player_playing_from_podcast">Podcast</string>
-    <string name="player_go_to_show">Aller au podcast</string>
     <string name="player_skip_back">Reculer de 10 secondes</string>
     <string name="player_skip_forward">Avancer de 30 secondes</string>
     <string name="player_speed">Vitesse de lecture %1$s. Appuyez pour changer</string>

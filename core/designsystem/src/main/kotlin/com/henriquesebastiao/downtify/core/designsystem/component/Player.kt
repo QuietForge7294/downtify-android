@@ -22,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ButtonShapes
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -37,7 +38,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
-import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -187,7 +187,7 @@ data class PlaybackLabels(val play: String, val pause: String, val previous: Str
 /**
  * Now Playing's transport (Material 3 Expressive button group): wide previous/next pills around
  * play/pause, which is a circle while paused and a 28 dp squircle while playing. The pressed
- * button widens and its neighbours make room. [compact] is 64 dp tall instead of 88. An episode
+ * button widens and its neighbours make room. [compact] is 56 dp tall instead of 76. An episode
  * swaps previous/next for its skips with [previousIcon] and [nextIcon] (and their [labels]).
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -203,7 +203,7 @@ fun PlaybackControls(
     previousIcon: Int = DowntifyIcons.Previous,
     nextIcon: Int = DowntifyIcons.Next,
 ) {
-    val height = if (compact) 64.dp else 88.dp
+    val height = if (compact) 56.dp else 76.dp
     val scheme = MaterialTheme.colorScheme
     val skipColors = ButtonDefaults.filledTonalButtonColors(
         containerColor = scheme.onPrimaryContainer.copy(alpha = SKIP_ALPHA),
@@ -315,8 +315,9 @@ private fun TransportButton(
 data class PlayerToggle(val icon: Int, val label: String, val checked: Boolean, val onClick: () -> Unit)
 
 /**
- * The row of toggles under the transport, in one pill: each 56 dp tall, rounder and tinted with
- * primary while on.
+ * The toggles under the transport as a connected button group in a darker pill (onPrimary, as the
+ * mini player's buttons): the group's ends round, the joins tight, each button 52 dp tall, a
+ * circle tinted with primary while on.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -328,25 +329,24 @@ fun PlayerToggles(toggles: List<PlayerToggle>, modifier: Modifier = Modifier) {
         checkedContainerColor = scheme.primary.copy(alpha = TOGGLE_CHECKED_ALPHA),
         checkedContentColor = scheme.onPrimaryContainer,
     )
-    val shapes = ToggleButtonShapes(
-        shape = RoundedCornerShape(20.dp),
-        pressedShape = RoundedCornerShape(16.dp),
-        checkedShape = CircleShape,
-    )
     Row(
         modifier
-            .background(scheme.surfaceContainerLowest.copy(alpha = GROUP_ALPHA), CircleShape)
+            .background(scheme.onPrimary, CircleShape)
             .padding(Spacing.sm),
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        toggles.forEach { toggle ->
+        toggles.forEachIndexed { index, toggle ->
             ToggleButton(
                 checked = toggle.checked,
                 onCheckedChange = { toggle.onClick() },
-                shapes = shapes,
+                shapes = when (index) {
+                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    toggles.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                },
                 colors = colors,
                 contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.weight(1f).height(56.dp),
+                modifier = Modifier.weight(1f).height(52.dp),
             ) {
                 Icon(painterResource(toggle.icon), contentDescription = toggle.label)
             }
@@ -359,8 +359,8 @@ fun PlayerToggles(toggles: List<PlayerToggle>, modifier: Modifier = Modifier) {
  * flat when paused. [progress] follows the player except while the finger is on it; [onSeek]
  * gets the fraction where it lets go. [timeAt] spells a fraction as a time for the labels below,
  * which follow the finger; [between] goes between them (the format, as a [Tag]). The times are in
- * the UI font, not the data face (the owner's choice for the player), with tabular figures so
- * they don't jitter as they count.
+ * the UI font, not the data face (the owner's choice for the player), bold, with tabular figures
+ * so they don't jitter as they count.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -420,7 +420,10 @@ fun WavySeekBar(
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val time = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum")
+            val time = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.Bold,
+                fontFeatureSettings = "tnum",
+            )
             Text(position, style = time, color = scheme.onPrimaryContainer, maxLines = 1)
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { between?.invoke() }
             Text(duration, style = time, color = scheme.onPrimaryContainer, maxLines = 1)
@@ -430,8 +433,8 @@ fun WavySeekBar(
 
 private val MINI_PLAYER_HEIGHT = 72.dp
 private val PLAYING_CORNER = 28.dp
-private val SKIP_ICON = 32.dp
-private val PLAY_ICON = 40.dp
+private val SKIP_ICON = 28.dp
+private val PLAY_ICON = 36.dp
 private const val PLAY_WEIGHT = 1.15f
 private val SEEK_STROKE = 6.dp
 private val SEEK_THUMB = 24.dp
@@ -445,7 +448,6 @@ private const val PLAYING_PERCENT = 30f
 private const val SKIP_ALPHA = 0.16f
 private const val TOGGLE_ALPHA = 0.09f
 private const val TOGGLE_CHECKED_ALPHA = 0.28f
-private const val GROUP_ALPHA = 0.38f
 private const val SEEK_TRACK_ALPHA = 0.26f
 
 @PhonePreviews

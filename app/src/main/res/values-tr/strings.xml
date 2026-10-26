@@ -8,7 +8,6 @@
     <string name="nav_downloads">İndirilenler</string>
     <string name="action_back">Geri</string>
     <string name="action_settings">Ayarlar</string>
-    <string name="action_more">Diğer seçenekler</string>
     <string name="action_retry">Tekrar dene</string>
     <string name="action_cancel">İptal</string>
 
@@ -350,12 +349,12 @@
     <string name="player_playing_from_album">Albümden çalıyor</string>
     <string name="player_playing_from_artist">Sanatçıdan çalıyor</string>
     <string name="player_playing_from_playlist">Çalma listesinden çalıyor</string>
-    <string name="player_playing_from_library">Kitaplığından çalıyor</string>
+    <string name="player_now_playing">Şimdi çalıyor</string>
     <string name="player_source_original_quality">%1$s üzerinden akıyor · Orijinal kalite</string>
-    <string name="player_format_bitrate">%1$s · %2$d\u00A0kbps</string>
+    <string name="player_sample_rate">%1$s\u00A0kHz</string>
+    <string name="player_bitrate">%1$d\u00A0kbps</string>
     <string name="player_source_unknown">%1$s üzerinden akıyor</string>
     <string name="player_playing_from_podcast">Podcast</string>
-    <string name="player_go_to_show">Podcast\'e git</string>
     <string name="player_skip_back">10 saniye geri</string>
     <string name="player_skip_forward">30 saniye ileri</string>
     <string name="player_speed">Oynatma hızı %1$s. Değiştirmek için dokun</string>

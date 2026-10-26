@@ -81,7 +81,7 @@ class TransportLayoutTest {
         show(songState)
         val play = compose.onNodeWithContentDescription("Pause").bounds()
         val previous = compose.onNodeWithContentDescription("Previous").bounds()
-        assertEquals(88f * 2, play.height, 1f)
+        assertEquals(76f * 2, play.height, 1f)
         assertTrue(play.width > previous.width)
     }
 
@@ -89,7 +89,7 @@ class TransportLayoutTest {
     @Test
     fun aShortScreenGetsTheCompactTransport() {
         show(songState)
-        assertEquals(64f * 2, compose.onNodeWithContentDescription("Pause").bounds().height, 1f)
+        assertEquals(56f * 2, compose.onNodeWithContentDescription("Pause").bounds().height, 1f)
         assertGaps(listOf("Previous", "Pause", "Next"), 7.5f * 2)
     }
 

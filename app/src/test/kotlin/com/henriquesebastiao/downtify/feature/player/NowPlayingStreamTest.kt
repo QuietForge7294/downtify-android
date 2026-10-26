@@ -107,17 +107,15 @@ class NowPlayingStreamTest {
                 )
             }
         }
-        // Nothing to like, no lyrics, no menu yet: there is no library id behind them.
+        // Nothing to like and no lyrics yet: there is no library id behind them.
         compose.onNodeWithContentDescription("Download Believe to the server").assertDoesNotExist()
         compose.onNodeWithContentDescription("Add to Liked songs").assertDoesNotExist()
         compose.onNodeWithContentDescription("Lyrics").assertDoesNotExist()
-        compose.onNodeWithContentDescription("More options").assertDoesNotExist()
     }
 
     @Test
-    fun aStreamWithALibraryCopyOpensItsAlbumAndArtist() {
+    fun aStreamWithALibraryCopyOpensItsArtist() {
         val copy = com.henriquesebastiao.downtify.ui.common.PreviewData.tracks[0]
-        var album: String? = null
         var artist: String? = null
         compose.setContent {
             DowntifyTheme {
@@ -125,40 +123,14 @@ class NowPlayingStreamTest {
                     state = state,
                     isLiked = false,
                     serverName = "nas",
-                    actions = NowPlayingActions(
-                        onGoToAlbum = { album = it },
-                        onGoToArtist = { artist = it },
-                    ),
+                    actions = NowPlayingActions(onGoToArtist = { artist = it }),
                     hasLibraryCopy = true,
                     libraryTrack = copy,
                 )
             }
         }
-        compose.onNodeWithContentDescription("More options").performClick()
-        compose.onNodeWithText("Go to album").performClick()
-        assertEquals(copy.albumId, album)
-        compose.onNodeWithContentDescription("More options").performClick()
-        compose.onNodeWithText("Go to artist").performClick()
+        compose.onNodeWithText("Cher").performClick()
         assertEquals(copy.artistId, artist)
-    }
-
-    @Test
-    fun similarOpensTracksLikeThePlayingOne() {
-        var similar: Pair<String, String>? = null
-        compose.setContent {
-            DowntifyTheme {
-                NowPlayingScreen(
-                    state = state,
-                    isLiked = false,
-                    serverName = "nas",
-                    actions = NowPlayingActions(
-                        onSimilar = { artist, title -> similar = artist to title },
-                    ),
-                )
-            }
-        }
-        compose.onNodeWithContentDescription("Tracks like Believe").performClick()
-        assertEquals("Cher" to "Believe", similar)
     }
 
     @Test

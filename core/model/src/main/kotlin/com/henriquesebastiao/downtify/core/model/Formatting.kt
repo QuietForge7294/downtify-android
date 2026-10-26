@@ -1,5 +1,6 @@
 package com.henriquesebastiao.downtify.core.model
 
+import java.math.BigDecimal
 import java.util.Locale
 
 /** `3:41`, or `1:02:09` for an hour or more. */
@@ -22,6 +23,12 @@ fun totalMinutes(seconds: Double): Int = ((seconds + 30) / 60).toInt()
 
 /** `FLAC`, `MP3`, … for a codec name. */
 fun codecLabel(codec: String): String = codec.uppercase(Locale.ROOT)
+
+/** A sample rate in kHz, exact and without trailing zeros: `44.1`, `48`, `22.05`. */
+fun kilohertz(hertz: Int): String = BigDecimal(hertz).movePointLeft(3).stripTrailingZeros().toPlainString()
+
+/** A bitrate in kbps, rounded: `941` for 941 302 bits per second. */
+fun kilobits(bitsPerSecond: Int): Int = ((bitsPerSecond + 500L) / 1000).toInt()
 
 /**
  * `412 MB`, `2.4 GB` — decimal units, as Android's storage settings show them. The number and the

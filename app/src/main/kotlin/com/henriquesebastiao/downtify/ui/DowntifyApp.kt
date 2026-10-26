@@ -406,14 +406,12 @@ private fun NowPlayingOverlay(open: Boolean, player: PlayerViewModel, onClose: (
             onCycleRepeat = player::cycleRepeat,
             onToggleLike = player::toggleLike,
             onDownloadStream = player::downloadStream,
-            onSimilar = { artist, title -> onNavigate(SimilarRoute(artist, title)) },
             onOpenLyrics = {
                 player.loadLyrics()
                 sheet = SHEET_LYRICS
             },
             onOpenQueue = { queueOpen = true },
             onOpenContext = { routeFor(it)?.let(onNavigate) },
-            onGoToAlbum = { onNavigate(AlbumRoute(it)) },
             onGoToArtist = { onNavigate(ArtistDestination(it)) },
             onSkipBack = player::skipBack,
             onSkipForward = player::skipForward,
