@@ -96,6 +96,9 @@ data class NowPlayingActions(
     val onGoToShow: (Long) -> Unit = {},
     val onGoToArtist: (String) -> Unit = {},
     val onDownloadStream: () -> Unit = {},
+    /** Moves the synced lyrics this many ms later (earlier when negative). */
+    val onShiftLyrics: (Long) -> Unit = {},
+    val onResetLyrics: () -> Unit = {},
 )
 
 /**

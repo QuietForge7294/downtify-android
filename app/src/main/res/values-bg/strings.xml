@@ -363,6 +363,11 @@
     <string name="player_lyrics_loading">Зареждане на текста…</string>
     <string name="player_lyrics_synced">Синхронизиран</string>
     <string name="player_lyrics_static">Статичен</string>
+    <string name="player_lyrics_timing">Настрой синхрона</string>
+    <string name="player_lyrics_earlier">Текстът по-рано</string>
+    <string name="player_lyrics_later">Текстът по-късно</string>
+    <string name="player_lyrics_timing_reset">Нулирай синхрона</string>
+    <string name="player_lyrics_offset">%1$s\u00A0с</string>
     <string name="player_error_network">Няма достъп до сървъра, за да се пусне тази песен.</string>
     <string name="player_error_not_found">Тази песен вече не е на сървъра.</string>
     <string name="player_error_old_server">Сървърът е твърде стар за поточно възпроизвеждане — обнови Downtify на сървъра.</string>

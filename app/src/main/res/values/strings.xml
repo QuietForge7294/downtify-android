@@ -365,6 +365,12 @@
     <string name="player_lyrics_loading">Loading lyrics…</string>
     <string name="player_lyrics_synced">Synced</string>
     <string name="player_lyrics_static">Static</string>
+    <string name="player_lyrics_timing">Adjust timing</string>
+    <string name="player_lyrics_earlier">Lyrics earlier</string>
+    <string name="player_lyrics_later">Lyrics later</string>
+    <string name="player_lyrics_timing_reset">Reset timing</string>
+    <!-- How far the lyrics are moved, in seconds: "+0.25 s". -->
+    <string name="player_lyrics_offset">%1$s\u00A0s</string>
     <string name="player_error_network">Can\'t reach the server to play this song.</string>
     <string name="player_error_not_found">This song isn\'t on the server anymore.</string>
     <string name="player_error_old_server">The server is too old for streaming — update Downtify on the server.</string>

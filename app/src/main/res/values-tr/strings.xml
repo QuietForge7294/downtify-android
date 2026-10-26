@@ -363,6 +363,11 @@
     <string name="player_lyrics_loading">Sözler yükleniyor…</string>
     <string name="player_lyrics_synced">Zamanlı</string>
     <string name="player_lyrics_static">Sabit</string>
+    <string name="player_lyrics_timing">Zamanlamayı ayarla</string>
+    <string name="player_lyrics_earlier">Sözler daha erken</string>
+    <string name="player_lyrics_later">Sözler daha geç</string>
+    <string name="player_lyrics_timing_reset">Zamanlamayı sıfırla</string>
+    <string name="player_lyrics_offset">%1$s\u00A0sn</string>
     <string name="player_error_network">Bu şarkıyı çalmak için sunucuya ulaşılamıyor.</string>
     <string name="player_error_not_found">Bu şarkı artık sunucuda değil.</string>
     <string name="player_error_old_server">Sunucu akış için çok eski — sunucudaki Downtify\'ı güncelle.</string>

@@ -372,6 +372,11 @@
     <string name="player_lyrics_loading">Chargement des paroles…</string>
     <string name="player_lyrics_synced">Synchronisées</string>
     <string name="player_lyrics_static">Statiques</string>
+    <string name="player_lyrics_timing">Ajuster la synchronisation</string>
+    <string name="player_lyrics_earlier">Paroles plus tôt</string>
+    <string name="player_lyrics_later">Paroles plus tard</string>
+    <string name="player_lyrics_timing_reset">Réinitialiser la synchronisation</string>
+    <string name="player_lyrics_offset">%1$s\u00A0s</string>
     <string name="player_error_network">Impossible de joindre le serveur pour lire ce titre.</string>
     <string name="player_error_not_found">Ce titre n’est plus sur le serveur.</string>
     <string name="player_error_old_server">Le serveur est trop ancien pour la diffusion : mettez Downtify à jour sur le serveur.</string>

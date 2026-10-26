@@ -1,7 +1,14 @@
 package com.henriquesebastiao.downtify.feature.player
 
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.scrollBy
@@ -36,6 +43,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButtonShapes
 import androidx.compose.material3.LoadingIndicator
@@ -61,12 +69,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -74,6 +85,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.text
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -86,10 +98,12 @@ import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.PhonePreviews
 import com.henriquesebastiao.downtify.core.designsystem.component.SeekBarPill
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
+import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyType
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 import com.henriquesebastiao.downtify.core.model.LrcParser
 import com.henriquesebastiao.downtify.core.model.LyricLine
 import com.henriquesebastiao.downtify.core.model.Lyrics
+import com.henriquesebastiao.downtify.core.model.LyricsTiming
 import com.henriquesebastiao.downtify.core.model.formatDuration
 import com.henriquesebastiao.downtify.core.player.PlayerState
 import com.henriquesebastiao.downtify.ui.common.PreviewData
@@ -103,6 +117,10 @@ import kotlinx.coroutines.flow.first
  * tabs when the server has an LRC, then the words — synced, the line being sung in bold primary
  * and kept in the middle, the others faded, a tap on one jumps to it; static, the plain text. A
  * big play/pause and the seek bar in a pill float over the bottom, the words scrolling under them.
+ *
+ * An LRC can be timed to another cut of the song (a live take, a video's longer intro): the
+ * timing button opens earlier / later buttons that move the synced lines by [offsetMs], kept per
+ * track ([NowPlayingActions.onShiftLyrics]).
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -112,8 +130,10 @@ fun LyricsScreen(
     controls: NowPlayingActions,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    offsetMs: Long = 0L,
 ) {
     var static by rememberSaveable { mutableStateOf(false) }
+    var adjusting by rememberSaveable { mutableStateOf(false) }
     // How much of the bottom the floating controls cover: the words can scroll out from under them.
     var controlsHeight by remember { mutableIntStateOf(0) }
     val covered = with(LocalDensity.current) { controlsHeight.toDp() }
@@ -130,9 +150,19 @@ fun LyricsScreen(
                 contentAlignment = Alignment.TopCenter,
             ) {
                 val loaded = (lyrics as? LyricsState.Loaded)?.lyrics
+                val synced = loaded?.isSynced == true && !static
                 Column(Modifier.widthIn(max = MAX_WIDTH).fillMaxSize()) {
-                    TopBar(onBack)
+                    TopBar(onBack, adjusting = adjusting, onAdjust = { adjusting = !adjusting }.takeIf { synced })
                     if (loaded?.isSynced == true) ModeTabs(static, onSelect = { static = it })
+                    AnimatedVisibility(
+                        visible = synced && adjusting,
+                        enter = expandVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) +
+                            fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
+                        exit = shrinkVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) +
+                            fadeOut(MaterialTheme.motionScheme.defaultEffectsSpec()),
+                    ) {
+                        TimingBar(offsetMs, controls.onShiftLyrics, controls.onResetLyrics)
+                    }
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         when {
                             loaded == null -> Box(
@@ -150,12 +180,12 @@ fun LyricsScreen(
                                     .alpha(INACTIVE_ALPHA),
                             )
 
-                            loaded.isSynced && !static -> SyncedLyrics(
-                                loaded.synced,
-                                rememberActiveLine(loaded.synced, state),
-                                controls.onSeek,
-                                covered,
-                            )
+                            synced -> {
+                                val lines = remember(loaded.synced, offsetMs) {
+                                    LyricsTiming.shift(loaded.synced, offsetMs)
+                                }
+                                SyncedLyrics(lines, rememberActiveLine(lines, state), controls.onSeek, covered)
+                            }
 
                             else -> StaticLyrics(loaded.text, covered)
                         }
@@ -174,9 +204,12 @@ fun LyricsScreen(
     }
 }
 
-/** Back in a dark circle at the start, "Lyrics" in the middle. */
+/**
+ * Back in a dark circle at the start, "Lyrics" in the middle and, with [onAdjust] (synced lyrics
+ * showing), the timing button at the end, filled with primary while [adjusting].
+ */
 @Composable
-private fun TopBar(onBack: () -> Unit) {
+private fun TopBar(onBack: () -> Unit, adjusting: Boolean, onAdjust: (() -> Unit)?) {
     val scheme = MaterialTheme.colorScheme
     Box(
         Modifier
@@ -201,6 +234,74 @@ private fun TopBar(onBack: () -> Unit) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = TOP_BAR_HEIGHT).semantics { heading() },
         )
+        if (onAdjust != null) {
+            CircleButton(
+                DowntifyIcons.LyricsTiming,
+                stringResource(R.string.player_lyrics_timing),
+                onAdjust,
+                modifier = Modifier.align(Alignment.CenterEnd).semantics { selected = adjusting },
+                containerColor = if (adjusting) scheme.primary else scheme.surfaceContainerLow,
+                contentColor = if (adjusting) scheme.onPrimary else scheme.onSurface,
+            )
+        }
+    }
+}
+
+/**
+ * Earlier and later around how far the lyrics are moved, in seconds ([LyricsTiming.STEP_MS] a
+ * press), and back to the LRC's times.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun TimingBar(offsetMs: Long, onShift: (Long) -> Unit, onReset: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val colors = IconButtonDefaults.filledIconButtonColors(
+        containerColor = scheme.onPrimaryContainer.copy(alpha = TAB_ALPHA),
+        contentColor = scheme.onPrimaryContainer,
+        disabledContainerColor = scheme.onPrimaryContainer.copy(alpha = TAB_ALPHA / 2),
+        disabledContentColor = scheme.onPrimaryContainer.copy(alpha = INACTIVE_ALPHA),
+    )
+    val locale = LocalConfiguration.current.locales[0]
+    Row(
+        Modifier.fillMaxWidth().padding(start = Spacing.xl, end = Spacing.xl, bottom = Spacing.lg),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+    ) {
+        TimingButton(DowntifyIcons.Remove, R.string.player_lyrics_earlier, colors, offsetMs > -LyricsTiming.MAX_MS) {
+            onShift(-LyricsTiming.STEP_MS)
+        }
+        Text(
+            stringResource(R.string.player_lyrics_offset, LyricsTiming.seconds(offsetMs, locale)),
+            style = DowntifyType.dataLarge,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            // Read out as it changes, after each press.
+            modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
+        )
+        TimingButton(DowntifyIcons.Add, R.string.player_lyrics_later, colors, offsetMs < LyricsTiming.MAX_MS) {
+            onShift(LyricsTiming.STEP_MS)
+        }
+        TimingButton(DowntifyIcons.Reset, R.string.player_lyrics_timing_reset, colors, offsetMs != 0L, onReset)
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun TimingButton(
+    @DrawableRes icon: Int,
+    @StringRes label: Int,
+    colors: IconButtonColors,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    FilledIconButton(
+        onClick = onClick,
+        enabled = enabled,
+        shapes = IconButtonDefaults.shapes(),
+        colors = colors,
+        modifier = Modifier.size(TIMING_BUTTON_SIZE),
+    ) {
+        Icon(painterResource(icon), contentDescription = stringResource(label))
     }
 }
 
@@ -323,7 +424,7 @@ private fun SyncedLyrics(lines: List<LyricLine>, active: Int, onSeek: (Long) -> 
                     color = if (isActive) scheme.primary else scheme.onPrimaryContainer,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onSeek(line.timeMs) }
+                        .clickable { onSeek(line.timeMs.coerceAtLeast(0)) }
                         .padding(horizontal = LINE_INSET, vertical = LINE_GAP)
                         .alpha(if (isActive) 1f else INACTIVE_ALPHA),
                 )
@@ -469,6 +570,7 @@ private val SHEET_MIN_HEIGHT = 200.dp
 private val SHEET_MAX_HEIGHT = 520.dp
 private val TOP_BAR_HEIGHT = 64.dp
 private val TAB_HEIGHT = 56.dp
+private val TIMING_BUTTON_SIZE = 48.dp
 private val LINE_INSET = 28.dp
 private val LINE_GAP = 9.dp
 private val CONTROLS_GAP = 20.dp
@@ -522,5 +624,15 @@ private fun LyricsPlainPreview() {
             controls = NowPlayingActions(),
             onBack = {},
         )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun LyricsTimingPreview() {
+    DowntifyTheme {
+        Surface(color = MaterialTheme.colorScheme.primaryContainer) {
+            TimingBar(offsetMs = 1_250, onShift = {}, onReset = {})
+        }
     }
 }

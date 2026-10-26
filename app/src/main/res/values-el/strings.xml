@@ -363,6 +363,11 @@
     <string name="player_lyrics_loading">Φόρτωση στίχων…</string>
     <string name="player_lyrics_synced">Συγχρονισμένοι</string>
     <string name="player_lyrics_static">Στατικοί</string>
+    <string name="player_lyrics_timing">Ρύθμιση συγχρονισμού</string>
+    <string name="player_lyrics_earlier">Στίχοι νωρίτερα</string>
+    <string name="player_lyrics_later">Στίχοι αργότερα</string>
+    <string name="player_lyrics_timing_reset">Επαναφορά συγχρονισμού</string>
+    <string name="player_lyrics_offset">%1$s\u00A0δ</string>
     <string name="player_error_network">Δεν είναι δυνατή η πρόσβαση στον διακομιστή για να παιχτεί αυτό το τραγούδι.</string>
     <string name="player_error_not_found">Αυτό το τραγούδι δεν υπάρχει πια στον διακομιστή.</string>
     <string name="player_error_old_server">Ο διακομιστής είναι πολύ παλιός για ροή — ενημέρωσε το Downtify στον διακομιστή.</string>

@@ -5,6 +5,7 @@ import android.util.LruCache
 import androidx.room.withTransaction
 import com.henriquesebastiao.downtify.core.data.db.DowntifyDatabase
 import com.henriquesebastiao.downtify.core.data.db.LikeEntity
+import com.henriquesebastiao.downtify.core.data.db.LyricsOffsetEntity
 import com.henriquesebastiao.downtify.core.data.db.PlaylistEntity
 import com.henriquesebastiao.downtify.core.data.di.ApplicationScope
 import com.henriquesebastiao.downtify.core.data.sync.LibraryLocalStore
@@ -12,6 +13,7 @@ import com.henriquesebastiao.downtify.core.data.sync.LibraryRemote
 import com.henriquesebastiao.downtify.core.data.sync.LibrarySyncer
 import com.henriquesebastiao.downtify.core.data.sync.SyncOutcome
 import com.henriquesebastiao.downtify.core.model.Lyrics
+import com.henriquesebastiao.downtify.core.model.LyricsTiming
 import com.henriquesebastiao.downtify.core.model.Playlist
 import com.henriquesebastiao.downtify.core.network.ApiFactory
 import com.henriquesebastiao.downtify.core.network.DowntifyApi
@@ -23,6 +25,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -156,6 +159,23 @@ class LibraryRepository @Inject constructor(
             Lyrics.Empty
         }
     }
+
+    /** How much later than its LRC [trackId]'s synced lyrics run (0 until moved). */
+    fun lyricsOffset(trackId: String): Flow<Long> =
+        db.lyricsOffsets().observe(trackId).map { it ?: 0L }.distinctUntilChanged()
+
+    /** Moves [trackId]'s lyrics [byMs] later (earlier when negative), within [LyricsTiming.MAX_MS]. */
+    suspend fun shiftLyrics(trackId: String, byMs: Long) {
+        val offsets = db.lyricsOffsets()
+        // Read and write in one transaction, so quick presses add up instead of overwriting each other.
+        db.withTransaction {
+            val offset = LyricsTiming.clamp((offsets.get(trackId) ?: 0L) + byMs)
+            if (offset == 0L) offsets.delete(trackId) else offsets.upsert(LyricsOffsetEntity(trackId, offset))
+        }
+    }
+
+    /** Puts [trackId]'s lyrics back on their LRC's times. */
+    suspend fun resetLyricsOffset(trackId: String) = db.lyricsOffsets().delete(trackId)
 
     private suspend fun refreshPlaylists(api: DowntifyApi) {
         val remote = api.playlists()

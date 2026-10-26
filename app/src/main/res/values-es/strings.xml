@@ -372,6 +372,11 @@
     <string name="player_lyrics_loading">Cargando la letra…</string>
     <string name="player_lyrics_synced">Sincronizada</string>
     <string name="player_lyrics_static">Estática</string>
+    <string name="player_lyrics_timing">Ajustar sincronización</string>
+    <string name="player_lyrics_earlier">Letra antes</string>
+    <string name="player_lyrics_later">Letra después</string>
+    <string name="player_lyrics_timing_reset">Restablecer sincronización</string>
+    <string name="player_lyrics_offset">%1$s\u00A0s</string>
     <string name="player_error_network">No se puede acceder al servidor para reproducir esta canción.</string>
     <string name="player_error_not_found">Esta canción ya no está en el servidor.</string>
     <string name="player_error_old_server">El servidor es demasiado antiguo para la reproducción: actualiza Downtify en el servidor.</string>

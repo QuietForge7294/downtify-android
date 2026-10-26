@@ -405,6 +405,7 @@ private fun NowPlayingOverlay(
     val streamTrack by player.streamTrack.collectAsStateWithLifecycle()
     val serverName by player.serverName.collectAsStateWithLifecycle()
     val lyrics by player.lyrics.collectAsStateWithLifecycle()
+    val lyricsOffset by player.lyricsOffset.collectAsStateWithLifecycle()
     var lyricsOpen by rememberSaveable { mutableStateOf(false) }
     var queueOpen by rememberSaveable { mutableStateOf(false) }
     val open = expansion.expanded
@@ -439,6 +440,8 @@ private fun NowPlayingOverlay(
             onCycleRepeat = player::cycleRepeat,
             onToggleLike = player::toggleLike,
             onDownloadStream = player::downloadStream,
+            onShiftLyrics = player::shiftLyrics,
+            onResetLyrics = player::resetLyricsOffset,
             onOpenLyrics = {
                 player.loadLyrics()
                 lyricsOpen = true
@@ -514,6 +517,7 @@ private fun NowPlayingOverlay(
         LaunchedEffect(state.track?.id, streamTrack?.id) { player.loadLyrics() }
         LyricsScreen(
             lyrics = lyrics,
+            offsetMs = lyricsOffset,
             state = state,
             controls = controls,
             onBack = { lyricsOpen = false },

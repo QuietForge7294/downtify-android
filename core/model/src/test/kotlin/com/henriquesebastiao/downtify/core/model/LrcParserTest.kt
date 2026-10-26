@@ -1,7 +1,9 @@
 package com.henriquesebastiao.downtify.core.model
 
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Test
 
 class LrcParserTest {
@@ -56,5 +58,25 @@ class LrcParserTest {
         assertEquals(1L, LrcParser.nextLineInMs(lines, 8_999))
         assertNull(LrcParser.nextLineInMs(lines, 9_000))
         assertNull(LrcParser.nextLineInMs(emptyList(), 0))
+    }
+
+    @Test
+    fun `moves the lines by the offset, within limits`() {
+        val lines = listOf(LyricLine(0, "a"), LyricLine(4_000, "b"))
+        assertSame(lines, LyricsTiming.shift(lines, 0))
+        assertEquals(listOf(LyricLine(750, "a"), LyricLine(4_750, "b")), LyricsTiming.shift(lines, 750))
+        assertEquals(listOf(LyricLine(-500, "a"), LyricLine(3_500, "b")), LyricsTiming.shift(lines, -500))
+        // A line moved before the start is being sung from the first moment.
+        assertEquals(0, LrcParser.activeIndex(LyricsTiming.shift(lines, -500), 0))
+        assertEquals(LyricsTiming.MAX_MS, LyricsTiming.clamp(LyricsTiming.MAX_MS + LyricsTiming.STEP_MS))
+        assertEquals(-LyricsTiming.MAX_MS, LyricsTiming.clamp(-60_000))
+        assertEquals(1_250L, LyricsTiming.clamp(1_250))
+    }
+
+    @Test
+    fun `writes the offset in seconds the locale's way`() {
+        assertEquals("+0.25", LyricsTiming.seconds(250, Locale.US))
+        assertEquals("-1,50", LyricsTiming.seconds(-1_500, Locale.forLanguageTag("pt-BR")))
+        assertEquals("0.00", LyricsTiming.seconds(0, Locale.US))
     }
 }

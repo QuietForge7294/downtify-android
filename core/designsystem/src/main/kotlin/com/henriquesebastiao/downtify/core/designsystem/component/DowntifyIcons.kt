@@ -49,6 +49,14 @@ object DowntifyIcons {
 
     @DrawableRes val Lyrics = R.drawable.ic_lyrics
 
+    @DrawableRes val LyricsTiming = R.drawable.ic_av_timer
+
+    @DrawableRes val Add = R.drawable.ic_add
+
+    @DrawableRes val Remove = R.drawable.ic_remove
+
+    @DrawableRes val Reset = R.drawable.ic_restart_alt
+
     @DrawableRes val Queue = R.drawable.ic_queue_music
 
     @DrawableRes val AddToQueue = R.drawable.ic_playlist_add
