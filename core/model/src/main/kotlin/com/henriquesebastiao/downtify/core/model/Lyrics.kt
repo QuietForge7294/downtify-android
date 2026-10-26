@@ -5,6 +5,9 @@ data class Lyrics(val synced: List<LyricLine>, val plain: String) {
     val isEmpty: Boolean get() = synced.isEmpty() && plain.isBlank()
     val isSynced: Boolean get() = synced.isNotEmpty()
 
+    /** The words without their times: the plain text, or the synced lines when there is none. */
+    val text: String get() = plain.ifBlank { synced.joinToString("\n") { it.text } }.trim()
+
     companion object {
         val Empty = Lyrics(emptyList(), "")
     }
@@ -54,6 +57,10 @@ object LrcParser {
         }
         return found
     }
+
+    /** How long after [positionMs] the next line starts, or null when the one being sung is the last. */
+    fun nextLineInMs(lines: List<LyricLine>, positionMs: Long): Long? =
+        lines.getOrNull(activeIndex(lines, positionMs) + 1)?.let { it.timeMs - positionMs }
 
     private fun toMillis(match: MatchResult): Long {
         val (min, sec, frac) = match.destructured

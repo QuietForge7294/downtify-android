@@ -1,6 +1,7 @@
 package com.henriquesebastiao.downtify.core.model
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class LrcParserTest {
@@ -29,11 +30,31 @@ class LrcParserTest {
     }
 
     @Test
+    fun `static text is the plain text, else the synced lines`() {
+        val lines = listOf(LyricLine(1_000, "a"), LyricLine(5_000, ""), LyricLine(9_000, "c"))
+        assertEquals("a\n\nc", Lyrics(lines, "").text)
+        assertEquals("plain words", Lyrics(lines, "\nplain words\n").text)
+        assertEquals("", Lyrics.Empty.text)
+    }
+
+    @Test
     fun `finds the active line`() {
         val lines = listOf(LyricLine(1_000, "a"), LyricLine(5_000, "b"), LyricLine(9_000, "c"))
         assertEquals(-1, LrcParser.activeIndex(lines, 500))
         assertEquals(0, LrcParser.activeIndex(lines, 1_000))
         assertEquals(1, LrcParser.activeIndex(lines, 8_999))
         assertEquals(2, LrcParser.activeIndex(lines, 60_000))
+    }
+
+    @Test
+    fun `tells how long until the next line`() {
+        val lines = listOf(LyricLine(1_000, "a"), LyricLine(5_000, "b"), LyricLine(5_000, "b2"), LyricLine(9_000, "c"))
+        assertEquals(500L, LrcParser.nextLineInMs(lines, 500))
+        assertEquals(4_000L, LrcParser.nextLineInMs(lines, 1_000))
+        // Lines sharing a stamp start together: the next one is the line after both.
+        assertEquals(4_000L, LrcParser.nextLineInMs(lines, 5_000))
+        assertEquals(1L, LrcParser.nextLineInMs(lines, 8_999))
+        assertNull(LrcParser.nextLineInMs(lines, 9_000))
+        assertNull(LrcParser.nextLineInMs(emptyList(), 0))
     }
 }

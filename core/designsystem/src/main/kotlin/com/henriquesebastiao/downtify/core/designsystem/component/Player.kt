@@ -381,57 +381,140 @@ fun WavySeekBar(
     val value = dragging ?: progress.coerceIn(0f, 1f)
     val position = timeAt(value)
     val scheme = MaterialTheme.colorScheme
-    val stroke = with(LocalDensity.current) { Stroke(width = SEEK_STROKE.toPx(), cap = StrokeCap.Round) }
-    // The slider's own state follows the player's position — except while the finger is on it.
-    val state = rememberSliderState()
-    LaunchedEffect(value) { state.value = value }
     Column(modifier.fillMaxWidth()) {
-        Slider(
-            state = state,
-            enabled = enabled,
-            onValueChange = {
-                state.value = it
-                dragging = it
-            },
-            onValueChangeFinished = {
+        WavySlider(
+            value = value,
+            onDrag = { dragging = it },
+            onRelease = {
                 dragging?.let(onSeek)
                 dragging = null
             },
-            thumb = {
-                Box(Modifier.size(SEEK_THUMB).background(scheme.primary, CircleShape))
-            },
-            track = {
-                LinearWavyProgressIndicator(
-                    progress = { state.value },
-                    color = scheme.primary,
-                    trackColor = scheme.primary.copy(alpha = SEEK_TRACK_ALPHA),
-                    stroke = stroke,
-                    trackStroke = stroke,
-                    amplitude = { if (playing) 1f else 0f },
-                    wavelength = SEEK_WAVELENGTH,
-                    modifier = Modifier.fillMaxWidth().height(SEEK_WAVE_HEIGHT),
-                )
-            },
-            modifier = Modifier.semantics {
-                this.contentDescription = contentDescription
-                stateDescription = "$position / $duration"
-            },
+            playing = playing,
+            thumbSize = SEEK_THUMB,
+            contentDescription = contentDescription,
+            stateDescription = "$position / $duration",
+            enabled = enabled,
         )
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val time = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.Bold,
-                fontFeatureSettings = "tnum",
-            )
-            Text(position, style = time, color = scheme.onPrimaryContainer, maxLines = 1)
+            Text(position, style = seekTimeStyle(), color = scheme.onPrimaryContainer, maxLines = 1)
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { between?.invoke() }
-            Text(duration, style = time, color = scheme.onPrimaryContainer, maxLines = 1)
+            Text(duration, style = seekTimeStyle(), color = scheme.onPrimaryContainer, maxLines = 1)
         }
     }
 }
+
+/**
+ * [WavySeekBar] on one line, floating over a page (the lyrics): a dark pill (surfaceContainerLow,
+ * a shadow under it) with the times at its ends and a smaller thumb. Same wave, same behaviour.
+ */
+@Composable
+fun SeekBarPill(
+    progress: Float,
+    onSeek: (Float) -> Unit,
+    playing: Boolean,
+    timeAt: (Float) -> String,
+    duration: String,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+) {
+    var dragging by remember { mutableStateOf<Float?>(null) }
+    val value = dragging ?: progress.coerceIn(0f, 1f)
+    val position = timeAt(value)
+    val scheme = MaterialTheme.colorScheme
+    Surface(
+        color = scheme.surfaceContainerLow,
+        contentColor = scheme.onSurface,
+        shape = CircleShape,
+        shadowElevation = PILL_ELEVATION,
+        modifier = modifier.fillMaxWidth().height(SEEK_PILL_HEIGHT),
+    ) {
+        Row(
+            Modifier.padding(horizontal = Spacing.xl),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(position, style = seekTimeStyle(), maxLines = 1)
+            WavySlider(
+                value = value,
+                onDrag = { dragging = it },
+                onRelease = {
+                    dragging?.let(onSeek)
+                    dragging = null
+                },
+                playing = playing,
+                thumbSize = SEEK_PILL_THUMB,
+                contentDescription = contentDescription,
+                stateDescription = "$position / $duration",
+                modifier = Modifier.weight(1f),
+            )
+            Text(duration, style = seekTimeStyle(), maxLines = 1)
+        }
+    }
+}
+
+/**
+ * Material's slider over a wavy track that flows while [playing] and lies flat when paused. Its
+ * own state follows [value] — except while the finger is on it: [onDrag] gets where the finger
+ * is, [onRelease] says it let go.
+ */
+@Suppress("LongParameterList")
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun WavySlider(
+    value: Float,
+    onDrag: (Float) -> Unit,
+    onRelease: () -> Unit,
+    playing: Boolean,
+    thumbSize: Dp,
+    contentDescription: String,
+    stateDescription: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val scheme = MaterialTheme.colorScheme
+    val stroke = with(LocalDensity.current) { Stroke(width = SEEK_STROKE.toPx(), cap = StrokeCap.Round) }
+    val state = rememberSliderState()
+    LaunchedEffect(value) { state.value = value }
+    Slider(
+        state = state,
+        enabled = enabled,
+        onValueChange = {
+            state.value = it
+            onDrag(it)
+        },
+        onValueChangeFinished = onRelease,
+        thumb = {
+            Box(Modifier.size(thumbSize).background(scheme.primary, CircleShape))
+        },
+        track = {
+            LinearWavyProgressIndicator(
+                progress = { state.value },
+                color = scheme.primary,
+                trackColor = scheme.primary.copy(alpha = SEEK_TRACK_ALPHA),
+                stroke = stroke,
+                trackStroke = stroke,
+                amplitude = { if (playing) 1f else 0f },
+                wavelength = SEEK_WAVELENGTH,
+                modifier = Modifier.fillMaxWidth().height(SEEK_WAVE_HEIGHT),
+            )
+        },
+        modifier = modifier.semantics {
+            this.contentDescription = contentDescription
+            this.stateDescription = stateDescription
+        },
+    )
+}
+
+/** The seek bar's times: bold, with tabular figures so they don't jitter as they count. */
+@Composable
+private fun seekTimeStyle() = MaterialTheme.typography.bodyMedium.copy(
+    fontWeight = FontWeight.Bold,
+    fontFeatureSettings = "tnum",
+)
 
 private val MINI_PLAYER_HEIGHT = 72.dp
 private val PLAYING_CORNER = 28.dp
@@ -442,6 +525,9 @@ private val SEEK_STROKE = 6.dp
 private val SEEK_THUMB = 24.dp
 private val SEEK_WAVELENGTH = 36.dp
 private val SEEK_WAVE_HEIGHT = 16.dp
+private val SEEK_PILL_HEIGHT = 60.dp
+private val SEEK_PILL_THUMB = 18.dp
+private val PILL_ELEVATION = 6.dp
 private const val SUBTITLE_ALPHA = 0.8f
 
 // A mini player button's corners in percent of its side: a circle, or a squircle while playing.
@@ -470,6 +556,14 @@ private fun PlayerPreview() {
                     MiniPlayerButton(DowntifyIcons.Next, "Next", {})
                 }
                 WavySeekBar(
+                    progress = 0.35f,
+                    onSeek = {},
+                    playing = true,
+                    timeAt = { "1:24" },
+                    duration = "3:59",
+                    contentDescription = "Position",
+                )
+                SeekBarPill(
                     progress = 0.35f,
                     onSeek = {},
                     playing = true,

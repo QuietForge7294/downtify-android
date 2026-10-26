@@ -370,6 +370,8 @@
     <string name="player_source_this_phone">Lecture depuis ce téléphone</string>
     <string name="player_lyrics_none">Pas de paroles pour ce titre.</string>
     <string name="player_lyrics_loading">Chargement des paroles…</string>
+    <string name="player_lyrics_synced">Synchronisées</string>
+    <string name="player_lyrics_static">Statiques</string>
     <string name="player_error_network">Impossible de joindre le serveur pour lire ce titre.</string>
     <string name="player_error_not_found">Ce titre n’est plus sur le serveur.</string>
     <string name="player_error_old_server">Le serveur est trop ancien pour la diffusion : mettez Downtify à jour sur le serveur.</string>

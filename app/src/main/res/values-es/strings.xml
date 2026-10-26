@@ -370,6 +370,8 @@
     <string name="player_source_this_phone">Reproduciendo desde este teléfono</string>
     <string name="player_lyrics_none">Esta canción no tiene letra.</string>
     <string name="player_lyrics_loading">Cargando la letra…</string>
+    <string name="player_lyrics_synced">Sincronizada</string>
+    <string name="player_lyrics_static">Estática</string>
     <string name="player_error_network">No se puede acceder al servidor para reproducir esta canción.</string>
     <string name="player_error_not_found">Esta canción ya no está en el servidor.</string>
     <string name="player_error_old_server">El servidor es demasiado antiguo para la reproducción: actualiza Downtify en el servidor.</string>

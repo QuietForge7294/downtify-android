@@ -363,6 +363,8 @@
     <string name="player_source_this_phone">Playing from this phone</string>
     <string name="player_lyrics_none">No lyrics for this song.</string>
     <string name="player_lyrics_loading">Loading lyrics…</string>
+    <string name="player_lyrics_synced">Synced</string>
+    <string name="player_lyrics_static">Static</string>
     <string name="player_error_network">Can\'t reach the server to play this song.</string>
     <string name="player_error_not_found">This song isn\'t on the server anymore.</string>
     <string name="player_error_old_server">The server is too old for streaming — update Downtify on the server.</string>

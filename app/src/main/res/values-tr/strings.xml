@@ -361,6 +361,8 @@
     <string name="player_source_this_phone">Bu telefondan çalıyor</string>
     <string name="player_lyrics_none">Bu şarkının sözleri yok.</string>
     <string name="player_lyrics_loading">Sözler yükleniyor…</string>
+    <string name="player_lyrics_synced">Zamanlı</string>
+    <string name="player_lyrics_static">Sabit</string>
     <string name="player_error_network">Bu şarkıyı çalmak için sunucuya ulaşılamıyor.</string>
     <string name="player_error_not_found">Bu şarkı artık sunucuda değil.</string>
     <string name="player_error_old_server">Sunucu akış için çok eski — sunucudaki Downtify\'ı güncelle.</string>

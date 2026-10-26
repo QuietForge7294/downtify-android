@@ -136,7 +136,7 @@ fun SearchRoute(
     )
     val lyrics by viewModel.lyricsFor.collectAsStateWithLifecycle()
     lyrics?.let {
-        LyricsSheet(lyrics = it, positionMs = 0, onSeek = {}, onDismiss = viewModel::hideLyrics)
+        LyricsSheet(lyrics = it, onDismiss = viewModel::hideLyrics)
     }
 }
 

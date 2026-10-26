@@ -361,6 +361,8 @@
     <string name="player_source_this_phone">Lejátszás erről a telefonról</string>
     <string name="player_lyrics_none">Ehhez a dalhoz nincs szöveg.</string>
     <string name="player_lyrics_loading">Dalszöveg betöltése…</string>
+    <string name="player_lyrics_synced">Időzített</string>
+    <string name="player_lyrics_static">Statikus</string>
     <string name="player_error_network">A szerver nem érhető el a dal lejátszásához.</string>
     <string name="player_error_not_found">Ez a dal már nincs a szerveren.</string>
     <string name="player_error_old_server">A szerver túl régi a streameléshez — frissítsd a Downtifyt a szerveren.</string>

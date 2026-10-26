@@ -75,7 +75,7 @@ import com.henriquesebastiao.downtify.feature.home.HomeRoute
 import com.henriquesebastiao.downtify.feature.library.LibraryNavigation
 import com.henriquesebastiao.downtify.feature.library.LibraryRoute
 import com.henriquesebastiao.downtify.feature.player.ExpandingPlayer
-import com.henriquesebastiao.downtify.feature.player.LyricsSheet
+import com.henriquesebastiao.downtify.feature.player.LyricsScreen
 import com.henriquesebastiao.downtify.feature.player.MiniPlayer
 import com.henriquesebastiao.downtify.feature.player.NowPlayingActions
 import com.henriquesebastiao.downtify.feature.player.NowPlayingScreen
@@ -405,14 +405,20 @@ private fun NowPlayingOverlay(
     val streamTrack by player.streamTrack.collectAsStateWithLifecycle()
     val serverName by player.serverName.collectAsStateWithLifecycle()
     val lyrics by player.lyrics.collectAsStateWithLifecycle()
-    var sheet by rememberSaveable { mutableStateOf<String?>(null) }
+    var lyricsOpen by rememberSaveable { mutableStateOf(false) }
     var queueOpen by rememberSaveable { mutableStateOf(false) }
     val open = expansion.expanded
 
-    LaunchedEffect(open) { if (!open) queueOpen = false }
+    LaunchedEffect(open) {
+        if (!open) {
+            queueOpen = false
+            lyricsOpen = false
+        }
+    }
     BackHandler(enabled = open && queueOpen) { queueOpen = false }
+    BackHandler(enabled = open && lyricsOpen) { lyricsOpen = false }
     // Back folds the player towards the mini player as the gesture goes, then closes it or springs back open.
-    PredictiveBackHandler(enabled = open && sheet == null && !queueOpen) { progress ->
+    PredictiveBackHandler(enabled = open && !lyricsOpen && !queueOpen) { progress ->
         try {
             expansion.foldBack { fold -> progress.collect { fold(it.progress) } }
             onClose()
@@ -435,7 +441,7 @@ private fun NowPlayingOverlay(
             onDownloadStream = player::downloadStream,
             onOpenLyrics = {
                 player.loadLyrics()
-                sheet = SHEET_LYRICS
+                lyricsOpen = true
             },
             onOpenQueue = { queueOpen = true },
             onOpenContext = { routeFor(it)?.let(onNavigate) },
@@ -452,7 +458,7 @@ private fun NowPlayingOverlay(
         coverUrl = playingCoverUrl(state),
         largeCoverUrl = playingCoverUrl(state, ServerUrls.COVER_LARGE),
         attached = attached,
-        dragEnabled = sheet == null && !queueOpen,
+        dragEnabled = !lyricsOpen && !queueOpen,
         mini = { coverModifier ->
             MiniPlayer(
                 state = state,
@@ -499,17 +505,19 @@ private fun NowPlayingOverlay(
         )
     }
 
-    when (sheet) {
-        SHEET_LYRICS -> {
-            LaunchedEffect(state.track?.id, streamTrack?.id) { player.loadLyrics() }
-            LyricsSheet(
-                lyrics = lyrics,
-                positionMs = state.positionMs,
-                onSeek = player::seekTo,
-                onDismiss = { sheet = null },
-                coverUrl = playingCoverUrl(state),
-            )
-        }
+    // The lyrics, too, rise over Now Playing from its lyrics button.
+    AnimatedVisibility(
+        visible = open && lyricsOpen,
+        enter = slideInVertically { it },
+        exit = slideOutVertically { it },
+    ) {
+        LaunchedEffect(state.track?.id, streamTrack?.id) { player.loadLyrics() }
+        LyricsScreen(
+            lyrics = lyrics,
+            state = state,
+            controls = controls,
+            onBack = { lyricsOpen = false },
+        )
     }
 }
 
@@ -553,8 +561,6 @@ private fun routeFor(context: PlaybackContext): Any? = when (context.type) {
     PlaybackContextType.Liked -> LikedRoute
     PlaybackContextType.Songs -> null
 }
-
-private const val SHEET_LYRICS = "lyrics"
 
 /** The layouts NavigationSuiteScaffold picks for a phone: where the floating bar takes over. */
 private val PhoneBars = setOf(
