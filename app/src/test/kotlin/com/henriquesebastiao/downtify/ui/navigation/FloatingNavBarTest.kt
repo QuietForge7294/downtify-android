@@ -26,7 +26,9 @@ class FloatingNavBarTest {
             DowntifyTheme { FloatingNavBar(selected = TopLevelDestination.Home, onSelect = { tapped = it }) }
         }
         compose.onNodeWithText("Home").assertIsSelected()
-        listOf("Search", "Library", "Downloads").forEach { compose.onNodeWithText(it).assertIsNotSelected() }
+        listOf("Search", "Library").forEach { compose.onNodeWithText(it).assertIsNotSelected() }
+        // Downloads lives in the side menu now.
+        compose.onNodeWithText("Downloads").assertDoesNotExist()
         compose.onNodeWithText("Library").performClick()
         assertEquals(TopLevelDestination.Library, tapped)
     }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -28,6 +29,7 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -96,9 +98,11 @@ import com.henriquesebastiao.downtify.ui.common.CoverUrls
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
 import com.henriquesebastiao.downtify.ui.navigation.AboutRoute as AboutDestination
 import com.henriquesebastiao.downtify.ui.navigation.AlbumRoute
+import com.henriquesebastiao.downtify.ui.navigation.AppDrawer
 import com.henriquesebastiao.downtify.ui.navigation.ArtistRoute as ArtistDestination
 import com.henriquesebastiao.downtify.ui.navigation.DiscoverRoute as DiscoverDestination
 import com.henriquesebastiao.downtify.ui.navigation.DownloadsRoute as DownloadsDestination
+import com.henriquesebastiao.downtify.ui.navigation.DrawerDestination
 import com.henriquesebastiao.downtify.ui.navigation.FloatingNavBar
 import com.henriquesebastiao.downtify.ui.navigation.HomeRoute as HomeDestination
 import com.henriquesebastiao.downtify.ui.navigation.LibraryRoute as LibraryDestination
@@ -165,6 +169,8 @@ private fun MainShell() {
     val expansion = rememberPlayerExpansion()
     val scope = rememberCoroutineScope()
     LaunchedEffect(hasMedia) { if (!hasMedia) expansion.snapTo(open = false) }
+    // The side menu, opened from Home's menu button.
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
     var currentTab by rememberSaveable { mutableStateOf(TopLevelDestination.Home) }
     val onSettings = destination?.hasRoute<SettingsDestination>() == true ||
         destination?.hasRoute<AboutDestination>() == true ||
@@ -196,75 +202,91 @@ private fun MainShell() {
     val noBar = onSettings || floatingBar || (onDetail && phone)
     val miniPlayer = hasMedia && !onSettings
 
-    Box(Modifier.fillMaxSize()) {
-        NavigationSuiteScaffold(
-            navigationSuiteItems = {
-                TopLevelDestination.entries.forEach { tab ->
-                    val selected = tab == currentTab
-                    item(
-                        selected = selected,
-                        onClick = { openTab(tab) },
-                        icon = {
-                            Icon(
-                                painterResource(if (selected) tab.selectedIcon else tab.icon),
-                                contentDescription = null,
-                            )
-                        },
-                        label = { NavLabel(stringResource(tab.label)) },
-                    )
-                }
-            },
-            layoutType = if (noBar) NavigationSuiteType.None else adaptiveLayout,
-        ) {
-            Column(Modifier.fillMaxSize()) {
-                // What sits at the bottom clears the system's navigation bar, unless the full-width bar
-                // under it already does; the screens above then leave no room for it themselves.
-                val fullWidthBar = !noBar && phone
-                val bottomStack = (miniPlayer || floatingBar) && !fullWidthBar
-                val content = if (bottomStack) Modifier.consumeWindowInsets(WindowInsets.navigationBars) else Modifier
-                Box(Modifier.weight(1f).then(content)) {
-                    AppNavHost(navController)
-                    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
-                }
-                if (miniPlayer || floatingBar) {
-                    Column(if (fullWidthBar) Modifier else Modifier.navigationBarsPadding()) {
-                        if (miniPlayer) {
-                            MiniPlayerHost(
-                                player = player,
-                                expansion = expansion,
-                                onOpen = { scope.launch { expansion.expand() } },
-                                attached = floatingBar,
-                            )
+    AppDrawer(
+        drawerState = drawerState,
+        selected = DrawerDestination.entries.firstOrNull { destination?.hasRoute(it.route::class) == true },
+        onSelect = { item ->
+            scope.launch { drawerState.close() }
+            navController.navigate(item.route) { launchSingleTop = true }
+        },
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            NavigationSuiteScaffold(
+                navigationSuiteItems = {
+                    TopLevelDestination.entries.forEach { tab ->
+                        val selected = tab == currentTab
+                        item(
+                            selected = selected,
+                            onClick = { openTab(tab) },
+                            icon = {
+                                Icon(
+                                    painterResource(if (selected) tab.selectedIcon else tab.icon),
+                                    contentDescription = null,
+                                )
+                            },
+                            label = { NavLabel(stringResource(tab.label)) },
+                        )
+                    }
+                },
+                layoutType = if (noBar) NavigationSuiteType.None else adaptiveLayout,
+            ) {
+                Column(Modifier.fillMaxSize()) {
+                    // What sits at the bottom clears the system's navigation bar, unless the full-width bar
+                    // under it already does; the screens above then leave no room for it themselves.
+                    val fullWidthBar = !noBar && phone
+                    val bottomStack = (miniPlayer || floatingBar) && !fullWidthBar
+                    val content = if (bottomStack) {
+                        Modifier.consumeWindowInsets(
+                            WindowInsets.navigationBars,
+                        )
+                    } else {
+                        Modifier
+                    }
+                    Box(Modifier.weight(1f).then(content)) {
+                        AppNavHost(navController, onOpenMenu = { scope.launch { drawerState.open() } })
+                        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+                    }
+                    if (miniPlayer || floatingBar) {
+                        Column(if (fullWidthBar) Modifier else Modifier.navigationBarsPadding()) {
+                            if (miniPlayer) {
+                                MiniPlayerHost(
+                                    player = player,
+                                    expansion = expansion,
+                                    onOpen = { scope.launch { expansion.expand() } },
+                                    attached = floatingBar,
+                                )
+                            }
+                            if (floatingBar) FloatingNavBar(currentTab, openTab, attached = miniPlayer)
                         }
-                        if (floatingBar) FloatingNavBar(currentTab, openTab, attached = miniPlayer)
                     }
                 }
             }
-        }
-        if (hasMedia) {
-            NowPlayingOverlay(
-                expansion = expansion,
-                player = player,
-                attached = floatingBar,
-                onOpen = { scope.launch { expansion.expand() } },
-                onClose = { scope.launch { expansion.collapse() } },
-                onNavigate = { route ->
-                    scope.launch { expansion.collapse() }
-                    navController.navigate(route) { launchSingleTop = true }
-                },
-            )
+            if (hasMedia) {
+                NowPlayingOverlay(
+                    expansion = expansion,
+                    player = player,
+                    attached = floatingBar,
+                    onOpen = { scope.launch { expansion.expand() } },
+                    onClose = { scope.launch { expansion.collapse() } },
+                    onNavigate = { route ->
+                        scope.launch { expansion.collapse() }
+                        navController.navigate(route) { launchSingleTop = true }
+                    },
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun AppNavHost(navController: NavHostController) {
+private fun AppNavHost(navController: NavHostController, onOpenMenu: () -> Unit) {
     val toAlbum: (String) -> Unit = { navController.navigate(AlbumRoute(it)) }
     val toArtist: (String) -> Unit = { navController.navigate(ArtistDestination(it)) }
     val toPlaylist: (String) -> Unit = { navController.navigate(PlaylistRoute(it)) }
     NavHost(navController = navController, startDestination = HomeDestination) {
         composable<HomeDestination> {
             HomeRoute(
+                onOpenMenu = onOpenMenu,
                 onOpenSettings = { navController.navigate(SettingsDestination) },
                 onOpenRecent = { navController.navigate(routeFor(it)) },
                 onOpenAlbum = toAlbum,
@@ -327,6 +349,7 @@ private fun AppNavHost(navController: NavHostController) {
         }
         composable<DownloadsDestination> {
             DownloadsRoute(
+                onBack = navController::popBackStack,
                 onOpen = { item ->
                     when (item.type) {
                         PlaybackContextType.Album -> toAlbum(item.refId)

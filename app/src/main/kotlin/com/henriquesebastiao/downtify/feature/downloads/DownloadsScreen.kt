@@ -89,6 +89,7 @@ import com.henriquesebastiao.downtify.ui.common.RowAction
 
 @Composable
 fun DownloadsRoute(
+    onBack: () -> Unit,
     onOpen: (DownloadItem) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DownloadsViewModel = hiltViewModel(),
@@ -100,11 +101,15 @@ fun DownloadsRoute(
         onOpen = onOpen,
         onRemove = viewModel::remove,
         onTab = viewModel::selectTab,
+        onBack = onBack,
         modifier = modifier,
     )
 }
 
-/** What's kept on the phone: the storage it takes, Liked songs, and each album or playlist. */
+/**
+ * What's kept on the phone: the storage it takes, Liked songs, and each album or playlist. Opened
+ * from the side menu, above Home.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DownloadsScreen(
@@ -114,12 +119,20 @@ fun DownloadsScreen(
     onRemove: (DownloadItem) -> Unit,
     modifier: Modifier = Modifier,
     onTab: (DownloadsTab) -> Unit = {},
+    onBack: () -> Unit = {},
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
-        topBar = { PageHeader(title = stringResource(R.string.downloads_title), scrollBehavior = scrollBehavior) },
+        topBar = {
+            PageHeader(
+                title = stringResource(R.string.downloads_title),
+                onBack = onBack,
+                backLabel = stringResource(R.string.action_back),
+                scrollBehavior = scrollBehavior,
+            )
+        },
     ) { padding ->
         if (state.loading) return@Scaffold
         LazyColumn(

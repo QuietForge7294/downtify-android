@@ -94,8 +94,7 @@ fun FloatingNavBar(
 
 /**
  * A destination's label: one line that steps down from labelMedium to 10 sp to fit a long word
- * ("Bibliothèque") on a narrow phone; past that it ends in an ellipsis ("Téléchargements" at
- * 360 dp), never in a cut letter.
+ * ("Bibliothèque") on a narrow phone; past that it ends in an ellipsis, never in a cut letter.
  */
 @Composable
 fun NavLabel(text: String, modifier: Modifier = Modifier) {

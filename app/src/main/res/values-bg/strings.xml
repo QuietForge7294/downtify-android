@@ -8,6 +8,7 @@
     <string name="nav_downloads">Изтегляния</string>
     <string name="action_back">Назад</string>
     <string name="action_settings">Настройки</string>
+    <string name="action_open_menu">Отваряне на менюто</string>
     <string name="action_retry">Опитай отново</string>
     <string name="action_cancel">Отказ</string>
 

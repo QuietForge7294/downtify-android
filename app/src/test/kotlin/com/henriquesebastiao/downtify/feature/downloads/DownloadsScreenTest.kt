@@ -132,4 +132,16 @@ class DownloadsScreenTest {
         compose.onNodeWithText("On this phone").assertIsNotSelected().performClick()
         assertEquals(DownloadsTab.Phone, tab)
     }
+
+    @Test
+    fun itOpensAboveHomeAndBackLeavesIt() {
+        var back = 0
+        compose.setContent {
+            DowntifyTheme {
+                DownloadsScreen(state(), onKeepLiked = {}, onOpen = {}, onRemove = {}, onBack = { back++ })
+            }
+        }
+        compose.onNodeWithContentDescription("Back").performClick()
+        assertEquals(1, back)
+    }
 }

@@ -76,6 +76,7 @@ Inspired by PixelPlayer:
 - page headers with round back and action buttons, the tinted Library header and its pill tabs;
 - grouped lists with large outer and small inner corners, and the settings' value tags;
 - the floating navigation bar, with the option of a full-width one;
+- the side menu opened from Home's menu button;
 - the mini player:
   - joined to the floating bar as one group;
   - its title sliding when it doesn't fit;

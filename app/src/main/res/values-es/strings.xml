@@ -8,6 +8,7 @@
     <string name="nav_downloads">Descargas</string>
     <string name="action_back">Atrás</string>
     <string name="action_settings">Ajustes</string>
+    <string name="action_open_menu">Abrir menú</string>
     <string name="action_retry">Reintentar</string>
     <string name="action_cancel">Cancelar</string>
 

@@ -8,6 +8,7 @@
     <string name="nav_downloads">Letöltések</string>
     <string name="action_back">Vissza</string>
     <string name="action_settings">Beállítások</string>
+    <string name="action_open_menu">Menü megnyitása</string>
     <string name="action_retry">Újra</string>
     <string name="action_cancel">Mégse</string>
 

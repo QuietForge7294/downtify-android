@@ -8,6 +8,7 @@
     <string name="nav_downloads">İndirilenler</string>
     <string name="action_back">Geri</string>
     <string name="action_settings">Ayarlar</string>
+    <string name="action_open_menu">Menüyü aç</string>
     <string name="action_retry">Tekrar dene</string>
     <string name="action_cancel">İptal</string>
 

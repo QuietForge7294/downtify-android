@@ -55,6 +55,9 @@ object DowntifyShape {
     /** The floating navigation bar. */
     val FloatingNavBar = RoundedCornerShape(BarCorner)
 
+    /** The side menu's sheet: flush with the screen's start edge, extra-large corners at its end. */
+    val Drawer = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)
+
     /**
      * Two buttons side by side as a pair (Now Playing's lyrics and queue): round on the outside,
      * 6 dp where they face each other.

@@ -5,6 +5,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -41,6 +42,7 @@ class HomeScreenTest {
         onOpenRecent: (RecentContext) -> Unit = {},
         onOpenSimilar: () -> Unit = {},
         onOpenDiscover: () -> Unit = {},
+        onOpenMenu: () -> Unit = {},
     ) {
         compose.setContent {
             DowntifyTheme {
@@ -53,6 +55,7 @@ class HomeScreenTest {
                     onRefresh = {},
                     onOpenSimilar = onOpenSimilar,
                     onOpenDiscover = onOpenDiscover,
+                    onOpenMenu = onOpenMenu,
                 )
             }
         }
@@ -88,6 +91,14 @@ class HomeScreenTest {
         tap("Discover")
         assertEquals(1, similar)
         assertEquals(1, discover)
+    }
+
+    @Test
+    fun theMenuButtonOpensTheSideMenu() {
+        var menu = 0
+        show(state, onOpenMenu = { menu++ })
+        compose.onNodeWithContentDescription("Open menu").performClick()
+        assertEquals(1, menu)
     }
 
     @Test

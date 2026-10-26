@@ -8,6 +8,7 @@
     <string name="nav_downloads">Λήψεις</string>
     <string name="action_back">Πίσω</string>
     <string name="action_settings">Ρυθμίσεις</string>
+    <string name="action_open_menu">Άνοιγμα μενού</string>
     <string name="action_retry">Δοκιμή ξανά</string>
     <string name="action_cancel">Ακύρωση</string>
 

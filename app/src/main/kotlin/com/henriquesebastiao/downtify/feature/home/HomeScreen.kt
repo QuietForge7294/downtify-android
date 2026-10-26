@@ -72,6 +72,7 @@ import java.time.LocalTime
 
 @Composable
 fun HomeRoute(
+    onOpenMenu: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenRecent: (RecentContext) -> Unit,
     onOpenAlbum: (String) -> Unit,
@@ -94,6 +95,7 @@ fun HomeRoute(
         onOpenDiscover,
         onOpenPodcasts,
         onOpenSimilar,
+        onOpenMenu = onOpenMenu,
     )
 }
 
@@ -110,12 +112,21 @@ fun HomeScreen(
     onOpenDiscover: () -> Unit = {},
     onOpenPodcasts: () -> Unit = {},
     onOpenSimilar: () -> Unit = {},
+    onOpenMenu: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0),
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    CircleButton(
+                        DowntifyIcons.Menu,
+                        stringResource(R.string.action_open_menu),
+                        onOpenMenu,
+                        Modifier.padding(start = Spacing.sm),
+                    )
+                },
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -226,7 +237,7 @@ private fun ServerStatusLine(state: HomeUiState, modifier: Modifier = Modifier) 
     }
 }
 
-/** Where Discover, Podcasts and Similar live: the four tabs stay as designed. */
+/** Where Discover, Podcasts and Similar live: the tabs stay as designed. */
 @Composable
 private fun Shortcuts(
     showDiscover: Boolean,
