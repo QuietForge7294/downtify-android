@@ -23,6 +23,7 @@ import com.henriquesebastiao.downtify.core.network.dto.PodcastEpisodesDto
 import com.henriquesebastiao.downtify.core.network.dto.PodcastPlaybackRequest
 import com.henriquesebastiao.downtify.core.network.dto.PodcastShowDto
 import com.henriquesebastiao.downtify.core.network.dto.ServerInfoDto
+import com.henriquesebastiao.downtify.core.network.dto.SignInRequest
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import retrofit2.Response
@@ -48,6 +49,9 @@ interface DowntifyApi {
 
     @POST("api/auth/pair")
     suspend fun pair(@Body body: PairRequest): PairResponse
+
+    @POST("api/auth/token")
+    suspend fun signIn(@Body body: SignInRequest): PairResponse
 
     @GET("api/v1/library")
     suspend fun library(

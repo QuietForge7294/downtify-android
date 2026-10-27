@@ -26,11 +26,25 @@
     <string name="connect_step">Adım %1$d/%2$d</string>
     <string name="connect_scan">Ayarlar › Uygulamalar\'daki kodu tara</string>
     <string name="connect_cleartext_warning">Bu adres ev ağında değil ve HTTPS kullanmıyor: telefonun anahtarı şifresiz iletilir. Dışarıdan kullanmak için Downtify\'ı HTTPS\'li bir ters vekil sunucunun arkasına koy.</string>
-    <string name="connect_revoked">Bu telefonun sunucuyla eşleşmesi kaldırıldı. Dinlemeye devam etmek için yeniden eşleştir.</string>
+    <string name="connect_revoked">Bu telefonun sunucudaki oturumu kapatıldı. Dinlemeye devam etmek için yeniden giriş yap.</string>
     <string name="connect_error_invalid">Bu bir adrese benzemiyor. http://192.168.1.20:8000 gibi dene.</string>
     <string name="connect_error_unreachable">Bu adresteki sunucuya ulaşılamıyor. Adresi ve telefonun aynı ağda olup olmadığını kontrol et.</string>
     <string name="connect_error_not_downtify">Bir şey yanıt verdi ama bu Downtify değil.</string>
     <string name="connect_error_too_new">Bu sunucu (Downtify %1$s) uygulamanın anladığından daha yeni. Uygulamayı güncelle.</string>
+
+    <string name="sign_in_title">%1$s sunucusuna giriş yap</string>
+    <string name="sign_in_body">Web sayfasındakiyle aynı kullanıcı adını ve parolayı kullan.</string>
+    <string name="sign_in_username">Kullanıcı adı</string>
+    <string name="sign_in_password">Parola</string>
+    <string name="sign_in_show_password">Parolayı göster</string>
+    <string name="sign_in_hide_password">Parolayı gizle</string>
+    <string name="sign_in_action">Giriş yap</string>
+    <string name="sign_in_use_code">Eşleştirme kodu kullan</string>
+    <string name="sign_in_use_password">Parolanla giriş yap</string>
+    <string name="sign_in_error_wrong">Kullanıcı adı veya parola yanlış.</string>
+    <string name="sign_in_error_off">Bu sunucuda giriş kapalı. Eşleştirme kodu kullan.</string>
+    <string name="sign_in_error_failed">Sunucu bu telefonla giriş yapamadı (hata %1$d).</string>
+    <string name="sign_in_cleartext_warning">Bu adres ev ağında değil ve HTTPS kullanmıyor: parolan şifresiz iletilir.</string>
 
     <string name="pair_title">%1$s ile eşleştir</string>
     <string name="pair_body">Web sayfasında Ayarlar › Uygulamalar\'ı aç ve Telefon eşleştir\'e dokun. QR kodunu tara ya da altında görünen kodu yaz.</string>
@@ -55,7 +69,7 @@
     <!-- Home -->
     <string name="home_streaming_from">%1$s üzerinden akıyor</string>
     <string name="home_unreachable">%1$s sunucusuna ulaşılamıyor · eşzamanlanmış kitaplığın gösteriliyor</string>
-    <string name="home_different_server">Bu adreste başka bir sunucu yanıt veriyor · Ayarlar\'dan yeniden eşleştir</string>
+    <string name="home_different_server">Bu adreste başka bir sunucu yanıt veriyor · Ayarlar\'dan yeniden giriş yap</string>
     <string name="home_syncing">%1$s ile eşzamanlanıyor…</string>
     <string name="home_jump_back_in">Kaldığın yerden devam et</string>
     <string name="home_recently_added">Son eklenenler</string>
@@ -313,11 +327,11 @@
     <string name="settings_about">Hakkında</string>
     <string name="settings_app_version">Android için Downtify %1$s</string>
     <string name="settings_server_api">Sunucu API sürümü %1$d</string>
-    <string name="settings_unpair">Bu telefonun eşleşmesini kaldır</string>
+    <string name="settings_unpair">Çıkış yap</string>
     <string name="settings_unpair_body">Bu sunucunun anahtarını telefondan sil</string>
-    <string name="settings_unpair_title">Bu telefonun eşleşmesi kaldırılsın mı?</string>
-    <string name="settings_unpair_message">Telefon anahtarını unutur ve bağlanma ekranına döner. Sunucudan da kaldırmak için web sayfasında Ayarlar › Uygulamalar › Eşleşmiş uygulamalar\'ı aç. Eşzamanlanmış kitaplığın başka bir sunucuyla eşleşene kadar kalır.</string>
-    <string name="settings_unpair_confirm">Eşleşmeyi kaldır</string>
+    <string name="settings_unpair_title">Bu sunucudan çıkış yapılsın mı?</string>
+    <string name="settings_unpair_message">Telefon anahtarını unutur ve bağlanma ekranına döner. Sunucudan da kaldırmak için web sayfasında Ayarlar › Uygulamalar › Eşleşmiş uygulamalar\'ı aç. Eşzamanlanmış kitaplığın başka bir sunucuya giriş yapana kadar kalır.</string>
+    <string name="settings_unpair_confirm">Çıkış yap</string>
 
     <!-- Player -->
     <string name="player_play">Oynat</string>

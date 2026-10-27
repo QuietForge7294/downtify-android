@@ -27,11 +27,25 @@
     <string name="connect_step">Step %1$d of %2$d</string>
     <string name="connect_scan">Scan the code from Settings › Apps</string>
     <string name="connect_cleartext_warning">This address isn\'t on your home network and doesn\'t use HTTPS: the phone\'s key would travel unencrypted. Put Downtify behind an HTTPS reverse proxy to use it from outside.</string>
-    <string name="connect_revoked">This phone was unpaired from the server. Pair it again to keep listening.</string>
+    <string name="connect_revoked">This phone was signed out of the server. Sign in again to keep listening.</string>
     <string name="connect_error_invalid">That doesn\'t look like an address. Try http://192.168.1.20:8000.</string>
     <string name="connect_error_unreachable">Can\'t reach a server at that address. Check it, and that the phone is on the same network.</string>
     <string name="connect_error_not_downtify">Something answered, but it isn\'t Downtify.</string>
     <string name="connect_error_too_new">This server (Downtify %1$s) is newer than this app understands. Update the app.</string>
+
+    <string name="sign_in_title">Sign in to %1$s</string>
+    <string name="sign_in_body">Use the same username and password as on the web page.</string>
+    <string name="sign_in_username">Username</string>
+    <string name="sign_in_password">Password</string>
+    <string name="sign_in_show_password">Show password</string>
+    <string name="sign_in_hide_password">Hide password</string>
+    <string name="sign_in_action">Sign in</string>
+    <string name="sign_in_use_code">Use a pairing code instead</string>
+    <string name="sign_in_use_password">Sign in with your password instead</string>
+    <string name="sign_in_error_wrong">Wrong username or password.</string>
+    <string name="sign_in_error_off">This server has sign-in turned off. Use a pairing code instead.</string>
+    <string name="sign_in_error_failed">The server couldn\'t sign this phone in (error %1$d).</string>
+    <string name="sign_in_cleartext_warning">This address isn\'t on your home network and doesn\'t use HTTPS: your password would travel unencrypted.</string>
 
     <string name="pair_title">Pair with %1$s</string>
     <string name="pair_body">On the web page, open Settings › Apps and press Pair a phone. Scan the QR code, or type the code shown under it.</string>
@@ -56,7 +70,7 @@
     <!-- Home -->
     <string name="home_streaming_from">Streaming from %1$s</string>
     <string name="home_unreachable">Can\'t reach %1$s · showing your synced library</string>
-    <string name="home_different_server">Another server answers at this address · pair again in Settings</string>
+    <string name="home_different_server">Another server answers at this address · sign in again in Settings</string>
     <string name="home_syncing">Syncing with %1$s…</string>
     <string name="home_jump_back_in">Jump back in</string>
     <string name="home_recently_added">Recently added</string>
@@ -315,11 +329,11 @@
     <string name="settings_about">About</string>
     <string name="settings_app_version">Downtify for Android %1$s</string>
     <string name="settings_server_api">Server API version %1$d</string>
-    <string name="settings_unpair">Unpair this phone</string>
+    <string name="settings_unpair">Sign out</string>
     <string name="settings_unpair_body">Forget this server\'s key on the phone</string>
-    <string name="settings_unpair_title">Unpair this phone?</string>
-    <string name="settings_unpair_message">The phone forgets its key and goes back to the connect screen. To remove it from the server too, open Settings › Apps › Paired apps on the web page. Your synced library stays until you pair with another server.</string>
-    <string name="settings_unpair_confirm">Unpair</string>
+    <string name="settings_unpair_title">Sign out of this server?</string>
+    <string name="settings_unpair_message">The phone forgets its key and goes back to the connect screen. To remove it from the server too, open Settings › Apps › Paired apps on the web page. Your synced library stays until you sign in to another server.</string>
+    <string name="settings_unpair_confirm">Sign out</string>
 
     <!-- Player -->
     <string name="player_play">Play</string>

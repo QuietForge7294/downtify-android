@@ -26,11 +26,25 @@
     <string name="connect_step">Стъпка %1$d от %2$d</string>
     <string name="connect_scan">Сканирай кода от Настройки › Приложения</string>
     <string name="connect_cleartext_warning">Този адрес не е в домашната ти мрежа и не използва HTTPS: ключът на телефона би пътувал некриптиран. Сложи Downtify зад HTTPS обратен прокси, за да го ползваш отвън.</string>
-    <string name="connect_revoked">Този телефон беше разкачен от сървъра. Свържи го отново, за да продължиш да слушаш.</string>
+    <string name="connect_revoked">Този телефон беше изписан от сървъра. Влез отново, за да продължиш да слушаш.</string>
     <string name="connect_error_invalid">Това не прилича на адрес. Опитай с http://192.168.1.20:8000.</string>
     <string name="connect_error_unreachable">Няма достъп до сървър на този адрес. Провери го и дали телефонът е в същата мрежа.</string>
     <string name="connect_error_not_downtify">Нещо отговори, но не е Downtify.</string>
     <string name="connect_error_too_new">Този сървър (Downtify %1$s) е по-нов, отколкото приложението разбира. Обнови приложението.</string>
+
+    <string name="sign_in_title">Вход в %1$s</string>
+    <string name="sign_in_body">Използвай същото потребителско име и парола като в уеб страницата.</string>
+    <string name="sign_in_username">Потребителско име</string>
+    <string name="sign_in_password">Парола</string>
+    <string name="sign_in_show_password">Покажи паролата</string>
+    <string name="sign_in_hide_password">Скрий паролата</string>
+    <string name="sign_in_action">Вход</string>
+    <string name="sign_in_use_code">Използвай код за сдвояване</string>
+    <string name="sign_in_use_password">Влез с паролата си</string>
+    <string name="sign_in_error_wrong">Грешно потребителско име или парола.</string>
+    <string name="sign_in_error_off">Входът е изключен на този сървър. Използвай код за сдвояване.</string>
+    <string name="sign_in_error_failed">Сървърът не успя да впише този телефон (грешка %1$d).</string>
+    <string name="sign_in_cleartext_warning">Този адрес не е в домашната ти мрежа и не използва HTTPS: паролата ти би пътувала некриптирана.</string>
 
     <string name="pair_title">Сдвояване с %1$s</string>
     <string name="pair_body">На уеб страницата отвори Настройки › Приложения и натисни Сдвояване на телефон. Сканирай QR кода или въведи кода под него.</string>
@@ -55,7 +69,7 @@
     <!-- Home -->
     <string name="home_streaming_from">Възпроизвеждане от %1$s</string>
     <string name="home_unreachable">Няма достъп до %1$s · показва се синхронизираната ти библиотека</string>
-    <string name="home_different_server">На този адрес отговаря друг сървър · сдвои отново от Настройки</string>
+    <string name="home_different_server">На този адрес отговаря друг сървър · влез отново от Настройки</string>
     <string name="home_syncing">Синхронизиране с %1$s…</string>
     <string name="home_jump_back_in">Продължи оттам, където спря</string>
     <string name="home_recently_added">Наскоро добавени</string>
@@ -313,11 +327,11 @@
     <string name="settings_about">Относно</string>
     <string name="settings_app_version">Downtify за Android %1$s</string>
     <string name="settings_server_api">Версия на API на сървъра: %1$d</string>
-    <string name="settings_unpair">Разкачи този телефон</string>
+    <string name="settings_unpair">Изход</string>
     <string name="settings_unpair_body">Забрави ключа на този сървър в телефона</string>
-    <string name="settings_unpair_title">Да се разкачи ли този телефон?</string>
-    <string name="settings_unpair_message">Телефонът забравя ключа си и се връща към екрана за свързване. За да го премахнеш и от сървъра, отвори Настройки › Приложения › Сдвоени приложения на уеб страницата. Синхронизираната ти библиотека остава, докато не сдвоиш с друг сървър.</string>
-    <string name="settings_unpair_confirm">Разкачи</string>
+    <string name="settings_unpair_title">Изход от този сървър?</string>
+    <string name="settings_unpair_message">Телефонът забравя ключа си и се връща към екрана за свързване. За да го премахнеш и от сървъра, отвори Настройки › Приложения › Сдвоени приложения на уеб страницата. Синхронизираната ти библиотека остава, докато не влезеш в друг сървър.</string>
+    <string name="settings_unpair_confirm">Изход</string>
 
     <!-- Player -->
     <string name="player_play">Пусни</string>

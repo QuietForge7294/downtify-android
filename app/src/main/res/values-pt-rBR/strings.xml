@@ -26,11 +26,25 @@
     <string name="connect_step">Etapa %1$d de %2$d</string>
     <string name="connect_scan">Escaneie o código em Configurações › Apps</string>
     <string name="connect_cleartext_warning">Este endereço não está na sua rede local e não usa HTTPS: a chave do celular trafegaria sem criptografia. Coloque o Downtify atrás de um proxy reverso HTTPS para usá-lo de fora.</string>
-    <string name="connect_revoked">Este celular foi desemparelhado do servidor. Emparelhe-o de novo para continuar ouvindo.</string>
+    <string name="connect_revoked">Este celular foi desconectado do servidor. Entre de novo para continuar ouvindo.</string>
     <string name="connect_error_invalid">Isso não parece um endereço. Tente http://192.168.1.20:8000.</string>
     <string name="connect_error_unreachable">Não foi possível alcançar um servidor nesse endereço. Confira-o e veja se o celular está na mesma rede.</string>
     <string name="connect_error_not_downtify">Algo respondeu, mas não é o Downtify.</string>
     <string name="connect_error_too_new">Este servidor (Downtify %1$s) é mais novo do que o app entende. Atualize o app.</string>
+
+    <string name="sign_in_title">Entrar em %1$s</string>
+    <string name="sign_in_body">Use o mesmo usuário e senha da página web.</string>
+    <string name="sign_in_username">Usuário</string>
+    <string name="sign_in_password">Senha</string>
+    <string name="sign_in_show_password">Mostrar senha</string>
+    <string name="sign_in_hide_password">Ocultar senha</string>
+    <string name="sign_in_action">Entrar</string>
+    <string name="sign_in_use_code">Usar um código de emparelhamento</string>
+    <string name="sign_in_use_password">Entrar com sua senha</string>
+    <string name="sign_in_error_wrong">Usuário ou senha incorretos.</string>
+    <string name="sign_in_error_off">Este servidor está com o login desligado. Use um código de emparelhamento.</string>
+    <string name="sign_in_error_failed">O servidor não conseguiu conectar este celular (erro %1$d).</string>
+    <string name="sign_in_cleartext_warning">Este endereço não está na sua rede local e não usa HTTPS: sua senha trafegaria sem criptografia.</string>
 
     <string name="pair_title">Emparelhar com %1$s</string>
     <string name="pair_body">Na página web, abra Configurações › Apps e toque em Emparelhar um celular. Escaneie o código QR ou digite o código mostrado abaixo dele.</string>
@@ -55,7 +69,7 @@
     <!-- Home -->
     <string name="home_streaming_from">Transmitindo de %1$s</string>
     <string name="home_unreachable">Não foi possível alcançar %1$s · mostrando sua biblioteca sincronizada</string>
-    <string name="home_different_server">Outro servidor responde neste endereço · emparelhe de novo em Configurações</string>
+    <string name="home_different_server">Outro servidor responde neste endereço · entre de novo em Configurações</string>
     <string name="home_syncing">Sincronizando com %1$s…</string>
     <string name="home_jump_back_in">Continue de onde parou</string>
     <string name="home_recently_added">Adicionados recentemente</string>
@@ -322,11 +336,11 @@
     <string name="settings_about">Sobre</string>
     <string name="settings_app_version">Downtify para Android %1$s</string>
     <string name="settings_server_api">Versão %1$d da API do servidor</string>
-    <string name="settings_unpair">Desemparelhar este celular</string>
+    <string name="settings_unpair">Sair</string>
     <string name="settings_unpair_body">Esquecer neste celular a chave deste servidor</string>
-    <string name="settings_unpair_title">Desemparelhar este celular?</string>
-    <string name="settings_unpair_message">O celular esquece a chave e volta para a tela de conexão. Para removê-lo também do servidor, abra Configurações › Apps › Apps emparelhados na página web. Sua biblioteca sincronizada permanece até você emparelhar com outro servidor.</string>
-    <string name="settings_unpair_confirm">Desemparelhar</string>
+    <string name="settings_unpair_title">Sair deste servidor?</string>
+    <string name="settings_unpair_message">O celular esquece a chave e volta para a tela de conexão. Para removê-lo também do servidor, abra Configurações › Apps › Apps emparelhados na página web. Sua biblioteca sincronizada permanece até você entrar em outro servidor.</string>
+    <string name="settings_unpair_confirm">Sair</string>
 
     <!-- Player -->
     <string name="player_play">Tocar</string>

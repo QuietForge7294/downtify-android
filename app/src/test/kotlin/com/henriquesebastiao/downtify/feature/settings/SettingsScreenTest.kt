@@ -3,6 +3,9 @@ package com.henriquesebastiao.downtify.feature.settings
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -86,13 +89,13 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun unpairingAsksFirst() {
+    fun signingOutAsksFirst() {
         var unpaired = false
         show(actions = SettingsActions(onUnpair = { unpaired = true }))
-        compose.onNodeWithText("Unpair this phone").performScrollTo().performClick()
+        compose.onNodeWithText("Sign out").performScrollTo().performClick()
         assertEquals(false, unpaired)
-        compose.onNodeWithText("Unpair this phone?").assertExists()
-        compose.onNodeWithText("Unpair").performClick()
+        compose.onNodeWithText("Sign out of this server?").assertExists()
+        compose.onNode(hasText("Sign out") and hasAnyAncestor(isDialog())).performClick()
         assertEquals(true, unpaired)
     }
 

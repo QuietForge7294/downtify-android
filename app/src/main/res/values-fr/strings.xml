@@ -26,11 +26,25 @@
     <string name="connect_step">Étape %1$d sur %2$d</string>
     <string name="connect_scan">Scanner le code dans Paramètres › Apps</string>
     <string name="connect_cleartext_warning">Cette adresse n’est pas sur votre réseau local et n’utilise pas HTTPS : la clé du téléphone circulerait en clair. Placez Downtify derrière un proxy inverse HTTPS pour l’utiliser depuis l’extérieur.</string>
-    <string name="connect_revoked">Ce téléphone a été dissocié du serveur. Associez-le à nouveau pour continuer à écouter.</string>
+    <string name="connect_revoked">Ce téléphone a été déconnecté du serveur. Reconnectez-vous pour continuer à écouter.</string>
     <string name="connect_error_invalid">Ça ne ressemble pas à une adresse. Essayez http://192.168.1.20:8000.</string>
     <string name="connect_error_unreachable">Impossible de joindre un serveur à cette adresse. Vérifiez-la, ainsi que le fait que le téléphone est sur le même réseau.</string>
     <string name="connect_error_not_downtify">Quelque chose a répondu, mais ce n’est pas Downtify.</string>
     <string name="connect_error_too_new">Ce serveur (Downtify %1$s) est plus récent que ce que l’app comprend. Mettez l’app à jour.</string>
+
+    <string name="sign_in_title">Se connecter à %1$s</string>
+    <string name="sign_in_body">Utilisez les mêmes nom d’utilisateur et mot de passe que sur la page web.</string>
+    <string name="sign_in_username">Nom d’utilisateur</string>
+    <string name="sign_in_password">Mot de passe</string>
+    <string name="sign_in_show_password">Afficher le mot de passe</string>
+    <string name="sign_in_hide_password">Masquer le mot de passe</string>
+    <string name="sign_in_action">Se connecter</string>
+    <string name="sign_in_use_code">Utiliser un code d’association</string>
+    <string name="sign_in_use_password">Se connecter avec votre mot de passe</string>
+    <string name="sign_in_error_wrong">Nom d’utilisateur ou mot de passe incorrect.</string>
+    <string name="sign_in_error_off">La connexion est désactivée sur ce serveur. Utilisez un code d’association.</string>
+    <string name="sign_in_error_failed">Le serveur n’a pas pu connecter ce téléphone (erreur %1$d).</string>
+    <string name="sign_in_cleartext_warning">Cette adresse n’est pas sur votre réseau local et n’utilise pas HTTPS : votre mot de passe circulerait en clair.</string>
 
     <string name="pair_title">Associer à %1$s</string>
     <string name="pair_body">Sur la page web, ouvrez Paramètres › Apps et appuyez sur Associer un téléphone. Scannez le code QR ou saisissez le code affiché dessous.</string>
@@ -55,7 +69,7 @@
     <!-- Home -->
     <string name="home_streaming_from">Diffusion depuis %1$s</string>
     <string name="home_unreachable">Impossible de joindre %1$s · affichage de votre bibliothèque synchronisée</string>
-    <string name="home_different_server">Un autre serveur répond à cette adresse · associez à nouveau dans Paramètres</string>
+    <string name="home_different_server">Un autre serveur répond à cette adresse · reconnectez-vous dans Paramètres</string>
     <string name="home_syncing">Synchronisation avec %1$s…</string>
     <string name="home_jump_back_in">Reprendre</string>
     <string name="home_recently_added">Ajoutés récemment</string>
@@ -322,11 +336,11 @@
     <string name="settings_about">À propos</string>
     <string name="settings_app_version">Downtify pour Android %1$s</string>
     <string name="settings_server_api">Version %1$d de l’API du serveur</string>
-    <string name="settings_unpair">Dissocier ce téléphone</string>
+    <string name="settings_unpair">Se déconnecter</string>
     <string name="settings_unpair_body">Oublier sur le téléphone la clé de ce serveur</string>
-    <string name="settings_unpair_title">Dissocier ce téléphone ?</string>
-    <string name="settings_unpair_message">Le téléphone oublie sa clé et revient à l’écran de connexion. Pour le retirer aussi du serveur, ouvrez Paramètres › Apps › Apps associées sur la page web. Votre bibliothèque synchronisée reste jusqu’à l’association avec un autre serveur.</string>
-    <string name="settings_unpair_confirm">Dissocier</string>
+    <string name="settings_unpair_title">Se déconnecter de ce serveur ?</string>
+    <string name="settings_unpair_message">Le téléphone oublie sa clé et revient à l’écran de connexion. Pour le retirer aussi du serveur, ouvrez Paramètres › Apps › Apps associées sur la page web. Votre bibliothèque synchronisée reste jusqu’à la connexion à un autre serveur.</string>
+    <string name="settings_unpair_confirm">Se déconnecter</string>
 
     <!-- Player -->
     <string name="player_play">Lecture</string>
