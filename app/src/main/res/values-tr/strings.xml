@@ -15,17 +15,16 @@
     <!-- Connect -->
     <string name="connect_title_line1">Müziğin,</string>
     <string name="connect_title_line2">sunucundan.</string>
-    <string name="connect_body">Evde çalıştırdığın Downtify\'a bağlan. Her şey oradan akar ve senin kalır.</string>
     <string name="connect_address_label">Sunucu adresi</string>
     <string name="connect_address_hint">Downtify\'ı tarayıcıda açtığın adresin aynısı.</string>
     <string name="connect_found">Bu ağda bulunanlar</string>
     <string name="connect_searching">Sunucular aranıyor…</string>
-    <string name="connect_none_found">Hiçbiri bulunamadı. Bunun yerine adresi yaz — Docker\'ın varsayılan ağı sunucuyu duyurmaz.</string>
+    <string name="connect_none_found">Bu ağda henüz sunucu bulunamadı.</string>
     <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Bağlan</string>
     <string name="connect_step">Adım %1$d/%2$d</string>
-    <string name="connect_scan">Ayarlar › Uygulamalar\'daki kodu tara</string>
-    <string name="connect_cleartext_warning">Bu adres ev ağında değil ve HTTPS kullanmıyor: telefonun anahtarı şifresiz iletilir. Dışarıdan kullanmak için Downtify\'ı HTTPS\'li bir ters vekil sunucunun arkasına koy.</string>
+    <string name="connect_scan">Eşleştirme QR kodunu tara</string>
+    <string name="connect_cleartext_warning">Ev ağında değil ve HTTPS yok: telefonun anahtarı şifresiz iletilir.</string>
     <string name="connect_revoked">Bu telefonun sunucudaki oturumu kapatıldı. Dinlemeye devam etmek için yeniden giriş yap.</string>
     <string name="connect_error_invalid">Bu bir adrese benzemiyor. http://192.168.1.20:8000 gibi dene.</string>
     <string name="connect_error_unreachable">Bu adresteki sunucuya ulaşılamıyor. Adresi ve telefonun aynı ağda olup olmadığını kontrol et.</string>
@@ -33,21 +32,21 @@
     <string name="connect_error_too_new">Bu sunucu (Downtify %1$s) uygulamanın anladığından daha yeni. Uygulamayı güncelle.</string>
 
     <string name="sign_in_title">%1$s sunucusuna giriş yap</string>
-    <string name="sign_in_body">Web sayfasındakiyle aynı kullanıcı adını ve parolayı kullan.</string>
+    <string name="sign_in_body">Web sayfasındaki hesabını kullan.</string>
     <string name="sign_in_username">Kullanıcı adı</string>
     <string name="sign_in_password">Parola</string>
     <string name="sign_in_show_password">Parolayı göster</string>
     <string name="sign_in_hide_password">Parolayı gizle</string>
     <string name="sign_in_action">Giriş yap</string>
-    <string name="sign_in_use_code">Eşleştirme kodu kullan</string>
+    <string name="sign_in_use_code">Kodla eşleştir</string>
     <string name="sign_in_use_password">Parolanla giriş yap</string>
     <string name="sign_in_error_wrong">Kullanıcı adı veya parola yanlış.</string>
     <string name="sign_in_error_off">Bu sunucuda giriş kapalı. Eşleştirme kodu kullan.</string>
     <string name="sign_in_error_failed">Sunucu bu telefonla giriş yapamadı (hata %1$d).</string>
-    <string name="sign_in_cleartext_warning">Bu adres ev ağında değil ve HTTPS kullanmıyor: parolan şifresiz iletilir.</string>
+    <string name="sign_in_cleartext_warning">Ev ağında değil ve HTTPS yok: parolan şifresiz iletilir.</string>
 
     <string name="pair_title">%1$s ile eşleştir</string>
-    <string name="pair_body">Web sayfasında Ayarlar › Uygulamalar\'ı aç ve Telefon eşleştir\'e dokun. QR kodunu tara ya da altında görünen kodu yaz.</string>
+    <string name="pair_body">Web sayfasında Ayarlar › Uygulamalar\'dan.</string>
     <string name="pair_code_label">Eşleştirme kodu</string>
     <string name="pair_code_placeholder">XXXX-XXXX</string>
     <string name="pair_action">Eşleştir</string>
@@ -62,7 +61,7 @@
     <string name="scan_title">Eşleştirme kodunu tara</string>
     <string name="scan_hint">Kamerayı Ayarlar › Uygulamalar › Telefon eşleştir\'deki QR koduna doğrult.</string>
     <string name="scan_close">Tarayıcıyı kapat</string>
-    <string name="connect_local_network_denied">Yerel ağ erişimi kapalı, bu yüzden Downtify yalnızca listeden seçtiğin sunucuya ulaşabilir. Adres yazmak için uygulamanın ayarlarından izin ver.</string>
+    <string name="connect_local_network_denied">Yerel ağ erişimi kapalı. Adres yazmak için uygulamanın ayarlarından izin ver.</string>
     <string name="scan_permission_denied">Kamera erişimi kapalı. Kodu yaz ya da telefonun ayarlarından kameraya izin ver.</string>
     <string name="scan_not_downtify">Bu QR kodu bir Downtify eşleştirme kodu değil.</string>
 

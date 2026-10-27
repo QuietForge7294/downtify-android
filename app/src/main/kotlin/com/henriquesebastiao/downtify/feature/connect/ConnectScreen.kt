@@ -11,7 +11,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -20,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -31,6 +36,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -56,6 +62,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -73,7 +80,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -172,7 +182,9 @@ fun ConnectRoute(
 /**
  * Two steps, an address and then the account's username and password (or a pairing code), laid out
  * as onboarding: a big title, a picture of the step, the form, and a footer whose 96 dp button
- * connects, signs in or pairs. It rises with the keyboard, so the action is in reach while typing.
+ * connects, signs in or pairs. Each step fits the screen without scrolling: the picture takes the
+ * room the rest leaves and goes when there's too little, and while typing the other ways in step
+ * aside. It rises with the keyboard, so the action is in reach while typing.
  */
 @Composable
 fun ConnectScreen(
@@ -197,21 +209,19 @@ fun ConnectScreen(
     val effects = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
     Surface(modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().imePadding()) {
-            Column(
+            Box(
                 Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
                     .windowInsetsPadding(
                         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                    )
-                    .padding(bottom = Spacing.xl),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    ),
+                contentAlignment = Alignment.TopCenter,
             ) {
                 AnimatedContent(
                     targetState = state.step,
                     transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
-                    modifier = Modifier.widthIn(max = 480.dp).fillMaxWidth(),
+                    modifier = Modifier.widthIn(max = 480.dp).fillMaxSize(),
                     label = "connectStep",
                 ) { shown ->
                     when (val step = shown) {
@@ -279,6 +289,7 @@ fun ConnectScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AddressStep(
     state: ConnectUiState,
@@ -289,23 +300,33 @@ private fun AddressStep(
     permissionDenied: Boolean,
     localNetworkDenied: Boolean,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xl)) {
+    val typing = WindowInsets.isImeVisible
+    StepColumn {
         HeroHeader(
             title = stringResource(R.string.connect_title_line1),
             accent = stringResource(R.string.connect_title_line2),
-            subtitle = stringResource(R.string.connect_body),
             small = true,
         )
-        // The ways in: the home network, the pairing code, the address.
-        ShapeIllustration(
-            satellites = listOf(DowntifyIcons.Wifi, DowntifyIcons.QrCode, DowntifyIcons.Server),
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(horizontal = Spacing.xl),
-        ) { DowntifyLogo(size = 64.dp) }
-
-        Column(Modifier.padding(horizontal = Spacing.xl), verticalArrangement = Arrangement.spacedBy(Spacing.xl)) {
-            if (state.revoked) Notice(stringResource(R.string.connect_revoked), DowntifyIcons.Unpair)
-            if (localNetworkDenied) Notice(stringResource(R.string.connect_local_network_denied), DowntifyIcons.Warning)
-
+        if (state.revoked || localNetworkDenied) {
+            Column(Modifier.padding(horizontal = Spacing.xl), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                if (state.revoked) Notice(stringResource(R.string.connect_revoked), DowntifyIcons.Unpair)
+                if (localNetworkDenied) {
+                    Notice(stringResource(R.string.connect_local_network_denied), DowntifyIcons.Warning)
+                }
+            }
+        }
+        // Servers that announce themselves take the picture's place: picking one is the quickest way in.
+        if (state.discovered.isNotEmpty()) {
+            DiscoveredList(state, onPickDiscovered, Modifier.weight(1f).padding(horizontal = Spacing.xl))
+        } else {
+            // The ways in: the home network, the pairing code, the address.
+            StepIllustration(
+                satellites = listOf(DowntifyIcons.Wifi, DowntifyIcons.QrCode, DowntifyIcons.Server),
+                caption = stringResource(R.string.connect_none_found).takeUnless { typing },
+                modifier = Modifier.weight(1f),
+            ) { DowntifyLogo(size = 64.dp) }
+        }
+        Column(Modifier.padding(horizontal = Spacing.xl), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             OutlinedTextField(
                 value = state.address,
                 onValueChange = onAddressChange,
@@ -327,15 +348,10 @@ private fun AddressStep(
                 modifier = Modifier.fillMaxWidth(),
             )
             if (state.cleartextWarning) {
-                Notice(
-                    stringResource(R.string.connect_cleartext_warning),
-                    DowntifyIcons.Warning,
-                )
+                Notice(stringResource(R.string.connect_cleartext_warning), DowntifyIcons.Warning)
             }
-
-            DiscoveredList(state, onPickDiscovered)
-
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            // While typing an address, scanning isn't what's wanted: the room goes to the field.
+            if (!typing) {
                 ScanButton(stringResource(R.string.connect_scan), onScan, state.busy)
                 if (permissionDenied) Notice(stringResource(R.string.scan_permission_denied), DowntifyIcons.Warning)
                 if (state.error == ConnectError.NotAPairingCode || state.error == ConnectError.OtherServer) {
@@ -346,12 +362,15 @@ private fun AddressStep(
     }
 }
 
-/** Servers that announce themselves on the network, as a segmented list to pick one from. */
+/**
+ * Servers that announce themselves on the network, as a segmented list to pick one from. It keeps
+ * to the room it's given; only a network with more servers than fit there scrolls the list.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun DiscoveredList(state: ConnectUiState, onPick: (DiscoveredServer) -> Unit) {
+private fun DiscoveredList(state: ConnectUiState, onPick: (DiscoveredServer) -> Unit, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             Icon(
                 painterResource(DowntifyIcons.Wifi),
@@ -366,15 +385,8 @@ private fun DiscoveredList(state: ConnectUiState, onPick: (DiscoveredServer) -> 
                 modifier = Modifier.semantics { heading() },
             )
         }
-        if (state.discovered.isEmpty()) {
-            Text(
-                stringResource(R.string.connect_none_found),
-                style = MaterialTheme.typography.bodyMedium,
-                color = scheme.onSurfaceVariant,
-            )
-        }
         Column(
-            Modifier.selectableGroup(),
+            Modifier.selectableGroup().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(ListStyle.Segmented.gap),
         ) {
             val servers = state.discovered
@@ -406,6 +418,7 @@ private fun DiscoveredList(state: ConnectUiState, onPick: (DiscoveredServer) -> 
 }
 
 /** The usual second step: the username and password the user signs in with on the web page. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SignInStep(
     state: ConnectUiState,
@@ -417,18 +430,19 @@ private fun SignInStep(
     onBack: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
+    val typing = WindowInsets.isImeVisible
     var showPassword by rememberSaveable { mutableStateOf(false) }
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xl)) {
+    StepColumn {
         StepHeader(
             title = stringResource(R.string.sign_in_title, step.info.name.ifBlank { step.baseUrl }),
             baseUrl = step.baseUrl,
             info = step.info,
-            body = stringResource(R.string.sign_in_body),
+            body = stringResource(R.string.sign_in_body).takeUnless { typing },
         )
         // What signing in takes: the account, its password, the server it opens.
-        ShapeIllustration(
+        StepIllustration(
             satellites = listOf(DowntifyIcons.Person, DowntifyIcons.Password, DowntifyIcons.Server),
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(horizontal = Spacing.xl),
+            modifier = Modifier.weight(1f),
         ) {
             Icon(
                 painterResource(DowntifyIcons.LockOpen),
@@ -437,7 +451,7 @@ private fun SignInStep(
                 modifier = Modifier.size(64.dp),
             )
         }
-        Column(Modifier.padding(horizontal = Spacing.xl), verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
+        Column(Modifier.padding(horizontal = Spacing.xl), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             if (ServerAddress.isCleartextBeyondLan(step.baseUrl)) {
                 Notice(stringResource(R.string.sign_in_cleartext_warning), DowntifyIcons.Warning)
             }
@@ -485,7 +499,8 @@ private fun SignInStep(
                 keyboardActions = KeyboardActions(onDone = { if (state.canSignIn) onSignIn() }),
                 modifier = Modifier.fillMaxWidth().semantics { contentType = ContentType.Password },
             )
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            // The other ways stay out of the keyboard's way while the form is being filled in.
+            if (!typing) {
                 ScanButton(stringResource(R.string.sign_in_use_code), onUsePairingCode, state.busy)
                 TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                     Text(stringResource(R.string.pair_other_server))
@@ -496,6 +511,7 @@ private fun SignInStep(
 }
 
 /** The way in without the password: a code (or its QR code) from the web page's Settings › Apps. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PairStep(
     state: ConnectUiState,
@@ -509,17 +525,18 @@ private fun PairStep(
 ) {
     val canUsePassword = step.info.capabilities.passwordSignIn
     BackHandler(onBack = if (canUsePassword) onUsePassword else onBackToAddress)
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xl)) {
+    val typing = WindowInsets.isImeVisible
+    StepColumn {
         StepHeader(
             title = stringResource(R.string.pair_title, step.info.name.ifBlank { step.baseUrl }),
             baseUrl = step.baseUrl,
             info = step.info,
-            body = stringResource(R.string.pair_body),
+            body = stringResource(R.string.pair_body).takeUnless { typing },
         )
         // The ways to pair: the QR code, the typed code, the server it pairs with.
-        ShapeIllustration(
+        StepIllustration(
             satellites = listOf(DowntifyIcons.QrCode, DowntifyIcons.Keyboard, DowntifyIcons.Server),
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(horizontal = Spacing.xl),
+            modifier = Modifier.weight(1f),
         ) {
             Icon(
                 painterResource(DowntifyIcons.LockOpen),
@@ -528,7 +545,7 @@ private fun PairStep(
                 modifier = Modifier.size(64.dp),
             )
         }
-        Column(Modifier.padding(horizontal = Spacing.xl), verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
+        Column(Modifier.padding(horizontal = Spacing.xl), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             OutlinedTextField(
                 value = state.code,
                 onValueChange = onCodeChange,
@@ -549,34 +566,121 @@ private fun PairStep(
                 keyboardActions = KeyboardActions(onDone = { if (state.canPair) onPair() }),
                 modifier = Modifier.fillMaxWidth(),
             )
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            if (!typing) {
                 ScanButton(stringResource(R.string.pair_scan), onScan, state.busy)
                 if (permissionDenied) Notice(stringResource(R.string.scan_permission_denied), DowntifyIcons.Warning)
-                if (canUsePassword) {
-                    TextButton(onClick = onUsePassword, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                        Text(stringResource(R.string.sign_in_use_password))
+                // Two text buttons, one under the other: their 48 dp touch targets are the gap.
+                Column {
+                    if (canUsePassword) {
+                        TextButton(onClick = onUsePassword, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                            Text(stringResource(R.string.sign_in_use_password))
+                        }
                     }
-                }
-                TextButton(onClick = onBackToAddress, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.pair_other_server))
+                    TextButton(onClick = onBackToAddress, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.pair_other_server))
+                    }
                 }
             }
         }
     }
 }
 
-/** The second step's title, the server it talks to (address and version) and what to do. */
+/**
+ * A step's layout: the whole height, a gap between its parts and above the footer. It fits the
+ * screen as it is, the picture taking what the rest leaves. Only when even the form can't fit (a
+ * short phone with the keyboard up) does it scroll, so the field being typed in stays in reach.
+ */
 @Composable
-private fun StepHeader(title: String, baseUrl: String, info: ServerInfo, body: String) {
+private fun StepColumn(content: @Composable ColumnScope.() -> Unit) = BoxWithConstraints(Modifier.fillMaxSize()) {
+    val scroll = rememberScrollState()
+    Column(
+        Modifier
+            .fillMaxWidth()
+            // Off while everything fits: no scrolling, and no overscroll stretch either.
+            .verticalScroll(scroll, enabled = scroll.maxValue > 0)
+            // At least the screen's height, so the weighted picture has the leftover room to take.
+            .heightIn(min = maxHeight)
+            .padding(bottom = Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(Spacing.lg),
+        content = content,
+    )
+}
+
+/**
+ * The step's picture in the room the header and the form leave it, centered, with a [caption]
+ * under it. Each shows whole or not at all: the caption when its lines fit, the picture when at
+ * least [MIN_ILLUSTRATION_HEIGHT] is left for it (not on a short phone, or with the keyboard up).
+ */
+@Composable
+private fun StepIllustration(
+    satellites: List<Int>,
+    modifier: Modifier = Modifier,
+    caption: String? = null,
+    center: @Composable () -> Unit,
+) {
+    Layout(
+        content = {
+            ShapeIllustration(satellites, center = center)
+            if (caption != null) StepCaption(caption)
+        },
+        modifier = modifier.fillMaxWidth().padding(horizontal = Spacing.xl),
+    ) { measurables, constraints ->
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val room = if (constraints.hasBoundedHeight) constraints.maxHeight else Constraints.Infinity
+        val gap = Spacing.md.roundToPx()
+        // Measured at its full height: given less, a text reports the height it was allowed, cut.
+        val text = measurables.getOrNull(1)?.measure(loose.copy(maxHeight = Constraints.Infinity))
+            ?.takeIf { it.height <= room }
+        val pictureRoom = room - (text?.let { it.height + gap } ?: 0)
+        val picture = if (pictureRoom >= MIN_ILLUSTRATION_HEIGHT.roundToPx()) {
+            measurables[0].measure(loose.copy(maxHeight = pictureRoom))
+        } else {
+            null
+        }
+        val shown = listOfNotNull(picture, text)
+        val used = shown.sumOf { it.height } + gap * (shown.size - 1).coerceAtLeast(0)
+        val height = if (constraints.hasBoundedHeight) constraints.maxHeight else used
+        layout(constraints.maxWidth, height) {
+            var y = (height - used) / 2
+            shown.forEach {
+                it.placeRelative((constraints.maxWidth - it.width) / 2, y)
+                y += it.height + gap
+            }
+        }
+    }
+}
+
+/** What the picture stands for right now, in a line or two under it ("no server found yet"). */
+@Composable
+private fun StepCaption(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Icon(
+            painterResource(DowntifyIcons.Wifi),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** The second step's title, the server it talks to (address and version) and, with room, what to do. */
+@Composable
+private fun StepHeader(title: String, baseUrl: String, info: ServerInfo, body: String?) {
     Column(
         Modifier.fillMaxWidth().padding(start = Spacing.xl, end = Spacing.xl, top = Spacing.xl),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
+        // One line: a long server name or a long language steps the size down rather than wrap.
+        val style = MaterialTheme.typography.headlineLarge
         Text(
             title,
-            style = MaterialTheme.typography.headlineLarge,
+            style = style,
             textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = TextAutoSize.StepBased(minFontSize = MIN_TITLE_SIZE, maxFontSize = style.fontSize),
             modifier = Modifier.semantics { heading() },
         )
         val address = baseUrl.substringAfter("://")
@@ -590,12 +694,14 @@ private fun StepHeader(title: String, baseUrl: String, info: ServerInfo, body: S
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        Text(
-            body,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        if (body != null) {
+            Text(
+                body,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
@@ -749,6 +855,10 @@ private fun ConnectPairPreview() {
 }
 
 private const val STEPS = 2
+
+/** Below this a step's picture is too small to read: the form gets the room instead. */
+private val MIN_ILLUSTRATION_HEIGHT = 96.dp
+private val MIN_TITLE_SIZE = 22.sp
 private const val LOCAL_NETWORK_SDK = 37
 private const val ACCESS_LOCAL_NETWORK = "android.permission.ACCESS_LOCAL_NETWORK"
 

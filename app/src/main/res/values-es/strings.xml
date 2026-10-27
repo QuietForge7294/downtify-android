@@ -15,17 +15,16 @@
     <!-- Connect -->
     <string name="connect_title_line1">Tu música,</string>
     <string name="connect_title_line2">desde tu servidor.</string>
-    <string name="connect_body">Conéctate al Downtify que tienes en casa. Todo se reproduce desde ahí y sigue siendo tuyo.</string>
     <string name="connect_address_label">Dirección del servidor</string>
     <string name="connect_address_hint">La misma dirección con la que abres Downtify en un navegador.</string>
     <string name="connect_found">Encontrados en esta red</string>
     <string name="connect_searching">Buscando servidores…</string>
-    <string name="connect_none_found">No se encontró ninguno. Escribe la dirección: la red predeterminada de Docker no anuncia el servidor.</string>
+    <string name="connect_none_found">Aún no se encontró ningún servidor en esta red.</string>
     <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Conectar</string>
     <string name="connect_step">Paso %1$d de %2$d</string>
-    <string name="connect_scan">Escanea el código en Ajustes › Apps</string>
-    <string name="connect_cleartext_warning">Esta dirección no está en tu red doméstica y no usa HTTPS: la clave del teléfono viajaría sin cifrar. Pon Downtify detrás de un proxy inverso con HTTPS para usarlo desde fuera.</string>
+    <string name="connect_scan">Escanear QR de vinculación</string>
+    <string name="connect_cleartext_warning">Fuera de tu red doméstica y sin HTTPS: la clave del teléfono viajaría sin cifrar.</string>
     <string name="connect_revoked">Se cerró la sesión de este teléfono en el servidor. Vuelve a iniciar sesión para seguir escuchando.</string>
     <string name="connect_error_invalid">Eso no parece una dirección. Prueba con http://192.168.1.20:8000.</string>
     <string name="connect_error_unreachable">No se puede acceder a un servidor en esa dirección. Revísala y comprueba que el teléfono esté en la misma red.</string>
@@ -33,21 +32,21 @@
     <string name="connect_error_too_new">Este servidor (Downtify %1$s) es más nuevo de lo que la app entiende. Actualiza la app.</string>
 
     <string name="sign_in_title">Inicia sesión en %1$s</string>
-    <string name="sign_in_body">Usa el mismo usuario y contraseña que en la página web.</string>
+    <string name="sign_in_body">Usa tu cuenta de la página web.</string>
     <string name="sign_in_username">Usuario</string>
     <string name="sign_in_password">Contraseña</string>
     <string name="sign_in_show_password">Mostrar contraseña</string>
     <string name="sign_in_hide_password">Ocultar contraseña</string>
     <string name="sign_in_action">Iniciar sesión</string>
-    <string name="sign_in_use_code">Usar un código de vinculación</string>
+    <string name="sign_in_use_code">Vincular con un código</string>
     <string name="sign_in_use_password">Iniciar sesión con tu contraseña</string>
     <string name="sign_in_error_wrong">Usuario o contraseña incorrectos.</string>
     <string name="sign_in_error_off">Este servidor tiene el inicio de sesión desactivado. Usa un código de vinculación.</string>
     <string name="sign_in_error_failed">El servidor no pudo iniciar sesión en este teléfono (error %1$d).</string>
-    <string name="sign_in_cleartext_warning">Esta dirección no está en tu red doméstica y no usa HTTPS: tu contraseña viajaría sin cifrar.</string>
+    <string name="sign_in_cleartext_warning">Fuera de tu red doméstica y sin HTTPS: tu contraseña viajaría sin cifrar.</string>
 
     <string name="pair_title">Vincular con %1$s</string>
-    <string name="pair_body">En la página web, abre Ajustes › Apps y pulsa Vincular un teléfono. Escanea el código QR o escribe el código que aparece debajo.</string>
+    <string name="pair_body">Desde Ajustes › Apps en la página web.</string>
     <string name="pair_code_label">Código de vinculación</string>
     <string name="pair_code_placeholder">XXXX-XXXX</string>
     <string name="pair_action">Vincular</string>
@@ -62,7 +61,7 @@
     <string name="scan_title">Escanear el código de vinculación</string>
     <string name="scan_hint">Apunta la cámara al código QR de Ajustes › Apps › Vincular un teléfono.</string>
     <string name="scan_close">Cerrar el escáner</string>
-    <string name="connect_local_network_denied">El acceso a la red local está desactivado, así que Downtify solo puede llegar a un servidor elegido de la lista. Para escribir una dirección, permítelo en los ajustes de la app.</string>
+    <string name="connect_local_network_denied">El acceso a la red local está desactivado. Para escribir una dirección, permítelo en los ajustes de la app.</string>
     <string name="scan_permission_denied">El acceso a la cámara está desactivado. Escribe el código o permite la cámara en los ajustes del teléfono.</string>
     <string name="scan_not_downtify">Ese código QR no es un código de vinculación de Downtify.</string>
 

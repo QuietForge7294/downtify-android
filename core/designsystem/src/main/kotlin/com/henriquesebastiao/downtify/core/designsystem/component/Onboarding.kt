@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -135,15 +134,28 @@ private fun NextButton(step: Int, label: String, icon: Int, onClick: () -> Unit,
  * An onboarding step's picture: a tilted card holding [center] (the app's mark, the step's icon)
  * with three [satellites], the step's icons, in Material shapes around it. They pop in one after
  * another on the spatial spring. Decorative: nothing in it is read out.
+ *
+ * It is 220 dp wide at most and shrinks, keeping its proportions, to the width and the height it's
+ * given: a screen that must not scroll can hand it whatever room is left.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ShapeIllustration(satellites: List<Int>, modifier: Modifier = Modifier, center: @Composable () -> Unit) {
+    BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
+        val byHeight = if (constraints.hasBoundedHeight) maxHeight * ILLUSTRATION_RATIO else ILLUSTRATION_WIDTH
+        val width = minOf(maxWidth, ILLUSTRATION_WIDTH, byHeight)
+        ShapeKit(satellites, Modifier.size(width, width / ILLUSTRATION_RATIO), center)
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun ShapeKit(satellites: List<Int>, modifier: Modifier, center: @Composable () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val tints = listOf(scheme.onSurfaceVariant, scheme.tertiary, scheme.primary)
     val shapes = listOf(CircleShape, MaterialShapes.Cookie9Sided.toShape(), CircleShape)
-    BoxWithConstraints(modifier.widthIn(max = ILLUSTRATION_WIDTH).fillMaxWidth().aspectRatio(ILLUSTRATION_RATIO)) {
+    BoxWithConstraints(modifier) {
         val unit = maxWidth / KIT_WIDTH
+        val scale = (maxWidth / ILLUSTRATION_WIDTH).coerceAtMost(1f)
         PopIn(0, Modifier.offset(unit * 70f, unit * 40f).size(unit * 220f, unit * 200f)) {
             Box(
                 Modifier
@@ -151,7 +163,14 @@ fun ShapeIllustration(satellites: List<Int>, modifier: Modifier = Modifier, cent
                     .graphicsLayer { rotationZ = CARD_TURN }
                     .background(scheme.surfaceContainerHigh, RoundedCornerShape(unit * 40f)),
             )
-            Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) { center() }
+            // [center] is drawn for the full-size picture: it shrinks with it.
+            Box(
+                Modifier.matchParentSize().graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                },
+                contentAlignment = Alignment.Center,
+            ) { center() }
         }
         SatellitePlaces.zip(satellites).forEachIndexed { index, (place, icon) ->
             val side = unit * place.size

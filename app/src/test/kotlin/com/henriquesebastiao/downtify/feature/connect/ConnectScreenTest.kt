@@ -1,13 +1,17 @@
 package com.henriquesebastiao.downtify.feature.connect
 
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.model.Capabilities
@@ -17,8 +21,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
+// A short phone: every step must fit it without scrolling. Native graphics, so text is measured
+// as on a device and the fit checks mean something.
 @RunWith(AndroidJUnit4::class)
+@Config(qualifiers = "w360dp-h640dp")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ConnectScreenTest {
     @get:Rule
     val compose = createComposeRule()
@@ -114,7 +124,7 @@ class ConnectScreenTest {
         compose.onNodeWithText("Wrong username or password.").assertExists()
         // Hidden behind dots until asked.
         compose.onNodeWithText("••••").assertExists()
-        compose.onNodeWithContentDescription("Show password").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Show password").performClick()
         compose.onNodeWithText("••••").assertDoesNotExist()
         compose.onNodeWithContentDescription("Hide password").assertExists()
     }
@@ -123,7 +133,7 @@ class ConnectScreenTest {
     fun thePairingCodeStaysOneTapAway() {
         var usedCode = false
         show(ConnectUiState(step = ConnectStep.SignIn(base, signInInfo)), onUsePairingCode = { usedCode = true })
-        compose.onNodeWithText("Use a pairing code instead").performScrollTo().performClick()
+        compose.onNodeWithText("Pair with a code").performClick()
         assertTrue(usedCode)
     }
 
@@ -131,7 +141,7 @@ class ConnectScreenTest {
     fun pairingLeadsBackToThePasswordWhenTheServerTakesOne() {
         var usedPassword = false
         show(ConnectUiState(step = ConnectStep.Pair(base, signInInfo)), onUsePassword = { usedPassword = true })
-        compose.onNodeWithText("Sign in with your password instead").performScrollTo().performClick()
+        compose.onNodeWithText("Sign in with your password instead").performClick()
         assertTrue(usedPassword)
     }
 
@@ -163,5 +173,60 @@ class ConnectScreenTest {
         show(ConnectUiState(address = base, searching = false, busy = true), onConnect = { connected++ })
         compose.onNodeWithContentDescription("Connect").assertIsNotEnabled().performClick()
         assertEquals(0, connected)
+    }
+
+    /** Fully shown, and above the footer: nothing hides behind it or below the screen. */
+    private fun SemanticsNodeInteraction.assertClearOfTheFooter(footerTop: Dp) {
+        assertIsDisplayed()
+        val bounds = getUnclippedBoundsInRoot()
+        assertTrue("$bounds runs into the footer at $footerTop", bounds.bottom <= footerTop)
+    }
+
+    /** Where the footer starts: its button, [next], sits 16 dp below its top. */
+    private fun footerTop(next: String) =
+        compose.onNodeWithContentDescription(next).getUnclippedBoundsInRoot().top - FOOTER_PADDING
+
+    @Test
+    fun theSignInStepFitsWithoutScrolling() {
+        show(
+            ConnectUiState(
+                step = ConnectStep.SignIn(base, signInInfo),
+                username = "maria",
+                password = "nope",
+                error = ConnectError.WrongPassword,
+            ),
+        )
+        val footer = footerTop("Sign in")
+        compose.onNodeWithText("Sign in to nas.local").assertClearOfTheFooter(footer)
+        compose.onNodeWithText("Use your account from the web page.").assertClearOfTheFooter(footer)
+        compose.onNodeWithText("Wrong username or password.").assertClearOfTheFooter(footer)
+        compose.onNodeWithText("Pair with a code").assertClearOfTheFooter(footer)
+        compose.onNodeWithText("Use another server").assertClearOfTheFooter(footer)
+        compose.onNodeWithContentDescription("Sign in").assertIsDisplayed()
+    }
+
+    @Test
+    fun thePairStepFitsWithoutScrolling() {
+        show(ConnectUiState(step = ConnectStep.Pair(base, signInInfo), code = "K7QM", error = ConnectError.WrongCode))
+        val footer = footerTop("Pair")
+        compose.onNodeWithText("Pair with nas.local").assertClearOfTheFooter(footer)
+        compose.onNodeWithText("From Settings › Apps on the web page.").assertClearOfTheFooter(footer)
+        compose.onNodeWithText("Scan the QR code").assertClearOfTheFooter(footer)
+        compose.onNodeWithText("Sign in with your password instead").assertClearOfTheFooter(footer)
+        compose.onNodeWithText("Use another server").assertClearOfTheFooter(footer)
+    }
+
+    @Test
+    fun theAddressStepFitsWithoutScrolling() {
+        show(ConnectUiState(address = base, searching = false, revoked = true))
+        val footer = footerTop("Connect")
+        compose.onNodeWithText("This phone was signed out of the server. Sign in again to keep listening.")
+            .assertClearOfTheFooter(footer)
+        compose.onNodeWithText("Server address").assertClearOfTheFooter(footer)
+        compose.onNodeWithText("Scan a pairing QR code").assertClearOfTheFooter(footer)
+    }
+
+    private companion object {
+        val FOOTER_PADDING = 16.dp
     }
 }

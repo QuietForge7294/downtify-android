@@ -15,17 +15,16 @@
     <!-- Connect -->
     <string name="connect_title_line1">Sua música,</string>
     <string name="connect_title_line2">do seu servidor.</string>
-    <string name="connect_body">Conecte-se ao Downtify que você mantém em casa. Tudo é transmitido de lá e continua sendo seu.</string>
     <string name="connect_address_label">Endereço do servidor</string>
     <string name="connect_address_hint">O mesmo endereço que você usa para abrir o Downtify no navegador.</string>
     <string name="connect_found">Encontrados nesta rede</string>
     <string name="connect_searching">Procurando servidores…</string>
-    <string name="connect_none_found">Nenhum encontrado. Digite o endereço — a rede padrão do Docker não anuncia o servidor.</string>
+    <string name="connect_none_found">Nenhum servidor encontrado nesta rede ainda.</string>
     <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Conectar</string>
     <string name="connect_step">Etapa %1$d de %2$d</string>
-    <string name="connect_scan">Escaneie o código em Configurações › Apps</string>
-    <string name="connect_cleartext_warning">Este endereço não está na sua rede local e não usa HTTPS: a chave do celular trafegaria sem criptografia. Coloque o Downtify atrás de um proxy reverso HTTPS para usá-lo de fora.</string>
+    <string name="connect_scan">Ler QR de emparelhamento</string>
+    <string name="connect_cleartext_warning">Fora da sua rede local e sem HTTPS: a chave do celular trafegaria sem criptografia.</string>
     <string name="connect_revoked">Este celular foi desconectado do servidor. Entre de novo para continuar ouvindo.</string>
     <string name="connect_error_invalid">Isso não parece um endereço. Tente http://192.168.1.20:8000.</string>
     <string name="connect_error_unreachable">Não foi possível alcançar um servidor nesse endereço. Confira-o e veja se o celular está na mesma rede.</string>
@@ -33,21 +32,21 @@
     <string name="connect_error_too_new">Este servidor (Downtify %1$s) é mais novo do que o app entende. Atualize o app.</string>
 
     <string name="sign_in_title">Entrar em %1$s</string>
-    <string name="sign_in_body">Use o mesmo usuário e senha da página web.</string>
+    <string name="sign_in_body">Use sua conta da página web.</string>
     <string name="sign_in_username">Usuário</string>
     <string name="sign_in_password">Senha</string>
     <string name="sign_in_show_password">Mostrar senha</string>
     <string name="sign_in_hide_password">Ocultar senha</string>
     <string name="sign_in_action">Entrar</string>
-    <string name="sign_in_use_code">Usar um código de emparelhamento</string>
+    <string name="sign_in_use_code">Emparelhar com um código</string>
     <string name="sign_in_use_password">Entrar com sua senha</string>
     <string name="sign_in_error_wrong">Usuário ou senha incorretos.</string>
     <string name="sign_in_error_off">Este servidor está com o login desligado. Use um código de emparelhamento.</string>
     <string name="sign_in_error_failed">O servidor não conseguiu conectar este celular (erro %1$d).</string>
-    <string name="sign_in_cleartext_warning">Este endereço não está na sua rede local e não usa HTTPS: sua senha trafegaria sem criptografia.</string>
+    <string name="sign_in_cleartext_warning">Fora da sua rede local e sem HTTPS: sua senha trafegaria sem criptografia.</string>
 
     <string name="pair_title">Emparelhar com %1$s</string>
-    <string name="pair_body">Na página web, abra Configurações › Apps e toque em Emparelhar um celular. Escaneie o código QR ou digite o código mostrado abaixo dele.</string>
+    <string name="pair_body">Em Configurações › Apps na página web.</string>
     <string name="pair_code_label">Código de emparelhamento</string>
     <string name="pair_code_placeholder">XXXX-XXXX</string>
     <string name="pair_action">Emparelhar</string>
@@ -62,7 +61,7 @@
     <string name="scan_title">Escanear o código de emparelhamento</string>
     <string name="scan_hint">Aponte a câmera para o código QR em Configurações › Apps › Emparelhar um celular.</string>
     <string name="scan_close">Fechar o leitor</string>
-    <string name="connect_local_network_denied">O acesso à rede local está desativado, então o Downtify só alcança um servidor escolhido na lista. Para digitar um endereço, permita nas configurações do app.</string>
+    <string name="connect_local_network_denied">O acesso à rede local está desativado. Para digitar um endereço, permita nas configurações do app.</string>
     <string name="scan_permission_denied">O acesso à câmera está desativado. Digite o código ou permita a câmera nas configurações do celular.</string>
     <string name="scan_not_downtify">Esse código QR não é um código de emparelhamento do Downtify.</string>
 

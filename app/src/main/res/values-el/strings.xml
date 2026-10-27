@@ -15,39 +15,38 @@
     <!-- Connect -->
     <string name="connect_title_line1">Η μουσική σου,</string>
     <string name="connect_title_line2">από τον δικό σου διακομιστή.</string>
-    <string name="connect_body">Συνδέσου στο Downtify που τρέχεις στο σπίτι. Όλα αναπαράγονται από εκεί και παραμένουν δικά σου.</string>
     <string name="connect_address_label">Διεύθυνση διακομιστή</string>
-    <string name="connect_address_hint">Η ίδια διεύθυνση με την οποία ανοίγεις το Downtify σε πρόγραμμα περιήγησης.</string>
+    <string name="connect_address_hint">Αυτή που ανοίγεις στο πρόγραμμα περιήγησης.</string>
     <string name="connect_found">Βρέθηκαν σε αυτό το δίκτυο</string>
     <string name="connect_searching">Αναζήτηση διακομιστών…</string>
-    <string name="connect_none_found">Δεν βρέθηκε κανένας. Πληκτρολόγησε τη διεύθυνση — το προεπιλεγμένο δίκτυο του Docker δεν ανακοινώνει τον διακομιστή.</string>
+    <string name="connect_none_found">Δεν βρέθηκε ακόμη διακομιστής σε αυτό το δίκτυο.</string>
     <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Σύνδεση</string>
     <string name="connect_step">Βήμα %1$d από %2$d</string>
-    <string name="connect_scan">Σάρωσε τον κωδικό από Ρυθμίσεις › Εφαρμογές</string>
-    <string name="connect_cleartext_warning">Αυτή η διεύθυνση δεν ανήκει στο οικιακό σου δίκτυο και δεν χρησιμοποιεί HTTPS: το κλειδί του τηλεφώνου θα ταξίδευε αδιαμόρφωτο. Βάλε το Downtify πίσω από αντίστροφο διακομιστή μεσολάβησης HTTPS για να το χρησιμοποιείς από έξω.</string>
-    <string name="connect_revoked">Αυτό το τηλέφωνο αποσυνδέθηκε από τον διακομιστή. Συνδέσου ξανά για να συνεχίσεις να ακούς.</string>
+    <string name="connect_scan">Σάρωση QR αντιστοίχισης</string>
+    <string name="connect_cleartext_warning">Εκτός οικιακού δικτύου και χωρίς HTTPS: το κλειδί του τηλεφώνου θα ταξίδευε χωρίς κρυπτογράφηση.</string>
+    <string name="connect_revoked">Το τηλέφωνο αποσυνδέθηκε από τον διακομιστή. Συνδέσου ξανά για να συνεχίσεις.</string>
     <string name="connect_error_invalid">Αυτό δεν μοιάζει με διεύθυνση. Δοκίμασε http://192.168.1.20:8000.</string>
     <string name="connect_error_unreachable">Δεν είναι δυνατή η πρόσβαση σε διακομιστή σε αυτή τη διεύθυνση. Έλεγξέ την και δες αν το τηλέφωνο είναι στο ίδιο δίκτυο.</string>
     <string name="connect_error_not_downtify">Κάτι απάντησε, αλλά δεν είναι Downtify.</string>
     <string name="connect_error_too_new">Αυτός ο διακομιστής (Downtify %1$s) είναι νεότερος από ό,τι καταλαβαίνει η εφαρμογή. Ενημέρωσε την εφαρμογή.</string>
 
     <string name="sign_in_title">Σύνδεση στο %1$s</string>
-    <string name="sign_in_body">Χρησιμοποίησε το ίδιο όνομα χρήστη και κωδικό με τη σελίδα ιστού.</string>
+    <string name="sign_in_body">Ο λογαριασμός της σελίδας ιστού.</string>
     <string name="sign_in_username">Όνομα χρήστη</string>
     <string name="sign_in_password">Κωδικός</string>
     <string name="sign_in_show_password">Εμφάνιση κωδικού</string>
     <string name="sign_in_hide_password">Απόκρυψη κωδικού</string>
     <string name="sign_in_action">Σύνδεση</string>
-    <string name="sign_in_use_code">Χρήση κωδικού αντιστοίχισης</string>
+    <string name="sign_in_use_code">Αντιστοίχιση με κωδικό</string>
     <string name="sign_in_use_password">Σύνδεση με τον κωδικό σου</string>
     <string name="sign_in_error_wrong">Λάθος όνομα χρήστη ή κωδικός.</string>
     <string name="sign_in_error_off">Η σύνδεση είναι απενεργοποιημένη σε αυτόν τον διακομιστή. Χρησιμοποίησε κωδικό αντιστοίχισης.</string>
     <string name="sign_in_error_failed">Ο διακομιστής δεν μπόρεσε να συνδέσει αυτό το τηλέφωνο (σφάλμα %1$d).</string>
-    <string name="sign_in_cleartext_warning">Αυτή η διεύθυνση δεν ανήκει στο οικιακό σου δίκτυο και δεν χρησιμοποιεί HTTPS: ο κωδικός σου θα ταξίδευε χωρίς κρυπτογράφηση.</string>
+    <string name="sign_in_cleartext_warning">Εκτός οικιακού δικτύου και χωρίς HTTPS: ο κωδικός σου θα ταξίδευε χωρίς κρυπτογράφηση.</string>
 
     <string name="pair_title">Αντιστοίχιση με %1$s</string>
-    <string name="pair_body">Στη σελίδα ιστού άνοιξε Ρυθμίσεις › Εφαρμογές και πάτα Αντιστοίχιση τηλεφώνου. Σάρωσε τον κωδικό QR ή πληκτρολόγησε τον κωδικό που εμφανίζεται από κάτω.</string>
+    <string name="pair_body">Από Ρυθμίσεις › Εφαρμογές στη σελίδα ιστού.</string>
     <string name="pair_code_label">Κωδικός αντιστοίχισης</string>
     <string name="pair_code_placeholder">XXXX-XXXX</string>
     <string name="pair_action">Αντιστοίχιση</string>
@@ -62,7 +61,7 @@
     <string name="scan_title">Σάρωση κωδικού αντιστοίχισης</string>
     <string name="scan_hint">Στόχευσε την κάμερα στον κωδικό QR στις Ρυθμίσεις › Εφαρμογές › Αντιστοίχιση τηλεφώνου.</string>
     <string name="scan_close">Κλείσιμο σαρωτή</string>
-    <string name="connect_local_network_denied">Η πρόσβαση στο τοπικό δίκτυο είναι απενεργοποιημένη, οπότε το Downtify φτάνει μόνο σε διακομιστή που επιλέγεις από τη λίστα. Για να πληκτρολογήσεις διεύθυνση, επίτρεψέ το στις ρυθμίσεις της εφαρμογής.</string>
+    <string name="connect_local_network_denied">Η πρόσβαση στο τοπικό δίκτυο είναι απενεργοποιημένη. Για να πληκτρολογήσεις διεύθυνση, επίτρεψέ το στις ρυθμίσεις της εφαρμογής.</string>
     <string name="scan_permission_denied">Η πρόσβαση στην κάμερα είναι απενεργοποιημένη. Πληκτρολόγησε τον κωδικό ή επίτρεψε την κάμερα στις ρυθμίσεις του τηλεφώνου.</string>
     <string name="scan_not_downtify">Αυτός ο κωδικός QR δεν είναι κωδικός αντιστοίχισης Downtify.</string>
 
