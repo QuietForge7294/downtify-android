@@ -53,9 +53,6 @@
     <string name="scan_not_downtify">Ese código QR no es un código de vinculación de Downtify.</string>
 
     <!-- Home -->
-    <string name="home_good_morning">Buenos días</string>
-    <string name="home_good_afternoon">Buenas tardes</string>
-    <string name="home_good_evening">Buenas noches</string>
     <string name="home_streaming_from">Reproduciendo desde %1$s</string>
     <string name="home_unreachable">No se puede acceder a %1$s · mostrando tu biblioteca sincronizada</string>
     <string name="home_different_server">Otro servidor responde en esta dirección · vuelve a vincular en Ajustes</string>

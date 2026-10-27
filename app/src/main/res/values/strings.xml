@@ -54,9 +54,6 @@
     <string name="scan_not_downtify">That QR code isn\'t a Downtify pairing code.</string>
 
     <!-- Home -->
-    <string name="home_good_morning">Good morning</string>
-    <string name="home_good_afternoon">Good afternoon</string>
-    <string name="home_good_evening">Good evening</string>
     <string name="home_streaming_from">Streaming from %1$s</string>
     <string name="home_unreachable">Can\'t reach %1$s · showing your synced library</string>
     <string name="home_different_server">Another server answers at this address · pair again in Settings</string>

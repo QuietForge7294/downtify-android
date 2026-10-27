@@ -53,9 +53,6 @@
     <string name="scan_not_downtify">Този QR код не е код за сдвояване на Downtify.</string>
 
     <!-- Home -->
-    <string name="home_good_morning">Добро утро</string>
-    <string name="home_good_afternoon">Добър ден</string>
-    <string name="home_good_evening">Добър вечер</string>
     <string name="home_streaming_from">Възпроизвеждане от %1$s</string>
     <string name="home_unreachable">Няма достъп до %1$s · показва се синхронизираната ти библиотека</string>
     <string name="home_different_server">На този адрес отговаря друг сървър · сдвои отново от Настройки</string>

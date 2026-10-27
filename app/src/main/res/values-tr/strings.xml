@@ -53,9 +53,6 @@
     <string name="scan_not_downtify">Bu QR kodu bir Downtify eşleştirme kodu değil.</string>
 
     <!-- Home -->
-    <string name="home_good_morning">Günaydın</string>
-    <string name="home_good_afternoon">İyi günler</string>
-    <string name="home_good_evening">İyi akşamlar</string>
     <string name="home_streaming_from">%1$s üzerinden akıyor</string>
     <string name="home_unreachable">%1$s sunucusuna ulaşılamıyor · eşzamanlanmış kitaplığın gösteriliyor</string>
     <string name="home_different_server">Bu adreste başka bir sunucu yanıt veriyor · Ayarlar\'dan yeniden eşleştir</string>

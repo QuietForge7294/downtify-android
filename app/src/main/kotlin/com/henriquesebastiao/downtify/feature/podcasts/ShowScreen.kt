@@ -63,6 +63,7 @@ import com.henriquesebastiao.downtify.core.model.PodcastEpisode
 import com.henriquesebastiao.downtify.core.model.PodcastShow
 import com.henriquesebastiao.downtify.core.model.formatDuration
 import com.henriquesebastiao.downtify.ui.common.formatDate
+import com.henriquesebastiao.downtify.ui.common.plusBottomBars
 
 @Composable
 fun ShowRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: ShowViewModel = hiltViewModel()) {
@@ -141,7 +142,7 @@ fun ShowScreen(
                 )
 
                 else -> LazyColumn(
-                    contentPadding = PaddingValues(bottom = Spacing.xl),
+                    contentPadding = PaddingValues(bottom = Spacing.xl).plusBottomBars(),
                     verticalArrangement = Arrangement.spacedBy(ListStyle.Separated.gap),
                     modifier = Modifier.fillMaxSize(),
                 ) {

@@ -68,6 +68,7 @@ import com.henriquesebastiao.downtify.ui.common.TrackActions
 import com.henriquesebastiao.downtify.ui.common.TrackItem
 import com.henriquesebastiao.downtify.ui.common.albumSubtitle
 import com.henriquesebastiao.downtify.ui.common.artistSubtitle
+import com.henriquesebastiao.downtify.ui.common.plusBottomBars
 import com.henriquesebastiao.downtify.ui.common.songsCount
 
 data class SearchNavigation(
@@ -264,7 +265,7 @@ private fun Results(
 
         else -> LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = Spacing.xl),
+            contentPadding = PaddingValues(bottom = Spacing.xl).plusBottomBars(),
             verticalArrangement = Arrangement.spacedBy(ListStyle.Separated.gap),
         ) {
             if (!results.isEmpty) {

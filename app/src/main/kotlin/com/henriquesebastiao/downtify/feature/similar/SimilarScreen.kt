@@ -53,6 +53,7 @@ import com.henriquesebastiao.downtify.core.model.Track
 import com.henriquesebastiao.downtify.feature.player.LyricsSheet
 import com.henriquesebastiao.downtify.feature.search.RemoteSongRow
 import com.henriquesebastiao.downtify.ui.common.LoadError
+import com.henriquesebastiao.downtify.ui.common.plusBottomBars
 
 @Composable
 fun SimilarRoute(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel: SimilarViewModel = hiltViewModel()) {
@@ -233,7 +234,7 @@ fun SimilarScreen(
                 )
 
                 state.songs.isNotEmpty() -> LazyColumn(
-                    contentPadding = PaddingValues(horizontal = Spacing.screen, vertical = Spacing.sm),
+                    contentPadding = PaddingValues(horizontal = Spacing.screen, vertical = Spacing.sm).plusBottomBars(),
                     verticalArrangement = Arrangement.spacedBy(ListStyle.Separated.gap),
                 ) {
                     items(state.songs, key = { "similar:${it.id}" }) { song ->

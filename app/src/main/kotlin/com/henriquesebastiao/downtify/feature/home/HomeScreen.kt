@@ -41,6 +41,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -52,7 +53,6 @@ import com.henriquesebastiao.downtify.core.designsystem.component.CircleButton
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyLogo
 import com.henriquesebastiao.downtify.core.designsystem.component.EmptyState
-import com.henriquesebastiao.downtify.core.designsystem.component.HeroHeader
 import com.henriquesebastiao.downtify.core.designsystem.component.PhonePreviews
 import com.henriquesebastiao.downtify.core.designsystem.component.SectionCard
 import com.henriquesebastiao.downtify.core.designsystem.component.SectionHeader
@@ -68,7 +68,7 @@ import com.henriquesebastiao.downtify.ui.common.CoverCard
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
 import com.henriquesebastiao.downtify.ui.common.PreviewData
 import com.henriquesebastiao.downtify.ui.common.albumSubtitle
-import java.time.LocalTime
+import com.henriquesebastiao.downtify.ui.common.plusBottomBars
 
 @Composable
 fun HomeRoute(
@@ -133,7 +133,11 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                     ) {
                         DowntifyLogo(size = 32.dp)
-                        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                        )
                     }
                 },
                 actions = {
@@ -152,8 +156,13 @@ fun HomeScreen(
             onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
-            LazyColumn(contentPadding = PaddingValues(bottom = Spacing.xl), modifier = Modifier.fillMaxSize()) {
-                item(key = "hero") { Hero(state) }
+            LazyColumn(
+                contentPadding = PaddingValues(bottom = Spacing.xl).plusBottomBars(),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                item(key = "status") {
+                    ServerStatusLine(state, Modifier.padding(horizontal = Spacing.screen, vertical = Spacing.sm))
+                }
                 when {
                     state.loading -> item(key = "loading") {
                         Box(Modifier.fillMaxWidth().padding(Spacing.xxl), contentAlignment = Alignment.Center) {
@@ -193,21 +202,6 @@ fun HomeScreen(
                 }
             }
         }
-    }
-}
-
-/** The greeting as the wide hero title, and where the music comes from as a status tag. */
-@Composable
-private fun Hero(state: HomeUiState) {
-    val hour = LocalTime.now().hour
-    val greeting = when (hour) {
-        in 5..11 -> R.string.home_good_morning
-        in 12..17 -> R.string.home_good_afternoon
-        else -> R.string.home_good_evening
-    }
-    Column {
-        HeroHeader(title = stringResource(greeting))
-        ServerStatusLine(state, Modifier.padding(horizontal = Spacing.xl))
     }
 }
 
@@ -337,7 +331,7 @@ private fun QuickAccessSection(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 title,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f).semantics {
                     heading()
                 },

@@ -76,6 +76,7 @@ import com.henriquesebastiao.downtify.ui.common.TrackActions
 import com.henriquesebastiao.downtify.ui.common.TrackItem
 import com.henriquesebastiao.downtify.ui.common.albumSubtitle
 import com.henriquesebastiao.downtify.ui.common.artistSubtitle
+import com.henriquesebastiao.downtify.ui.common.plusBottomBars
 import com.henriquesebastiao.downtify.ui.common.songsCount
 
 /** Where the library can navigate to. */
@@ -302,9 +303,12 @@ internal class AtLeastTwoColumns(private val minSize: Dp) : GridCells {
 
 private val CoverGridMinSize = 160.dp
 private val gridCells = AtLeastTwoColumns(CoverGridMinSize)
-private val gridPadding =
-    PaddingValues(start = Spacing.screen, end = Spacing.screen, top = Spacing.sm, bottom = Spacing.xl)
-private val listPadding = gridPadding
+private val gridPadding: PaddingValues
+    @Composable get() =
+        PaddingValues(start = Spacing.screen, end = Spacing.screen, top = Spacing.sm, bottom = Spacing.xl)
+            .plusBottomBars()
+private val listPadding: PaddingValues
+    @Composable get() = gridPadding
 private val listGap = Arrangement.spacedBy(ListStyle.Separated.gap)
 private val PANEL_CORNER = 32.dp
 private const val TINT_ALPHA = 0.18f

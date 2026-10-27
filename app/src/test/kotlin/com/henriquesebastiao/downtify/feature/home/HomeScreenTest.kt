@@ -62,14 +62,14 @@ class HomeScreenTest {
     }
 
     @Test
-    fun theGreetingIsTheHeroHeadingAndTheServerItsStatus() {
+    fun thePageOpensOnTheServersStatusWithNoGreeting() {
         show(state)
-        val greeting = listOf("Good morning", "Good afternoon", "Good evening")
-            .map { compose.onAllNodes(hasText(it)).fetchSemanticsNodes() }
-            .single { it.isNotEmpty() }
-            .single()
-        assertTrue(SemanticsProperties.Heading in greeting.config)
+        listOf("Good morning", "Good afternoon", "Good evening").forEach {
+            compose.onNodeWithText(it).assertDoesNotExist()
+        }
         compose.onNodeWithText("Streaming from nas.local").assertExists()
+        val section = compose.onNodeWithText("Jump back in").fetchSemanticsNode()
+        assertTrue(SemanticsProperties.Heading in section.config)
     }
 
     @Test

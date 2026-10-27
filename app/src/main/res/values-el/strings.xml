@@ -53,9 +53,6 @@
     <string name="scan_not_downtify">Αυτός ο κωδικός QR δεν είναι κωδικός αντιστοίχισης Downtify.</string>
 
     <!-- Home -->
-    <string name="home_good_morning">Καλημέρα</string>
-    <string name="home_good_afternoon">Καλό απόγευμα</string>
-    <string name="home_good_evening">Καλησπέρα</string>
     <string name="home_streaming_from">Αναπαραγωγή από %1$s</string>
     <string name="home_unreachable">Δεν είναι δυνατή η πρόσβαση στο %1$s · εμφανίζεται η συγχρονισμένη βιβλιοθήκη σου</string>
     <string name="home_different_server">Άλλος διακομιστής απαντά σε αυτή τη διεύθυνση · αντιστοίχισε ξανά στις Ρυθμίσεις</string>

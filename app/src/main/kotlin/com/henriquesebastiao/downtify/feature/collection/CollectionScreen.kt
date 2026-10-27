@@ -76,6 +76,7 @@ import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
 import com.henriquesebastiao.downtify.ui.common.PreviewData
 import com.henriquesebastiao.downtify.ui.common.TrackActions
 import com.henriquesebastiao.downtify.ui.common.TrackItem
+import com.henriquesebastiao.downtify.ui.common.plusBottomBars
 import com.henriquesebastiao.downtify.ui.common.songsCount
 
 @Composable
@@ -177,7 +178,7 @@ fun CollectionScreen(
 
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(bottom = Spacing.xl),
+                contentPadding = PaddingValues(bottom = Spacing.xl).plusBottomBars(),
                 verticalArrangement = Arrangement.spacedBy(ListStyle.Separated.gap),
             ) {
                 item(key = "header") {

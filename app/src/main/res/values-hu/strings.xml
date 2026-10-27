@@ -53,9 +53,6 @@
     <string name="scan_not_downtify">Ez a QR-kód nem Downtify párosítókód.</string>
 
     <!-- Home -->
-    <string name="home_good_morning">Jó reggelt</string>
-    <string name="home_good_afternoon">Jó napot</string>
-    <string name="home_good_evening">Jó estét</string>
     <string name="home_streaming_from">Streamelés innen: %1$s</string>
     <string name="home_unreachable">%1$s nem érhető el · a szinkronizált könyvtárad látható</string>
     <string name="home_different_server">Ezen a címen másik szerver válaszol · párosíts újra a Beállításokban</string>

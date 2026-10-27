@@ -35,6 +35,7 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 import com.henriquesebastiao.downtify.core.model.PodcastShow
 import com.henriquesebastiao.downtify.ui.common.CoverItem
 import com.henriquesebastiao.downtify.ui.common.LoadError
+import com.henriquesebastiao.downtify.ui.common.plusBottomBars
 
 @Composable
 fun PodcastsRoute(
@@ -99,7 +100,7 @@ fun PodcastsScreen(
                 }
 
                 else -> LazyColumn(
-                    contentPadding = PaddingValues(horizontal = Spacing.screen, vertical = Spacing.sm),
+                    contentPadding = PaddingValues(horizontal = Spacing.screen, vertical = Spacing.sm).plusBottomBars(),
                     verticalArrangement = Arrangement.spacedBy(ListStyle.Separated.gap),
                     modifier = Modifier.fillMaxSize(),
                 ) {

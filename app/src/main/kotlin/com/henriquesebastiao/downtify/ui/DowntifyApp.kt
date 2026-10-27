@@ -42,9 +42,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -95,6 +98,7 @@ import com.henriquesebastiao.downtify.feature.search.SearchRoute
 import com.henriquesebastiao.downtify.feature.settings.SettingsRoute
 import com.henriquesebastiao.downtify.feature.similar.SimilarRoute as SimilarScreenRoute
 import com.henriquesebastiao.downtify.ui.common.CoverUrls
+import com.henriquesebastiao.downtify.ui.common.LocalBottomBarsInset
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
 import com.henriquesebastiao.downtify.ui.navigation.AboutRoute as AboutDestination
 import com.henriquesebastiao.downtify.ui.navigation.AlbumRoute
@@ -230,7 +234,9 @@ private fun MainShell() {
                 },
                 layoutType = if (noBar) NavigationSuiteType.None else adaptiveLayout,
             ) {
-                Column(Modifier.fillMaxSize()) {
+                // The content runs on behind the mini player and the floating bar, as in PixelPlayer:
+                // they float over its end, and the screens pad their lists by what they cover.
+                Box(Modifier.fillMaxSize()) {
                     // What sits at the bottom clears the system's navigation bar, unless the full-width bar
                     // under it already does; the screens above then leave no room for it themselves.
                     val fullWidthBar = !noBar && phone
@@ -242,12 +248,22 @@ private fun MainShell() {
                     } else {
                         Modifier
                     }
-                    Box(Modifier.weight(1f).then(content)) {
-                        AppNavHost(navController, onOpenMenu = { scope.launch { drawerState.open() } })
-                        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+                    var stackHeight by remember { mutableStateOf(0.dp) }
+                    val covered = if (miniPlayer || floatingBar) stackHeight else 0.dp
+                    CompositionLocalProvider(LocalBottomBarsInset provides covered) {
+                        Box(Modifier.fillMaxSize().then(content)) {
+                            AppNavHost(navController, onOpenMenu = { scope.launch { drawerState.open() } })
+                        }
                     }
                     if (miniPlayer || floatingBar) {
-                        Column(if (fullWidthBar) Modifier else Modifier.navigationBarsPadding()) {
+                        val density = LocalDensity.current
+                        Column(
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                // Measured with the system bar's padding: that's covered too.
+                                .onSizeChanged { stackHeight = with(density) { it.height.toDp() } }
+                                .then(if (fullWidthBar) Modifier else Modifier.navigationBarsPadding()),
+                        ) {
                             if (miniPlayer) {
                                 MiniPlayerHost(
                                     player = player,
@@ -259,6 +275,7 @@ private fun MainShell() {
                             if (floatingBar) FloatingNavBar(currentTab, openTab, attached = miniPlayer)
                         }
                     }
+                    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = covered))
                 }
             }
             if (hasMedia) {

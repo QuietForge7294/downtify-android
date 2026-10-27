@@ -86,6 +86,7 @@ import com.henriquesebastiao.downtify.ui.common.GroupedList
 import com.henriquesebastiao.downtify.ui.common.GroupedRow
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
 import com.henriquesebastiao.downtify.ui.common.RowAction
+import com.henriquesebastiao.downtify.ui.common.plusBottomBars
 
 @Composable
 fun DownloadsRoute(
@@ -136,7 +137,7 @@ fun DownloadsScreen(
     ) { padding ->
         if (state.loading) return@Scaffold
         LazyColumn(
-            contentPadding = PaddingValues(bottom = Spacing.xl),
+            contentPadding = PaddingValues(bottom = Spacing.xl).plusBottomBars(),
             verticalArrangement = Arrangement.spacedBy(ListStyle.Separated.gap),
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {

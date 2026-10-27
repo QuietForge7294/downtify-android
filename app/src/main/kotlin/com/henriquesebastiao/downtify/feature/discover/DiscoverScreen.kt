@@ -68,6 +68,7 @@ import com.henriquesebastiao.downtify.core.model.DiscoverPlaylist
 import com.henriquesebastiao.downtify.ui.common.CoverCard
 import com.henriquesebastiao.downtify.ui.common.CoverItem
 import com.henriquesebastiao.downtify.ui.common.LoadError
+import com.henriquesebastiao.downtify.ui.common.plusBottomBars
 
 @Composable
 fun DiscoverRoute(
@@ -206,7 +207,7 @@ private fun Content(
     onPreview: (DiscoverArtist) -> Unit,
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(bottom = Spacing.xl),
+        contentPadding = PaddingValues(bottom = Spacing.xl).plusBottomBars(),
         verticalArrangement = Arrangement.spacedBy(ListStyle.Separated.gap),
         modifier = Modifier.fillMaxSize(),
     ) {
