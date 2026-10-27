@@ -15,25 +15,38 @@
     <!-- Connect -->
     <string name="connect_title_line1">A zenéd,</string>
     <string name="connect_title_line2">a saját szervereden.</string>
-    <string name="connect_body">Csatlakozz az otthon futtatott Downtifyhoz. Minden onnan streamel, és a tiéd marad.</string>
     <string name="connect_address_label">Szerver címe</string>
     <string name="connect_address_hint">Ugyanaz a cím, amelyen böngészőben megnyitod a Downtifyt.</string>
     <string name="connect_found">Ezen a hálózaton találhatók</string>
     <string name="connect_searching">Szerverek keresése…</string>
-    <string name="connect_none_found">Nem található egy sem. Írd be inkább a címet — a Docker alapértelmezett hálózata nem hirdeti a szervert.</string>
+    <string name="connect_none_found">Ezen a hálózaton még nem található szerver.</string>
     <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Csatlakozás</string>
     <string name="connect_step">%1$d/%2$d. lépés</string>
-    <string name="connect_scan">Olvasd be a kódot a Beállítások › Alkalmazások oldalról</string>
-    <string name="connect_cleartext_warning">Ez a cím nem az otthoni hálózaton van, és nem használ HTTPS-t: a telefon kulcsa titkosítatlanul utazna. Tedd a Downtifyt HTTPS-es fordított proxy mögé, hogy kívülről is használhasd.</string>
-    <string name="connect_revoked">Ezt a telefont leválasztották a szerverről. Párosítsd újra, hogy tovább hallgathass zenét.</string>
+    <string name="connect_scan">Párosító QR-kód beolvasása</string>
+    <string name="connect_cleartext_warning">Nem az otthoni hálózaton van, és nincs HTTPS: a telefon kulcsa titkosítatlanul utazna.</string>
+    <string name="connect_revoked">Ezt a telefont kijelentkeztették a szerverről. Jelentkezz be újra, hogy tovább hallgathass zenét.</string>
     <string name="connect_error_invalid">Ez nem úgy néz ki, mint egy cím. Próbáld így: http://192.168.1.20:8000.</string>
     <string name="connect_error_unreachable">Ezen a címen nem érhető el szerver. Ellenőrizd a címet, és hogy a telefon ugyanazon a hálózaton van-e.</string>
     <string name="connect_error_not_downtify">Valami válaszolt, de nem Downtify.</string>
     <string name="connect_error_too_new">Ez a szerver (Downtify %1$s) újabb, mint amit az alkalmazás ismer. Frissítsd az alkalmazást.</string>
 
+    <string name="sign_in_title">Bejelentkezés ide: %1$s</string>
+    <string name="sign_in_body">Használd a weboldalon használt fiókodat.</string>
+    <string name="sign_in_username">Felhasználónév</string>
+    <string name="sign_in_password">Jelszó</string>
+    <string name="sign_in_show_password">Jelszó megjelenítése</string>
+    <string name="sign_in_hide_password">Jelszó elrejtése</string>
+    <string name="sign_in_action">Bejelentkezés</string>
+    <string name="sign_in_use_code">Párosítás kóddal</string>
+    <string name="sign_in_use_password">Bejelentkezés jelszóval</string>
+    <string name="sign_in_error_wrong">Hibás felhasználónév vagy jelszó.</string>
+    <string name="sign_in_error_off">Ezen a szerveren ki van kapcsolva a bejelentkezés. Használj párosítókódot.</string>
+    <string name="sign_in_error_failed">A szerver nem tudta bejelentkeztetni a telefont (hiba: %1$d).</string>
+    <string name="sign_in_cleartext_warning">Nem az otthoni hálózaton van, és nincs HTTPS: a jelszavad titkosítatlanul utazna.</string>
+
     <string name="pair_title">Párosítás: %1$s</string>
-    <string name="pair_body">A weboldalon nyisd meg a Beállítások › Alkalmazások részt, és koppints a Telefon párosítása gombra. Olvasd be a QR-kódot, vagy írd be alatta látható kódot.</string>
+    <string name="pair_body">A weboldal Beállítások › Alkalmazások részéből.</string>
     <string name="pair_code_label">Párosítókód</string>
     <string name="pair_code_placeholder">XXXX-XXXX</string>
     <string name="pair_action">Párosítás</string>
@@ -48,14 +61,14 @@
     <string name="scan_title">Párosítókód beolvasása</string>
     <string name="scan_hint">Irányítsd a kamerát a Beállítások › Alkalmazások › Telefon párosítása oldalon látható QR-kódra.</string>
     <string name="scan_close">Olvasó bezárása</string>
-    <string name="connect_local_network_denied">A helyi hálózati hozzáférés ki van kapcsolva, ezért a Downtify csak a listából választott szervert éri el. Cím beírásához engedélyezd az alkalmazás beállításaiban.</string>
+    <string name="connect_local_network_denied">A helyi hálózati hozzáférés ki van kapcsolva. Cím beírásához engedélyezd az alkalmazás beállításaiban.</string>
     <string name="scan_permission_denied">A kamerahozzáférés ki van kapcsolva. Írd be a kódot, vagy engedélyezd a kamerát a telefon beállításaiban.</string>
     <string name="scan_not_downtify">Ez a QR-kód nem Downtify párosítókód.</string>
 
     <!-- Home -->
     <string name="home_streaming_from">Streamelés innen: %1$s</string>
     <string name="home_unreachable">%1$s nem érhető el · a szinkronizált könyvtárad látható</string>
-    <string name="home_different_server">Ezen a címen másik szerver válaszol · párosíts újra a Beállításokban</string>
+    <string name="home_different_server">Ezen a címen másik szerver válaszol · jelentkezz be újra a Beállításokban</string>
     <string name="home_syncing">Szinkronizálás: %1$s…</string>
     <string name="home_jump_back_in">Folytasd, ahol abbahagytad</string>
     <string name="home_recently_added">Nemrég hozzáadott</string>
@@ -313,11 +326,11 @@
     <string name="settings_about">Névjegy</string>
     <string name="settings_app_version">Downtify Androidra %1$s</string>
     <string name="settings_server_api">Szerver API-verziója: %1$d</string>
-    <string name="settings_unpair">A telefon leválasztása</string>
+    <string name="settings_unpair">Kijelentkezés</string>
     <string name="settings_unpair_body">A szerver kulcsának elfelejtése a telefonon</string>
-    <string name="settings_unpair_title">Leválasztod a telefont?</string>
-    <string name="settings_unpair_message">A telefon elfelejti a kulcsát, és visszatér a csatlakozási képernyőre. Hogy a szerverről is eltávolítsd, nyisd meg a weboldalon a Beállítások › Alkalmazások › Párosított alkalmazások részt. A szinkronizált könyvtárad megmarad, amíg másik szerverrel nem párosítasz.</string>
-    <string name="settings_unpair_confirm">Leválasztás</string>
+    <string name="settings_unpair_title">Kijelentkezel erről a szerverről?</string>
+    <string name="settings_unpair_message">A telefon elfelejti a kulcsát, és visszatér a csatlakozási képernyőre. Hogy a szerverről is eltávolítsd, nyisd meg a weboldalon a Beállítások › Alkalmazások › Párosított alkalmazások részt. A szinkronizált könyvtárad megmarad, amíg másik szerverre nem jelentkezel be.</string>
+    <string name="settings_unpair_confirm">Kijelentkezés</string>
 
     <!-- Player -->
     <string name="player_play">Lejátszás</string>

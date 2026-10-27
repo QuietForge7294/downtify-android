@@ -123,6 +123,14 @@ object DowntifyIcons {
 
     @DrawableRes val LockOpen = R.drawable.ic_lock_open
 
+    @DrawableRes val Person = R.drawable.ic_person
+
+    @DrawableRes val Password = R.drawable.ic_password
+
+    @DrawableRes val Visibility = R.drawable.ic_visibility
+
+    @DrawableRes val VisibilityOff = R.drawable.ic_visibility_off
+
     @DrawableRes val Graphic = R.drawable.ic_graphic_eq
 
     @DrawableRes val Logo = R.drawable.ic_downtify_logo

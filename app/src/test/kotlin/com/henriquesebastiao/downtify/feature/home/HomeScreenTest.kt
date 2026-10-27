@@ -113,7 +113,7 @@ class HomeScreenTest {
     fun aServerThatIsntTheOnePairedSaysSoInsteadOfStreaming() {
         show(state.copy(status = ServerStatus.DifferentServer))
         // Whole, on a narrow phone too: it says what to do.
-        compose.onNodeWithText("Another server answers at this address · pair again in Settings").assertExists()
+        compose.onNodeWithText("Another server answers at this address · sign in again in Settings").assertExists()
         compose.onNodeWithText("Streaming from nas.local").assertDoesNotExist()
     }
 }

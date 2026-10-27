@@ -16,25 +16,38 @@
     <!-- Connect -->
     <string name="connect_title_line1">Your music,</string>
     <string name="connect_title_line2">from your server.</string>
-    <string name="connect_body">Connect to the Downtify you run at home. Everything streams from there, and stays yours.</string>
     <string name="connect_address_label">Server address</string>
     <string name="connect_address_hint">The same address you open Downtify at in a browser.</string>
     <string name="connect_found">Found on this network</string>
     <string name="connect_searching">Looking for servers…</string>
-    <string name="connect_none_found">None found. Type the address instead — Docker\'s default network doesn\'t announce the server.</string>
+    <string name="connect_none_found">No server found on this network yet.</string>
     <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Connect</string>
     <string name="connect_step">Step %1$d of %2$d</string>
-    <string name="connect_scan">Scan the code from Settings › Apps</string>
-    <string name="connect_cleartext_warning">This address isn\'t on your home network and doesn\'t use HTTPS: the phone\'s key would travel unencrypted. Put Downtify behind an HTTPS reverse proxy to use it from outside.</string>
-    <string name="connect_revoked">This phone was unpaired from the server. Pair it again to keep listening.</string>
+    <string name="connect_scan">Scan a pairing QR code</string>
+    <string name="connect_cleartext_warning">Not on your home network and not HTTPS: the phone\'s key would travel unencrypted.</string>
+    <string name="connect_revoked">This phone was signed out of the server. Sign in again to keep listening.</string>
     <string name="connect_error_invalid">That doesn\'t look like an address. Try http://192.168.1.20:8000.</string>
     <string name="connect_error_unreachable">Can\'t reach a server at that address. Check it, and that the phone is on the same network.</string>
     <string name="connect_error_not_downtify">Something answered, but it isn\'t Downtify.</string>
     <string name="connect_error_too_new">This server (Downtify %1$s) is newer than this app understands. Update the app.</string>
 
+    <string name="sign_in_title">Sign in to %1$s</string>
+    <string name="sign_in_body">Use your account from the web page.</string>
+    <string name="sign_in_username">Username</string>
+    <string name="sign_in_password">Password</string>
+    <string name="sign_in_show_password">Show password</string>
+    <string name="sign_in_hide_password">Hide password</string>
+    <string name="sign_in_action">Sign in</string>
+    <string name="sign_in_use_code">Pair with a code</string>
+    <string name="sign_in_use_password">Sign in with your password instead</string>
+    <string name="sign_in_error_wrong">Wrong username or password.</string>
+    <string name="sign_in_error_off">This server has sign-in turned off. Use a pairing code instead.</string>
+    <string name="sign_in_error_failed">The server couldn\'t sign this phone in (error %1$d).</string>
+    <string name="sign_in_cleartext_warning">Not on your home network and not HTTPS: your password would travel unencrypted.</string>
+
     <string name="pair_title">Pair with %1$s</string>
-    <string name="pair_body">On the web page, open Settings › Apps and press Pair a phone. Scan the QR code, or type the code shown under it.</string>
+    <string name="pair_body">From Settings › Apps on the web page.</string>
     <string name="pair_code_label">Pairing code</string>
     <string name="pair_code_placeholder">XXXX-XXXX</string>
     <string name="pair_action">Pair</string>
@@ -49,14 +62,14 @@
     <string name="scan_title">Scan the pairing code</string>
     <string name="scan_hint">Point the camera at the QR code in Settings › Apps › Pair a phone.</string>
     <string name="scan_close">Close the scanner</string>
-    <string name="connect_local_network_denied">Local network access is off, so Downtify can only reach a server you pick from the list. To type an address, allow it in the app\'s settings.</string>
+    <string name="connect_local_network_denied">Local network access is off. To type an address, allow it in the app\'s settings.</string>
     <string name="scan_permission_denied">Camera access is off. Type the code instead, or allow the camera in the phone\'s settings.</string>
     <string name="scan_not_downtify">That QR code isn\'t a Downtify pairing code.</string>
 
     <!-- Home -->
     <string name="home_streaming_from">Streaming from %1$s</string>
     <string name="home_unreachable">Can\'t reach %1$s · showing your synced library</string>
-    <string name="home_different_server">Another server answers at this address · pair again in Settings</string>
+    <string name="home_different_server">Another server answers at this address · sign in again in Settings</string>
     <string name="home_syncing">Syncing with %1$s…</string>
     <string name="home_jump_back_in">Jump back in</string>
     <string name="home_recently_added">Recently added</string>
@@ -315,11 +328,11 @@
     <string name="settings_about">About</string>
     <string name="settings_app_version">Downtify for Android %1$s</string>
     <string name="settings_server_api">Server API version %1$d</string>
-    <string name="settings_unpair">Unpair this phone</string>
+    <string name="settings_unpair">Sign out</string>
     <string name="settings_unpair_body">Forget this server\'s key on the phone</string>
-    <string name="settings_unpair_title">Unpair this phone?</string>
-    <string name="settings_unpair_message">The phone forgets its key and goes back to the connect screen. To remove it from the server too, open Settings › Apps › Paired apps on the web page. Your synced library stays until you pair with another server.</string>
-    <string name="settings_unpair_confirm">Unpair</string>
+    <string name="settings_unpair_title">Sign out of this server?</string>
+    <string name="settings_unpair_message">The phone forgets its key and goes back to the connect screen. To remove it from the server too, open Settings › Apps › Paired apps on the web page. Your synced library stays until you sign in to another server.</string>
+    <string name="settings_unpair_confirm">Sign out</string>
 
     <!-- Player -->
     <string name="player_play">Play</string>

@@ -1,8 +1,8 @@
 # Downtify for Android
 
-The official Android client for [Downtify](https://github.com/henriquesebastiao/downtify), the self-hosted music server. It finds your server on the home network (or takes an address you type), pairs with it, syncs the library and streams it — original quality on Wi-Fi, transcoded on mobile data — with the system media notification, lock screen and Bluetooth controls.
+The official Android client for [Downtify](https://github.com/henriquesebastiao/downtify), the self-hosted music server. It finds your server on the home network (or takes an address you type), signs in with your Downtify account, syncs the library and streams it — original quality on Wi-Fi, transcoded on mobile data — with the system media notification, lock screen and Bluetooth controls.
 
-Status: **phase 4** (connect & pair, library sync, browsing, streaming, play reports, offline downloads, server search with previews and download requests, Discover, podcasts). Casting, widgets and Android Auto come later — see [docs/roadmap.md](docs/roadmap.md).
+Status: **phase 4** (connect & sign in, library sync, browsing, streaming, play reports, offline downloads, server search with previews and download requests, Discover, podcasts). Casting, widgets and Android Auto come later — see [docs/roadmap.md](docs/roadmap.md).
 
 > [!IMPORTANT]
 > This app is currently in the development and testing phase; it will contain bugs. Integration with Downtify is also still being developed and tested.
@@ -24,7 +24,7 @@ Status: **phase 4** (connect & pair, library sync, browsing, streaming, play rep
 
 - JDK 17 or newer (the build targets Java 17).
 - Android SDK with platform 37 (`compileSdk`/`targetSdk` 37, `minSdk` 26). Gradle installs missing platforms on first build when `sdk.dir` in `local.properties` points at a writable SDK.
-- A Downtify server **3.1.0 or newer** (mobile API v1, pairing).
+- A Downtify server **3.1.0 or newer** (mobile API v1, pairing). Signing in with a username and password needs a server newer than 3.7.0 (`password_sign_in` in `GET /api/server/info`); older ones pair with a code.
 
 ## Build
 
@@ -43,14 +43,16 @@ The debug build installs as `com.henriquesebastiao.downtify.debug`, so it sits n
 1. Run Downtify (`make run` or Docker). Note the address you open it at in a browser, e.g. `http://192.168.1.20:8000`.
 2. Open the app. Allow **nearby devices / local network** access when asked (Android 17+ needs it to reach anything on your home network).
 3. Pick the server under **Found on this network**, or type its address. `192.168.1.20:8000` is enough; `http://` is added for you. HTTPS addresses work too, including behind a reverse proxy with a private CA installed on the phone.
-4. On the web page, signed in as the account the phone should belong to, open **Settings → Apps → Pair a phone**. Scan the QR code, or type the 8-character code.
+4. Sign in with the username and password you use on the web page. The phone becomes one of that account's paired apps; the password isn't kept on the phone.
+
+   Or pair instead, without typing the password: on the web page, signed in as the account the phone should belong to, open **Settings → Apps → Pair a phone**, then scan the QR code (from the first screen, or **Use a pairing code instead**) or type the 8-character code. A server with sign-in turned off, or older than app sign-in, goes straight to the code.
 
 Notes:
 
 - **Docker:** the default bridge network doesn't carry mDNS, so the server won't show up under "Found on this network". Type the address, or run the container with `network_mode: host`.
 - **Emulator:** the host machine is `10.0.2.2` (`http://10.0.2.2:8000`).
-- **Plain http** is allowed for any address, because self-hosted servers are usually `http://` on the LAN and Android's network security config can't express "private addresses only". Over http the device token travels unencrypted: fine at home, not across the internet. The connect screen warns when you type a plain-http public address. See `app/src/main/res/xml/network_security_config.xml`.
-- **Unpairing** from the web (Settings → Apps → the phone → Unpair) stops playback and sends the app back to the connect screen.
+- **Plain http** is allowed for any address, because self-hosted servers are usually `http://` on the LAN and Android's network security config can't express "private addresses only". Over http the password and the device token travel unencrypted: fine at home, not across the internet. The connect and sign-in steps warn about a plain-http public address. See `app/src/main/res/xml/network_security_config.xml`.
+- **Unpairing** from the web (Settings → Apps → the phone → Unpair) stops playback and sends the app back to the connect screen. **Sign out** in the app's Settings forgets the token on the phone; the web page keeps listing the phone until it's unpaired there.
 
 ## Project layout
 
