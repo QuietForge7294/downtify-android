@@ -2,16 +2,14 @@
 
 The official Android client for [Downtify](https://github.com/henriquesebastiao/downtify), the self-hosted music server. It finds your server on the home network (or takes an address you type), signs in with your Downtify account, syncs the library and streams it — original quality on Wi-Fi, transcoded on mobile data — with the system media notification, lock screen and Bluetooth controls.
 
-Status: **phase 4** (connect & sign in, library sync, browsing, streaming, play reports, offline downloads, server search with previews and download requests, Discover, podcasts). Casting, widgets and Android Auto come later — see [docs/roadmap.md](docs/roadmap.md).
-
 > [!IMPORTANT]
 > This app is currently in the development and testing phase; it will contain bugs. Integration with Downtify is also still being developed and tested.
 
 ## Screenshots
 
-<img width="30%" vspace="20" src="https://github.com/user-attachments/assets/2faac8b4-1567-49d5-ac2c-44451cc8a0bc" />
-<img width="30%" vspace="20" src="https://github.com/user-attachments/assets/b25e5433-80c6-4ffb-a74e-1f9152b53782" />
-<img width="30%" vspace="20" src="https://github.com/user-attachments/assets/e4196813-6b84-4061-a544-d373cd6c928a" />
+<img width="30%" vspace="20" src="https://github.com/user-attachments/assets/dd1fc199-a8d1-454b-84c6-3fbb96822c7a" />
+<img width="30%" vspace="20" src="https://github.com/user-attachments/assets/8ea1042a-a4dc-416d-9752-8939f55741e4" />
+<img width="30%" vspace="20" src="https://github.com/user-attachments/assets/c86efa10-362d-4794-a19a-a5097a0fc084" />
 
 ## Languages, fonts and theme
 
