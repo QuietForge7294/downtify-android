@@ -3,6 +3,7 @@ package com.henriquesebastiao.downtify.feature.connect
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -42,7 +43,8 @@ class ConnectScreenTest {
                 )
             }
         }
-        compose.onNodeWithText("Connect").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Connect").assertIsNotEnabled()
+        compose.onNodeWithText("Step 1 of 2").assertExists()
         compose.onNodeWithText("Server address").performTextInput("192.168.1.20")
         assertEquals("192.168.1.20", typed)
         assertTrue(!connected)
@@ -65,7 +67,7 @@ class ConnectScreenTest {
                 )
             }
         }
-        compose.onNodeWithText("Connect").performScrollTo().assertIsEnabled().performClick()
+        compose.onNodeWithContentDescription("Connect").assertIsEnabled().performClick()
         assertTrue(connected)
     }
 
@@ -89,7 +91,53 @@ class ConnectScreenTest {
                 )
             }
         }
-        compose.onNodeWithText("Pair").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Pair").assertIsNotEnabled()
+        compose.onNodeWithText("Step 2 of 2").assertExists()
         compose.onNodeWithText("Pairing code").assertExists()
+    }
+
+    @Test
+    fun aFullCodePairsFromTheFooter() {
+        var paired = false
+        compose.setContent {
+            DowntifyTheme {
+                ConnectScreen(
+                    state = ConnectUiState(
+                        step = ConnectStep.Pair("http://192.168.1.20:8000", info),
+                        code = "K7QM2XPD",
+                    ),
+                    onAddressChange = {},
+                    onPickDiscovered = {},
+                    onConnect = {},
+                    onCodeChange = {},
+                    onPair = { paired = true },
+                    onBackToAddress = {},
+                    onScan = {},
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("Pair").assertIsEnabled().performClick()
+        assertTrue(paired)
+    }
+
+    @Test
+    fun whileConnectingTheFooterWaitsInsteadOfConnectingAgain() {
+        var connected = 0
+        compose.setContent {
+            DowntifyTheme {
+                ConnectScreen(
+                    state = ConnectUiState(address = "http://192.168.1.20:8000", searching = false, busy = true),
+                    onAddressChange = {},
+                    onPickDiscovered = {},
+                    onConnect = { connected++ },
+                    onCodeChange = {},
+                    onPair = {},
+                    onBackToAddress = {},
+                    onScan = {},
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("Connect").assertIsNotEnabled().performClick()
+        assertEquals(0, connected)
     }
 }

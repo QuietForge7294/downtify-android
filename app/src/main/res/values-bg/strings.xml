@@ -8,7 +8,7 @@
     <string name="nav_downloads">Изтегляния</string>
     <string name="action_back">Назад</string>
     <string name="action_settings">Настройки</string>
-    <string name="action_more">Още опции</string>
+    <string name="action_open_menu">Отваряне на менюто</string>
     <string name="action_retry">Опитай отново</string>
     <string name="action_cancel">Отказ</string>
 
@@ -21,8 +21,9 @@
     <string name="connect_found">Намерени в тази мрежа</string>
     <string name="connect_searching">Търсене на сървъри…</string>
     <string name="connect_none_found">Не е намерен нито един. Въведи адреса ръчно — мрежата по подразбиране на Docker не обявява сървъра.</string>
-    <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
+    <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Свързване</string>
+    <string name="connect_step">Стъпка %1$d от %2$d</string>
     <string name="connect_scan">Сканирай кода от Настройки › Приложения</string>
     <string name="connect_cleartext_warning">Този адрес не е в домашната ти мрежа и не използва HTTPS: ключът на телефона би пътувал некриптиран. Сложи Downtify зад HTTPS обратен прокси, за да го ползваш отвън.</string>
     <string name="connect_revoked">Този телефон беше разкачен от сървъра. Свържи го отново, за да продължиш да слушаш.</string>
@@ -39,7 +40,7 @@
     <string name="pair_scan">Сканирай QR кода</string>
     <string name="pair_other_server">Използвай друг сървър</string>
     <string name="pair_error_wrong_code">Този код е грешен, изтекъл или вече използван. Кодовете работят веднъж и за пет минути.</string>
-    <string name="pair_error_too_many">Твърде много опити. Опитай отново след %1$d с.</string>
+    <string name="pair_error_too_many">Твърде много опити. Опитай отново след %1$d\u00A0с.</string>
     <string name="pair_error_unreachable">Няма достъп до сървъра. Провери връзката и опитай отново.</string>
     <string name="pair_error_failed">Сървърът не успя да сдвои този телефон (грешка %1$d).</string>
     <string name="pair_error_other_server">Този код е за друг сървър, а не за този на въпросния адрес.</string>
@@ -52,9 +53,6 @@
     <string name="scan_not_downtify">Този QR код не е код за сдвояване на Downtify.</string>
 
     <!-- Home -->
-    <string name="home_good_morning">Добро утро</string>
-    <string name="home_good_afternoon">Добър ден</string>
-    <string name="home_good_evening">Добър вечер</string>
     <string name="home_streaming_from">Възпроизвеждане от %1$s</string>
     <string name="home_unreachable">Няма достъп до %1$s · показва се синхронизираната ти библиотека</string>
     <string name="home_different_server">На този адрес отговаря друг сървър · сдвои отново от Настройки</string>
@@ -73,9 +71,14 @@
     <string name="library_artists">Изпълнители</string>
     <string name="library_playlists">Плейлисти</string>
     <string name="library_songs">Песни</string>
+    <string name="library_sort">Подреди по: %1$s</string>
     <string name="library_sort_recent">Наскоро добавени</string>
     <string name="library_sort_alpha">По азбучен ред</string>
     <string name="library_sort_artist">Изпълнител</string>
+    <string name="library_sort_by">Подреди по</string>
+    <string name="library_sort_order">Ред</string>
+    <string name="library_sort_ascending">Възходящо</string>
+    <string name="library_sort_descending">Низходящо</string>
     <string name="library_show_list">Покажи като списък</string>
     <string name="library_show_grid">Покажи като мрежа</string>
     <string name="library_empty_albums">Още няма албуми</string>
@@ -94,7 +97,7 @@
         <item quantity="one">%d албум</item>
         <item quantity="other">%d албума</item>
     </plurals>
-    <string name="minutes_short">%d мин</string>
+    <string name="minutes_short">%d\u00A0мин</string>
     <string name="unknown_artist">Неизвестен изпълнител</string>
     <string name="unknown_album">Неизвестен албум</string>
 
@@ -297,13 +300,14 @@
     <string name="settings_quality_mobile">Качество на потока по мобилни данни</string>
     <string name="settings_quality_no_transcoding">Сървърът не може да прекодира (няма ffmpeg): файловете се възпроизвеждат както са.</string>
     <string name="settings_quality_original">Оригинално · както е изтеглено</string>
-    <string name="settings_quality_transcoded">%1$s · %2$d kbps · прекодирано от сървъра</string>
-    <string name="settings_quality_label">%1$s · %2$d kbps</string>
+    <string name="settings_quality_transcoded">%1$s · %2$d\u00A0kbps · прекодирано от сървъра</string>
+    <string name="settings_quality_label">%1$s · %2$d\u00A0kbps</string>
     <string name="settings_appearance">Външен вид</string>
     <string name="settings_theme">Тема</string>
-    <string name="settings_theme_system">Следвай системата</string>
+    <string name="settings_theme_system">Системна</string>
     <string name="settings_theme_dark">Тъмна</string>
     <string name="settings_theme_light">Светла</string>
+    <string name="settings_theme_body">„Системна“ следва светлия или тъмния режим на устройството.</string>
     <string name="settings_dynamic_color">Цветове от тапета</string>
     <string name="settings_dynamic_color_body">Material You вместо зеленото на Downtify</string>
     <string name="settings_about">Относно</string>
@@ -347,18 +351,25 @@
     <string name="player_playing_from_album">Свири от албум</string>
     <string name="player_playing_from_artist">Свири от изпълнител</string>
     <string name="player_playing_from_playlist">Свири от плейлист</string>
-    <string name="player_playing_from_library">Свири от библиотеката ти</string>
-    <string name="player_source_original">Възпроизвеждане от %1$s · %2$s · Оригинално качество</string>
-    <string name="player_source_transcoded">Възпроизвеждане от %1$s · %2$s %3$d kbps</string>
+    <string name="player_now_playing">Сега свири</string>
+    <string name="player_source_original_quality">Възпроизвеждане от %1$s · Оригинално качество</string>
+    <string name="player_sample_rate">%1$s\u00A0kHz</string>
+    <string name="player_bitrate">%1$d\u00A0kbps</string>
     <string name="player_source_unknown">Възпроизвеждане от %1$s</string>
     <string name="player_playing_from_podcast">Подкаст</string>
-    <string name="player_go_to_show">Към подкаста</string>
     <string name="player_skip_back">Назад с 10 секунди</string>
     <string name="player_skip_forward">Напред с 30 секунди</string>
     <string name="player_speed">Скорост на възпроизвеждане %1$s. Докосни за промяна</string>
-    <string name="player_source_phone">Свири от този телефон · %1$s</string>
+    <string name="player_source_this_phone">Свири от този телефон</string>
     <string name="player_lyrics_none">Няма текст за тази песен.</string>
     <string name="player_lyrics_loading">Зареждане на текста…</string>
+    <string name="player_lyrics_synced">Синхронизиран</string>
+    <string name="player_lyrics_static">Статичен</string>
+    <string name="player_lyrics_timing">Настрой синхрона</string>
+    <string name="player_lyrics_earlier">Текстът по-рано</string>
+    <string name="player_lyrics_later">Текстът по-късно</string>
+    <string name="player_lyrics_timing_reset">Нулирай синхрона</string>
+    <string name="player_lyrics_offset">%1$s\u00A0с</string>
     <string name="player_error_network">Няма достъп до сървъра, за да се пусне тази песен.</string>
     <string name="player_error_not_found">Тази песен вече не е на сървъра.</string>
     <string name="player_error_old_server">Сървърът е твърде стар за поточно възпроизвеждане — обнови Downtify на сървъра.</string>
@@ -372,8 +383,10 @@
     <string name="settings_language_summary">%1$s · задава се в езиковите настройки на приложенията в Android</string>
     <string name="settings_amoled">Чисто черно</string>
     <string name="settings_amoled_body">Истинско черно в тъмната тема. Пести батерия на OLED екрани.</string>
+    <string name="settings_floating_nav_bar">Плаваща лента за навигация</string>
+    <string name="settings_floating_nav_bar_body">На телефона лентата е заоблена капсула, вместо да заема цялата ширина на екрана</string>
     <string name="settings_font">Шрифт</string>
-    <string name="settings_font_downtify">Downtify</string>
+    <string name="settings_font_downtify">Класически Downtify</string>
     <string name="settings_font_system">Системен шрифт</string>
     <string name="settings_about_entry">Относно Downtify</string>
 
@@ -446,7 +459,7 @@
     <string name="settings_read_ahead_off">Изключено</string>
     <string name="settings_read_ahead_count">Песни напред: %1$d</string>
     <string name="settings_stream_cache">Временен аудио кеш</string>
-    <string name="settings_stream_cache_size">%1$d MB</string>
+    <string name="settings_stream_cache_size">%1$d\u00A0MB</string>
     <string name="settings_stream_cache_body">Място за наскоро слушано и предварително заредено аудио. Офлайн изтеглянията са отделни. Големите песни може да надвишат лимита; само целите песни се считат за готови.</string>
     <string name="settings_read_ahead_mobile">Зареждане през мобилни данни</string>
     <string name="settings_read_ahead_mobile_body">Разрешаване на допълнителни данни за подготовка на следващите песни.</string>

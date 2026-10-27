@@ -75,6 +75,10 @@ data class LikeEntity(
     val position: Int,
 )
 
+/** How much later than its LRC a track's synced lyrics run, as set on this phone (ms, may be negative). */
+@Entity(tableName = "lyrics_offsets")
+data class LyricsOffsetEntity(@PrimaryKey val trackId: String, val offsetMs: Long)
+
 @Entity(tableName = "recent_contexts")
 data class RecentContextEntity(
     @PrimaryKey val key: String,

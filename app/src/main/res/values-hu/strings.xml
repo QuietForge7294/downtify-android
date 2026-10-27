@@ -8,7 +8,7 @@
     <string name="nav_downloads">Letöltések</string>
     <string name="action_back">Vissza</string>
     <string name="action_settings">Beállítások</string>
-    <string name="action_more">További lehetőségek</string>
+    <string name="action_open_menu">Menü megnyitása</string>
     <string name="action_retry">Újra</string>
     <string name="action_cancel">Mégse</string>
 
@@ -21,8 +21,9 @@
     <string name="connect_found">Ezen a hálózaton találhatók</string>
     <string name="connect_searching">Szerverek keresése…</string>
     <string name="connect_none_found">Nem található egy sem. Írd be inkább a címet — a Docker alapértelmezett hálózata nem hirdeti a szervert.</string>
-    <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
+    <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Csatlakozás</string>
+    <string name="connect_step">%1$d/%2$d. lépés</string>
     <string name="connect_scan">Olvasd be a kódot a Beállítások › Alkalmazások oldalról</string>
     <string name="connect_cleartext_warning">Ez a cím nem az otthoni hálózaton van, és nem használ HTTPS-t: a telefon kulcsa titkosítatlanul utazna. Tedd a Downtifyt HTTPS-es fordított proxy mögé, hogy kívülről is használhasd.</string>
     <string name="connect_revoked">Ezt a telefont leválasztották a szerverről. Párosítsd újra, hogy tovább hallgathass zenét.</string>
@@ -39,7 +40,7 @@
     <string name="pair_scan">QR-kód beolvasása</string>
     <string name="pair_other_server">Másik szerver használata</string>
     <string name="pair_error_wrong_code">Ez a kód hibás, lejárt vagy már felhasználták. A kódok öt percig érvényesek, és csak egyszer használhatók.</string>
-    <string name="pair_error_too_many">Túl sok próbálkozás. Próbáld újra %1$d mp múlva.</string>
+    <string name="pair_error_too_many">Túl sok próbálkozás. Próbáld újra %1$d\u00A0mp múlva.</string>
     <string name="pair_error_unreachable">A szerver nem érhető el. Ellenőrizd a kapcsolatot, és próbáld újra.</string>
     <string name="pair_error_failed">A szerver nem tudta párosítani a telefont (hiba: %1$d).</string>
     <string name="pair_error_other_server">Ez a kód nem az ezen a címen lévő szerverhez tartozik.</string>
@@ -52,9 +53,6 @@
     <string name="scan_not_downtify">Ez a QR-kód nem Downtify párosítókód.</string>
 
     <!-- Home -->
-    <string name="home_good_morning">Jó reggelt</string>
-    <string name="home_good_afternoon">Jó napot</string>
-    <string name="home_good_evening">Jó estét</string>
     <string name="home_streaming_from">Streamelés innen: %1$s</string>
     <string name="home_unreachable">%1$s nem érhető el · a szinkronizált könyvtárad látható</string>
     <string name="home_different_server">Ezen a címen másik szerver válaszol · párosíts újra a Beállításokban</string>
@@ -73,9 +71,14 @@
     <string name="library_artists">Előadók</string>
     <string name="library_playlists">Lejátszási listák</string>
     <string name="library_songs">Dalok</string>
+    <string name="library_sort">Rendezés: %1$s</string>
     <string name="library_sort_recent">Nemrég hozzáadott</string>
     <string name="library_sort_alpha">Betűrend</string>
     <string name="library_sort_artist">Előadó</string>
+    <string name="library_sort_by">Rendezés</string>
+    <string name="library_sort_order">Sorrend</string>
+    <string name="library_sort_ascending">Növekvő</string>
+    <string name="library_sort_descending">Csökkenő</string>
     <string name="library_show_list">Megjelenítés listaként</string>
     <string name="library_show_grid">Megjelenítés rácsként</string>
     <string name="library_empty_albums">Még nincs album</string>
@@ -94,7 +97,7 @@
         <item quantity="one">%d album</item>
         <item quantity="other">%d album</item>
     </plurals>
-    <string name="minutes_short">%d perc</string>
+    <string name="minutes_short">%d\u00A0perc</string>
     <string name="unknown_artist">Ismeretlen előadó</string>
     <string name="unknown_album">Ismeretlen album</string>
 
@@ -297,13 +300,14 @@
     <string name="settings_quality_mobile">Streamelési minőség mobiladaton</string>
     <string name="settings_quality_no_transcoding">A szerver nem tud átkódolni (nincs ffmpeg): a fájlok eredeti formában streamelnek.</string>
     <string name="settings_quality_original">Eredeti · ahogy letöltötték</string>
-    <string name="settings_quality_transcoded">%1$s · %2$d kbps · a szerver átkódolja</string>
-    <string name="settings_quality_label">%1$s · %2$d kbps</string>
+    <string name="settings_quality_transcoded">%1$s · %2$d\u00A0kbps · a szerver átkódolja</string>
+    <string name="settings_quality_label">%1$s · %2$d\u00A0kbps</string>
     <string name="settings_appearance">Megjelenés</string>
     <string name="settings_theme">Téma</string>
-    <string name="settings_theme_system">Rendszer követése</string>
+    <string name="settings_theme_system">Rendszer</string>
     <string name="settings_theme_dark">Sötét</string>
     <string name="settings_theme_light">Világos</string>
+    <string name="settings_theme_body">A Rendszer az eszköz világos vagy sötét módját követi.</string>
     <string name="settings_dynamic_color">Háttérkép színeinek használata</string>
     <string name="settings_dynamic_color_body">Material You a Downtify-zöld helyett</string>
     <string name="settings_about">Névjegy</string>
@@ -347,18 +351,25 @@
     <string name="player_playing_from_album">Lejátszás albumból</string>
     <string name="player_playing_from_artist">Lejátszás előadótól</string>
     <string name="player_playing_from_playlist">Lejátszás lejátszási listából</string>
-    <string name="player_playing_from_library">Lejátszás a könyvtáradból</string>
-    <string name="player_source_original">Streamelés innen: %1$s · %2$s · Eredeti minőség</string>
-    <string name="player_source_transcoded">Streamelés innen: %1$s · %2$s %3$d kbps</string>
+    <string name="player_now_playing">Most szól</string>
+    <string name="player_source_original_quality">Streamelés innen: %1$s · Eredeti minőség</string>
+    <string name="player_sample_rate">%1$s\u00A0kHz</string>
+    <string name="player_bitrate">%1$d\u00A0kbps</string>
     <string name="player_source_unknown">Streamelés innen: %1$s</string>
     <string name="player_playing_from_podcast">Podcast</string>
-    <string name="player_go_to_show">Ugrás a podcastra</string>
     <string name="player_skip_back">Vissza 10 másodpercet</string>
     <string name="player_skip_forward">Előre 30 másodpercet</string>
     <string name="player_speed">Lejátszási sebesség: %1$s. Koppints a módosításhoz</string>
-    <string name="player_source_phone">Lejátszás erről a telefonról · %1$s</string>
+    <string name="player_source_this_phone">Lejátszás erről a telefonról</string>
     <string name="player_lyrics_none">Ehhez a dalhoz nincs szöveg.</string>
     <string name="player_lyrics_loading">Dalszöveg betöltése…</string>
+    <string name="player_lyrics_synced">Időzített</string>
+    <string name="player_lyrics_static">Statikus</string>
+    <string name="player_lyrics_timing">Időzítés igazítása</string>
+    <string name="player_lyrics_earlier">Dalszöveg korábban</string>
+    <string name="player_lyrics_later">Dalszöveg később</string>
+    <string name="player_lyrics_timing_reset">Időzítés visszaállítása</string>
+    <string name="player_lyrics_offset">%1$s\u00A0mp</string>
     <string name="player_error_network">A szerver nem érhető el a dal lejátszásához.</string>
     <string name="player_error_not_found">Ez a dal már nincs a szerveren.</string>
     <string name="player_error_old_server">A szerver túl régi a streameléshez — frissítsd a Downtifyt a szerveren.</string>
@@ -372,8 +383,10 @@
     <string name="settings_language_summary">%1$s · az Android alkalmazásnyelv-beállításaiban módosítható</string>
     <string name="settings_amoled">Tiszta fekete</string>
     <string name="settings_amoled_body">Valódi fekete a sötét témában. Energiát takarít meg OLED kijelzőn.</string>
+    <string name="settings_floating_nav_bar">Lebegő navigációs sáv</string>
+    <string name="settings_floating_nav_bar_body">Telefonon a sáv lekerekített kapszula a képernyő teljes szélessége helyett</string>
     <string name="settings_font">Betűtípus</string>
-    <string name="settings_font_downtify">Downtify</string>
+    <string name="settings_font_downtify">Klasszikus Downtify</string>
     <string name="settings_font_system">Rendszer betűtípusa</string>
     <string name="settings_about_entry">A Downtifyról</string>
 
@@ -446,7 +459,7 @@
     <string name="settings_read_ahead_off">Kikapcsolva</string>
     <string name="settings_read_ahead_count">Előtöltött számok száma: %1$d</string>
     <string name="settings_stream_cache">Ideiglenes hanggyorsítótár</string>
-    <string name="settings_stream_cache_size">%1$d MB</string>
+    <string name="settings_stream_cache_size">%1$d\u00A0MB</string>
     <string name="settings_stream_cache_body">A nemrég játszott és előtöltött hang tárhelye. Az offline letöltések külön maradnak. A nagy számok túlléphetik a korlátot; csak a teljes számok számítanak késznek.</string>
     <string name="settings_read_ahead_mobile">Előtöltés mobiladattal</string>
     <string name="settings_read_ahead_mobile_body">Többlet adatforgalom engedélyezése a következő számokhoz.</string>

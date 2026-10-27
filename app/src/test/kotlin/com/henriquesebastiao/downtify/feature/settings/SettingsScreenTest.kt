@@ -1,10 +1,14 @@
 package com.henriquesebastiao.downtify.feature.settings
 
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.henriquesebastiao.downtify.core.data.settings.ThemeMode
 import com.henriquesebastiao.downtify.core.data.settings.UserSettings
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.model.AppFont
@@ -41,6 +45,24 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun theThemeIsAGroupOfThreeChoicesOnTheRow() {
+        var theme: ThemeMode? = null
+        show(actions = SettingsActions(onTheme = { theme = it }))
+        compose.onNodeWithText("System").performScrollTo().assertIsSelected()
+        compose.onNodeWithText("Dark").assertIsNotSelected()
+        compose.onNodeWithText("Light").performClick()
+        assertEquals(ThemeMode.Light, theme)
+    }
+
+    @Test
+    fun theFloatingNavigationBarIsASwitchThatStartsOn() {
+        var value: Boolean? = null
+        show(actions = SettingsActions(onFloatingNavBar = { value = it }))
+        compose.onNodeWithText("Floating navigation bar").performScrollTo().assertIsOn().performClick()
+        assertEquals(false, value)
+    }
+
+    @Test
     fun theFontDialogOffersThreeFontsAndReportsTheChoice() {
         var font: AppFont? = null
         show(
@@ -50,9 +72,9 @@ class SettingsScreenTest {
         // The row shows the current choice.
         compose.onNodeWithText("System font").performScrollTo().assertExists()
         compose.onNodeWithText("Font").performScrollTo().performClick()
-        compose.onNodeWithText("Downtify").assertExists()
-        compose.onNodeWithText("Google Sans Flex").performClick()
-        assertEquals(AppFont.GoogleSansFlex, font)
+        compose.onNodeWithText("Google Sans Flex").assertExists()
+        compose.onNodeWithText("Downtify classic").performClick()
+        assertEquals(AppFont.Downtify, font)
     }
 
     @Test

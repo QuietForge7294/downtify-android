@@ -16,7 +16,7 @@ Status: **phase 4** (connect & pair, library sync, browsing, streaming, play rep
 ## Languages, fonts and theme
 
 - **Languages:** the same eight as the Downtify web app — Bulgarian, English, French, Greek, Hungarian, Portuguese (Brazil), Spanish and Turkish. The app follows the phone's language and falls back to English when it isn't one of these. On Android 13+ the language can also be set per app (**Settings › Appearance › Language** opens Android's own screen for it).
-- **Fonts** (Settings › Appearance › Font): Downtify's own (Sora and DM Sans), the system font, or Google Sans Flex (its rounded cut, as on Pixel phones). Google fonts are fetched by Play services; without it the system font is used.
+- **Fonts** (Settings › Appearance › Font): Google Sans Flex in its rounded cut, as on Pixel phones (the default), Downtify classic (Sora and DM Sans) or the system font. Google fonts are fetched by Play services; without it the system font is used.
 - **Theme:** follow system, dark or light, optional wallpaper colors (Android 12+) and **Pure black** for OLED screens in the dark theme.
 - **About** (Settings › About Downtify): version (tap to copy), bug reports, source code, the GPL-3.0 license, the terms and disclaimer, and ways to support the project.
 
@@ -65,6 +65,27 @@ Notes:
 | `build-logic` | Gradle convention plugins |
 
 Conventions for working on the code are in [CLAUDE.md](CLAUDE.md). The server contract the app implements lives in the server repository: `docs/mobile-client-contract.md`.
+
+## Credits
+
+The app follows Material 3 Expressive. Several of its components take their design from [PixelPlayer](https://github.com/PixelPlayerHQ/PixelPlayer), a Material 3 Expressive music player for Android by [theovilardo](https://github.com/theovilardo) and [contributors](https://github.com/PixelPlayerHQ/PixelPlayer/graphs/contributors). Its free and open-source edition is [PixelPlayerOSS](https://github.com/PixelPlayerHQ/PixelPlayerOSS), under GPL-3.0. Thank you for the inspiration.
+
+Inspired by PixelPlayer:
+
+- the type scale with Google Sans Flex's rounded cut, the large page titles and the wide hero title;
+- page headers with round back and action buttons, the tinted Library header and its pill tabs;
+- grouped lists with large outer and small inner corners, and the settings' value tags;
+- the floating navigation bar, with the option of a full-width one;
+- the side menu opened from Home's menu button;
+- the library's one-row title, its icon buttons, its sort sheet and its scrollbar;
+- the song that's playing drawn as a pill with a round cover;
+- the mini player:
+  - joined to the floating bar as one group;
+  - its title sliding when it doesn't fit;
+  - its previous, play/pause and next buttons;
+- Now Playing and the mini player in the colors of the cover.
+
+These are designs, not code: Downtify implements them in its own components (`:core:designsystem`) and includes no PixelPlayer source.
 
 ## License
 

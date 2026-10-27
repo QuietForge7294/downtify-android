@@ -69,6 +69,21 @@ interface LikeDao {
 }
 
 @Dao
+interface LyricsOffsetDao {
+    @Query("SELECT offsetMs FROM lyrics_offsets WHERE trackId = :trackId")
+    fun observe(trackId: String): Flow<Long?>
+
+    @Query("SELECT offsetMs FROM lyrics_offsets WHERE trackId = :trackId")
+    suspend fun get(trackId: String): Long?
+
+    @Upsert
+    suspend fun upsert(entity: LyricsOffsetEntity)
+
+    @Query("DELETE FROM lyrics_offsets WHERE trackId = :trackId")
+    suspend fun delete(trackId: String)
+}
+
+@Dao
 interface RecentContextDao {
     @Query("SELECT * FROM recent_contexts ORDER BY playedAt DESC LIMIT :limit")
     fun observe(limit: Int): Flow<List<RecentContextEntity>>

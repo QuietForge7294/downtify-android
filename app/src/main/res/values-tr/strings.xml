@@ -8,7 +8,7 @@
     <string name="nav_downloads">İndirilenler</string>
     <string name="action_back">Geri</string>
     <string name="action_settings">Ayarlar</string>
-    <string name="action_more">Diğer seçenekler</string>
+    <string name="action_open_menu">Menüyü aç</string>
     <string name="action_retry">Tekrar dene</string>
     <string name="action_cancel">İptal</string>
 
@@ -21,8 +21,9 @@
     <string name="connect_found">Bu ağda bulunanlar</string>
     <string name="connect_searching">Sunucular aranıyor…</string>
     <string name="connect_none_found">Hiçbiri bulunamadı. Bunun yerine adresi yaz — Docker\'ın varsayılan ağı sunucuyu duyurmaz.</string>
-    <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
+    <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Bağlan</string>
+    <string name="connect_step">Adım %1$d/%2$d</string>
     <string name="connect_scan">Ayarlar › Uygulamalar\'daki kodu tara</string>
     <string name="connect_cleartext_warning">Bu adres ev ağında değil ve HTTPS kullanmıyor: telefonun anahtarı şifresiz iletilir. Dışarıdan kullanmak için Downtify\'ı HTTPS\'li bir ters vekil sunucunun arkasına koy.</string>
     <string name="connect_revoked">Bu telefonun sunucuyla eşleşmesi kaldırıldı. Dinlemeye devam etmek için yeniden eşleştir.</string>
@@ -39,7 +40,7 @@
     <string name="pair_scan">QR kodunu tara</string>
     <string name="pair_other_server">Başka bir sunucu kullan</string>
     <string name="pair_error_wrong_code">Bu kod yanlış, süresi dolmuş ya da zaten kullanılmış. Kodlar beş dakika boyunca yalnızca bir kez çalışır.</string>
-    <string name="pair_error_too_many">Çok fazla deneme. %1$d sn sonra tekrar dene.</string>
+    <string name="pair_error_too_many">Çok fazla deneme. %1$d\u00A0sn sonra tekrar dene.</string>
     <string name="pair_error_unreachable">Sunucuya ulaşılamıyor. Bağlantını kontrol edip tekrar dene.</string>
     <string name="pair_error_failed">Sunucu bu telefonu eşleştiremedi (hata %1$d).</string>
     <string name="pair_error_other_server">Bu kod, o adresteki sunucudan farklı bir sunucuya ait.</string>
@@ -52,9 +53,6 @@
     <string name="scan_not_downtify">Bu QR kodu bir Downtify eşleştirme kodu değil.</string>
 
     <!-- Home -->
-    <string name="home_good_morning">Günaydın</string>
-    <string name="home_good_afternoon">İyi günler</string>
-    <string name="home_good_evening">İyi akşamlar</string>
     <string name="home_streaming_from">%1$s üzerinden akıyor</string>
     <string name="home_unreachable">%1$s sunucusuna ulaşılamıyor · eşzamanlanmış kitaplığın gösteriliyor</string>
     <string name="home_different_server">Bu adreste başka bir sunucu yanıt veriyor · Ayarlar\'dan yeniden eşleştir</string>
@@ -73,9 +71,14 @@
     <string name="library_artists">Sanatçılar</string>
     <string name="library_playlists">Çalma listeleri</string>
     <string name="library_songs">Şarkılar</string>
+    <string name="library_sort">Sırala: %1$s</string>
     <string name="library_sort_recent">Son eklenenler</string>
     <string name="library_sort_alpha">Alfabetik</string>
     <string name="library_sort_artist">Sanatçı</string>
+    <string name="library_sort_by">Sırala</string>
+    <string name="library_sort_order">Sıra</string>
+    <string name="library_sort_ascending">Artan</string>
+    <string name="library_sort_descending">Azalan</string>
     <string name="library_show_list">Liste olarak göster</string>
     <string name="library_show_grid">Izgara olarak göster</string>
     <string name="library_empty_albums">Henüz albüm yok</string>
@@ -94,7 +97,7 @@
         <item quantity="one">%d albüm</item>
         <item quantity="other">%d albüm</item>
     </plurals>
-    <string name="minutes_short">%d dk</string>
+    <string name="minutes_short">%d\u00A0dk</string>
     <string name="unknown_artist">Bilinmeyen sanatçı</string>
     <string name="unknown_album">Bilinmeyen albüm</string>
 
@@ -297,13 +300,14 @@
     <string name="settings_quality_mobile">Mobil veride akış kalitesi</string>
     <string name="settings_quality_no_transcoding">Sunucu kod dönüştüremiyor (ffmpeg yok): dosyalar olduğu gibi akar.</string>
     <string name="settings_quality_original">Orijinal · indirildiği gibi</string>
-    <string name="settings_quality_transcoded">%1$s · %2$d kbps · sunucu tarafından dönüştürüldü</string>
-    <string name="settings_quality_label">%1$s · %2$d kbps</string>
+    <string name="settings_quality_transcoded">%1$s · %2$d\u00A0kbps · sunucu tarafından dönüştürüldü</string>
+    <string name="settings_quality_label">%1$s · %2$d\u00A0kbps</string>
     <string name="settings_appearance">Görünüm</string>
     <string name="settings_theme">Tema</string>
-    <string name="settings_theme_system">Sistemi izle</string>
+    <string name="settings_theme_system">Sistem</string>
     <string name="settings_theme_dark">Koyu</string>
     <string name="settings_theme_light">Açık</string>
+    <string name="settings_theme_body">Sistem, cihazının açık veya koyu modunu izler.</string>
     <string name="settings_dynamic_color">Duvar kâğıdı renklerini kullan</string>
     <string name="settings_dynamic_color_body">Downtify yeşili yerine Material You</string>
     <string name="settings_about">Hakkında</string>
@@ -347,18 +351,25 @@
     <string name="player_playing_from_album">Albümden çalıyor</string>
     <string name="player_playing_from_artist">Sanatçıdan çalıyor</string>
     <string name="player_playing_from_playlist">Çalma listesinden çalıyor</string>
-    <string name="player_playing_from_library">Kitaplığından çalıyor</string>
-    <string name="player_source_original">%1$s üzerinden akıyor · %2$s · Orijinal kalite</string>
-    <string name="player_source_transcoded">%1$s üzerinden akıyor · %2$s %3$d kbps</string>
+    <string name="player_now_playing">Şimdi çalıyor</string>
+    <string name="player_source_original_quality">%1$s üzerinden akıyor · Orijinal kalite</string>
+    <string name="player_sample_rate">%1$s\u00A0kHz</string>
+    <string name="player_bitrate">%1$d\u00A0kbps</string>
     <string name="player_source_unknown">%1$s üzerinden akıyor</string>
     <string name="player_playing_from_podcast">Podcast</string>
-    <string name="player_go_to_show">Podcast\'e git</string>
     <string name="player_skip_back">10 saniye geri</string>
     <string name="player_skip_forward">30 saniye ileri</string>
     <string name="player_speed">Oynatma hızı %1$s. Değiştirmek için dokun</string>
-    <string name="player_source_phone">Bu telefondan çalıyor · %1$s</string>
+    <string name="player_source_this_phone">Bu telefondan çalıyor</string>
     <string name="player_lyrics_none">Bu şarkının sözleri yok.</string>
     <string name="player_lyrics_loading">Sözler yükleniyor…</string>
+    <string name="player_lyrics_synced">Zamanlı</string>
+    <string name="player_lyrics_static">Sabit</string>
+    <string name="player_lyrics_timing">Zamanlamayı ayarla</string>
+    <string name="player_lyrics_earlier">Sözler daha erken</string>
+    <string name="player_lyrics_later">Sözler daha geç</string>
+    <string name="player_lyrics_timing_reset">Zamanlamayı sıfırla</string>
+    <string name="player_lyrics_offset">%1$s\u00A0sn</string>
     <string name="player_error_network">Bu şarkıyı çalmak için sunucuya ulaşılamıyor.</string>
     <string name="player_error_not_found">Bu şarkı artık sunucuda değil.</string>
     <string name="player_error_old_server">Sunucu akış için çok eski — sunucudaki Downtify\'ı güncelle.</string>
@@ -372,8 +383,10 @@
     <string name="settings_language_summary">%1$s · Android\'in uygulama dili ayarlarından seçilir</string>
     <string name="settings_amoled">Saf siyah</string>
     <string name="settings_amoled_body">Koyu temada gerçek siyah. OLED ekranlarda pil tasarrufu sağlar.</string>
+    <string name="settings_floating_nav_bar">Kayan gezinme çubuğu</string>
+    <string name="settings_floating_nav_bar_body">Telefonda çubuk, ekranın tüm genişliğini kaplamak yerine yuvarlak bir hap şeklini alır</string>
     <string name="settings_font">Yazı tipi</string>
-    <string name="settings_font_downtify">Downtify</string>
+    <string name="settings_font_downtify">Klasik Downtify</string>
     <string name="settings_font_system">Sistem yazı tipi</string>
     <string name="settings_about_entry">Downtify hakkında</string>
 
@@ -446,7 +459,7 @@
     <string name="settings_read_ahead_off">Kapalı</string>
     <string name="settings_read_ahead_count">Önceden yüklenecek şarkı: %1$d</string>
     <string name="settings_stream_cache">Geçici ses önbelleği</string>
-    <string name="settings_stream_cache_size">%1$d MB</string>
+    <string name="settings_stream_cache_size">%1$d\u00A0MB</string>
     <string name="settings_stream_cache_body">Son çalınan ve önceden yüklenen sesler için alan. Çevrimdışı indirmeler ayrıdır. Büyük şarkılar bu sınırı aşabilir; yalnızca tamamlanan şarkılar hazır sayılır.</string>
     <string name="settings_read_ahead_mobile">Mobil veriyle önceden yükle</string>
     <string name="settings_read_ahead_mobile_body">Sonraki şarkıları hazırlamak için ek veri kullanımına izin ver.</string>

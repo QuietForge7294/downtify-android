@@ -8,7 +8,7 @@
     <string name="nav_downloads">Téléchargements</string>
     <string name="action_back">Retour</string>
     <string name="action_settings">Paramètres</string>
-    <string name="action_more">Plus d’options</string>
+    <string name="action_open_menu">Ouvrir le menu</string>
     <string name="action_retry">Réessayer</string>
     <string name="action_cancel">Annuler</string>
 
@@ -21,8 +21,9 @@
     <string name="connect_found">Trouvés sur ce réseau</string>
     <string name="connect_searching">Recherche de serveurs…</string>
     <string name="connect_none_found">Aucun trouvé. Saisissez plutôt l’adresse : le réseau par défaut de Docker n’annonce pas le serveur.</string>
-    <string name="connect_server_subtitle">%1$s · Downtify %2$s</string>
+    <string name="connect_server_subtitle">%1$s · Downtify\u00A0%2$s</string>
     <string name="connect_action">Se connecter</string>
+    <string name="connect_step">Étape %1$d sur %2$d</string>
     <string name="connect_scan">Scanner le code dans Paramètres › Apps</string>
     <string name="connect_cleartext_warning">Cette adresse n’est pas sur votre réseau local et n’utilise pas HTTPS : la clé du téléphone circulerait en clair. Placez Downtify derrière un proxy inverse HTTPS pour l’utiliser depuis l’extérieur.</string>
     <string name="connect_revoked">Ce téléphone a été dissocié du serveur. Associez-le à nouveau pour continuer à écouter.</string>
@@ -39,7 +40,7 @@
     <string name="pair_scan">Scanner le code QR</string>
     <string name="pair_other_server">Utiliser un autre serveur</string>
     <string name="pair_error_wrong_code">Ce code est incorrect, expiré ou déjà utilisé. Un code ne fonctionne qu’une fois, pendant cinq minutes.</string>
-    <string name="pair_error_too_many">Trop de tentatives. Réessayez dans %1$d s.</string>
+    <string name="pair_error_too_many">Trop de tentatives. Réessayez dans %1$d\u00A0s.</string>
     <string name="pair_error_unreachable">Impossible de joindre le serveur. Vérifiez la connexion et réessayez.</string>
     <string name="pair_error_failed">Le serveur n’a pas pu associer ce téléphone (erreur %1$d).</string>
     <string name="pair_error_other_server">Ce code correspond à un autre serveur que celui de cette adresse.</string>
@@ -52,9 +53,6 @@
     <string name="scan_not_downtify">Ce code QR n’est pas un code d’association Downtify.</string>
 
     <!-- Home -->
-    <string name="home_good_morning">Bonjour</string>
-    <string name="home_good_afternoon">Bon après-midi</string>
-    <string name="home_good_evening">Bonsoir</string>
     <string name="home_streaming_from">Diffusion depuis %1$s</string>
     <string name="home_unreachable">Impossible de joindre %1$s · affichage de votre bibliothèque synchronisée</string>
     <string name="home_different_server">Un autre serveur répond à cette adresse · associez à nouveau dans Paramètres</string>
@@ -73,9 +71,14 @@
     <string name="library_artists">Artistes</string>
     <string name="library_playlists">Playlists</string>
     <string name="library_songs">Titres</string>
+    <string name="library_sort">Trier par : %1$s</string>
     <string name="library_sort_recent">Ajoutés récemment</string>
     <string name="library_sort_alpha">Ordre alphabétique</string>
     <string name="library_sort_artist">Artiste</string>
+    <string name="library_sort_by">Trier par</string>
+    <string name="library_sort_order">Ordre</string>
+    <string name="library_sort_ascending">Croissant</string>
+    <string name="library_sort_descending">Décroissant</string>
     <string name="library_show_list">Afficher en liste</string>
     <string name="library_show_grid">Afficher en grille</string>
     <string name="library_empty_albums">Aucun album pour l’instant</string>
@@ -96,7 +99,7 @@
         <item quantity="many">%d d’albums</item>
         <item quantity="other">%d albums</item>
     </plurals>
-    <string name="minutes_short">%d min</string>
+    <string name="minutes_short">%d\u00A0min</string>
     <string name="unknown_artist">Artiste inconnu</string>
     <string name="unknown_album">Album inconnu</string>
 
@@ -306,13 +309,14 @@
     <string name="settings_quality_mobile">Qualité de diffusion en données mobiles</string>
     <string name="settings_quality_no_transcoding">Le serveur ne peut pas transcoder (pas de ffmpeg) : les fichiers sont diffusés tels quels.</string>
     <string name="settings_quality_original">Originale · telle que téléchargée</string>
-    <string name="settings_quality_transcoded">%1$s · %2$d kbit/s · transcodé par le serveur</string>
-    <string name="settings_quality_label">%1$s · %2$d kbit/s</string>
+    <string name="settings_quality_transcoded">%1$s · %2$d\u00A0kbit/s · transcodé par le serveur</string>
+    <string name="settings_quality_label">%1$s · %2$d\u00A0kbit/s</string>
     <string name="settings_appearance">Apparence</string>
     <string name="settings_theme">Thème</string>
-    <string name="settings_theme_system">Suivre le système</string>
+    <string name="settings_theme_system">Système</string>
     <string name="settings_theme_dark">Sombre</string>
     <string name="settings_theme_light">Clair</string>
+    <string name="settings_theme_body">Système suit le mode clair ou sombre de l’appareil.</string>
     <string name="settings_dynamic_color">Utiliser les couleurs du fond d’écran</string>
     <string name="settings_dynamic_color_body">Material You au lieu du vert Downtify</string>
     <string name="settings_about">À propos</string>
@@ -356,18 +360,25 @@
     <string name="player_playing_from_album">Lecture depuis l’album</string>
     <string name="player_playing_from_artist">Lecture depuis l’artiste</string>
     <string name="player_playing_from_playlist">Lecture depuis la playlist</string>
-    <string name="player_playing_from_library">Lecture depuis votre bibliothèque</string>
-    <string name="player_source_original">Diffusion depuis %1$s · %2$s · Qualité originale</string>
-    <string name="player_source_transcoded">Diffusion depuis %1$s · %2$s %3$d kbit/s</string>
+    <string name="player_now_playing">En cours de lecture</string>
+    <string name="player_source_original_quality">Diffusion depuis %1$s · Qualité originale</string>
+    <string name="player_sample_rate">%1$s\u00A0kHz</string>
+    <string name="player_bitrate">%1$d\u00A0kbit/s</string>
     <string name="player_source_unknown">Diffusion depuis %1$s</string>
     <string name="player_playing_from_podcast">Podcast</string>
-    <string name="player_go_to_show">Aller au podcast</string>
     <string name="player_skip_back">Reculer de 10 secondes</string>
     <string name="player_skip_forward">Avancer de 30 secondes</string>
     <string name="player_speed">Vitesse de lecture %1$s. Appuyez pour changer</string>
-    <string name="player_source_phone">Lecture depuis ce téléphone · %1$s</string>
+    <string name="player_source_this_phone">Lecture depuis ce téléphone</string>
     <string name="player_lyrics_none">Pas de paroles pour ce titre.</string>
     <string name="player_lyrics_loading">Chargement des paroles…</string>
+    <string name="player_lyrics_synced">Synchronisées</string>
+    <string name="player_lyrics_static">Statiques</string>
+    <string name="player_lyrics_timing">Ajuster la synchronisation</string>
+    <string name="player_lyrics_earlier">Paroles plus tôt</string>
+    <string name="player_lyrics_later">Paroles plus tard</string>
+    <string name="player_lyrics_timing_reset">Réinitialiser la synchronisation</string>
+    <string name="player_lyrics_offset">%1$s\u00A0s</string>
     <string name="player_error_network">Impossible de joindre le serveur pour lire ce titre.</string>
     <string name="player_error_not_found">Ce titre n’est plus sur le serveur.</string>
     <string name="player_error_old_server">Le serveur est trop ancien pour la diffusion : mettez Downtify à jour sur le serveur.</string>
@@ -381,8 +392,10 @@
     <string name="settings_language_summary">%1$s · à régler dans les paramètres de langue des apps d’Android</string>
     <string name="settings_amoled">Noir pur</string>
     <string name="settings_amoled_body">Vrai noir dans le thème sombre. Économise la batterie sur les écrans OLED.</string>
+    <string name="settings_floating_nav_bar">Barre de navigation flottante</string>
+    <string name="settings_floating_nav_bar_body">Sur le téléphone, la barre devient une pilule arrondie au lieu d’occuper toute la largeur de l’écran</string>
     <string name="settings_font">Police</string>
-    <string name="settings_font_downtify">Downtify</string>
+    <string name="settings_font_downtify">Downtify classique</string>
     <string name="settings_font_system">Police du système</string>
     <string name="settings_about_entry">À propos de Downtify</string>
 
@@ -455,7 +468,7 @@
     <string name="settings_read_ahead_off">Désactivé</string>
     <string name="settings_read_ahead_count">Morceaux en avance : %1$d</string>
     <string name="settings_stream_cache">Cache audio temporaire</string>
-    <string name="settings_stream_cache_size">%1$d Mo</string>
+    <string name="settings_stream_cache_size">%1$d\u00A0Mo</string>
     <string name="settings_stream_cache_body">Espace pour la musique récemment écoutée et préchargée. Les téléchargements hors ligne sont séparés. Les gros morceaux peuvent dépasser cette limite ; seuls les morceaux complets sont comptés comme prêts.</string>
     <string name="settings_read_ahead_mobile">Précharger avec les données mobiles</string>
     <string name="settings_read_ahead_mobile_body">Autoriser une consommation supplémentaire pour préparer les prochains morceaux.</string>

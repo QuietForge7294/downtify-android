@@ -96,6 +96,7 @@ class MainActivity : ComponentActivity() {
                 dynamicColor = settings?.dynamicColor == true,
                 amoled = settings?.amoled == true,
                 font = settings?.font ?: AppFont.Default,
+                floatingNavBar = settings?.floatingNavBar ?: true,
             ) {
                 DowntifyApp(viewModel = viewModel)
             }
