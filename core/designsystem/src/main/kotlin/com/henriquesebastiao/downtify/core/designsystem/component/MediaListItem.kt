@@ -33,7 +33,7 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 /**
  * A content row (song, album, file, download) as a card of a separated list: [leading] (a 64 dp
  * [Artwork] or a track number), a titleMedium title over a bodyLarge [subtitle], an optional
- * monospaced [meta] line (a size, a duration) and [trailing] controls (a [CircleButton] "more").
+ * tabular [meta] line (a size, a duration) and [trailing] controls (a [CircleButton] "more").
  * [active] is what's playing: the title in bold primary; [dimmed] is something done with (an
  * episode heard), its title in the muted color. Lines are one line, ellipsized; a title or status
  * that must be read whole may take [titleLines] or [subtitleLines]. [extra] goes under them (a

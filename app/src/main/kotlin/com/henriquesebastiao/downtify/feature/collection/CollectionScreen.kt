@@ -112,7 +112,7 @@ fun CollectionRoute(
 /**
  * An album, a playlist or Liked songs (v3): the header and its top bar take the cover's colors
  * ([CoverTheme]), fading into the app's surface; the songs are cards of a separated list in the
- * app's own scheme (pure black included), the duration of each in mono.
+ * app's own scheme (pure black included), the duration of each in tabular figures.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -308,7 +308,6 @@ private fun Details(state: CollectionUiState) {
         Tag(
             stringResource(R.string.minutes_short, totalMinutes(state.durationSeconds)),
             small = true,
-            mono = true,
             tone = TagTone.OnColor,
         )
     }

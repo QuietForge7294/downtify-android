@@ -176,7 +176,7 @@ fun AboutScreen(versionLabel: String, actions: AboutActions, modifier: Modifier 
     }
 }
 
-/** The app's mark, its name, the version as a tag in the data face, and what it is. */
+/** The app's mark, its name, the version as a tag, and what it is. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AboutHeader(versionLabel: String) {
@@ -191,7 +191,7 @@ private fun AboutHeader(versionLabel: String) {
             style = MaterialTheme.typography.headlineMediumEmphasized,
             modifier = Modifier.semantics { heading() },
         )
-        Tag(versionLabel, tone = TagTone.Secondary, mono = true)
+        Tag(versionLabel, tone = TagTone.Secondary)
         Text(
             stringResource(R.string.about_tagline),
             style = MaterialTheme.typography.bodyLarge,

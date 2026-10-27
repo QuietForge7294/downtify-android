@@ -331,7 +331,7 @@ private fun ServerJobRow(job: ServerJob) {
             }
 
             job.status.isActive && job.position != null -> {
-                { Tag("#${job.position}", small = true, mono = true) }
+                { Tag("#${job.position}", small = true) }
             }
 
             else -> null
@@ -355,7 +355,7 @@ private fun jobStatus(job: ServerJob): String = when (job.status) {
     }
 }
 
-/** How much of the phone the offline copies take: the screen's one hero card, its values in mono. */
+/** How much of the phone the offline copies take: the screen's one hero card, its values in tabular figures. */
 @Composable
 private fun StorageCard(state: DownloadsUiState, modifier: Modifier = Modifier) {
     val unlimited = state.limitBytes == OfflinePlanner.UNLIMITED

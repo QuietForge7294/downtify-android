@@ -217,7 +217,7 @@ private fun Header(show: PodcastShow) {
 
 /**
  * An episode as a card: its title on up to two lines (bold until heard, then muted), the date,
- * length and where it stopped in mono, and how far it was heard as a flat bar.
+ * length and where it stopped in tabular figures, and how far it was heard as a flat bar.
  */
 @Composable
 private fun EpisodeRow(
@@ -308,7 +308,7 @@ private fun EpisodeMenu(episode: PodcastEpisode, actions: EpisodeActions) {
     }
 }
 
-/** `Sep 18, 2026 · 31:02`: the line in mono. */
+/** `Sep 18, 2026 · 31:02`: the line in tabular figures. */
 @Composable
 private fun meta(episode: PodcastEpisode): String = buildList {
     formatDate(episode.publishedAt)?.let(::add)

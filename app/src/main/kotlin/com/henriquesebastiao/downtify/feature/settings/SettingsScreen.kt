@@ -292,7 +292,7 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, modifier: M
 }
 
 /**
- * The paired server, the screen's one hero card: its name, its address in the data face, and its
+ * The paired server, the screen's one hero card: its name, its address in the data style, and its
  * state as tags (color, icon and words) that wrap between each other, never inside one.
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -327,7 +327,7 @@ private fun ServerCard(state: SettingsUiState, onChangeServer: () -> Unit, onOpe
         ) {
             ConnectionTag(state.connection)
             if (state.version.isNotBlank()) {
-                Tag(stringResource(R.string.settings_server_version, state.version), small = true, mono = true)
+                Tag(stringResource(R.string.settings_server_version, state.version))
             }
         }
         if (state.username.isNotBlank()) {
@@ -474,7 +474,6 @@ private fun CacheLimitDialog(current: Int, onSelect: (Int) -> Unit, onDismiss: (
                 Tag(
                     stringResource(R.string.settings_stream_cache_size, value.roundToInt()),
                     tone = TagTone.Secondary,
-                    mono = true,
                 )
                 Slider(value = value, onValueChange = { value = it }, valueRange = 10f..200f, steps = 18)
             }
@@ -631,7 +630,7 @@ private fun qualityLabel(quality: StreamQuality): String = if (quality.isOrigina
     stringResource(R.string.settings_quality_label, quality.format.displayName, quality.bitrate)
 }
 
-/** A transcoded quality's format and bitrate, set in the data face; the " · " between them isn't. */
+/** A transcoded quality's format and bitrate, in tabular figures; the " · " between them isn't. */
 @Composable
 private fun qualityValues(quality: StreamQuality): List<String> =
     if (quality.isOriginal) emptyList() else qualityLabel(quality).split(" · ")

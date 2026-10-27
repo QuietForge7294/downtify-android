@@ -1,7 +1,10 @@
 package com.henriquesebastiao.downtify.core.designsystem.theme
 
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -167,7 +170,10 @@ fun downtifyTypography(font: AppFont): Typography {
 /** The default font's type scale: what previews and tests use. */
 val DowntifyTypography = downtifyTypography(AppFont.Default)
 
-/** The styles Material 3's scale doesn't have. Their faces are fixed: they don't follow the font setting. */
+/**
+ * The styles Material 3's scale doesn't have. The hero's face is fixed: it doesn't follow the font
+ * setting. The data styles do: they're the app's own face.
+ */
 object DowntifyType {
     /** The wide, rounded hero title (home, welcome): Google Sans Flex at wdth 151, whatever font the app uses. */
     val hero = base.displayLarge.copy(
@@ -182,28 +188,38 @@ object DowntifyType {
     /** [hero] for titles with a long word (more than ~8 letters). */
     val heroSmall = hero.copy(fontSize = 44.sp)
 
-    // Technical values (durations, bitrates, sample rates, sizes, formats): monospaced, tabular figures.
-    val dataLarge = mono(FontWeight.Medium, size = 22, line = 28)
-    val dataMedium = mono(FontWeight.Medium, size = 14, line = 20)
-    val dataSmall = mono(FontWeight.Normal, size = 12, line = 16)
+    // Technical values (durations, bitrates, sample rates, sizes, formats): the app's own face, with
+    // tabular figures so a value that changes doesn't shift.
+    val dataLarge: TextStyle
+        @Composable @ReadOnlyComposable
+        get() = data(FontWeight.Medium, size = 22, line = 28)
+    val dataMedium: TextStyle
+        @Composable @ReadOnlyComposable
+        get() = data(FontWeight.Medium, size = 14, line = 20)
+    val dataSmall: TextStyle
+        @Composable @ReadOnlyComposable
+        get() = data(FontWeight.Normal, size = 12, line = 16)
 
-    /** A technical value being typed (a server address): the text field's size, in the data face. */
-    val dataInput = mono(FontWeight.Normal, size = 16, line = 24)
+    /** A technical value being typed (a server address): the text field's size, in the data style. */
+    val dataInput: TextStyle
+        @Composable @ReadOnlyComposable
+        get() = data(FontWeight.Normal, size = 16, line = 24)
 
-    private fun mono(weight: FontWeight, size: Int, line: Int) = base.bodyMedium.copy(
-        fontFamily = FontFamily.Monospace,
+    @Composable
+    @ReadOnlyComposable
+    private fun data(weight: FontWeight, size: Int, line: Int) = MaterialTheme.typography.bodyMedium.copy(
         fontWeight = weight,
         fontSize = size.sp,
         lineHeight = line.sp,
         letterSpacing = 0.sp,
-        fontFeatureSettings = "tnum",
+        fontFeatureSettings = TABULAR_FIGURES,
     )
 }
 
 /**
  * [text], a translated sentence with values in it ("2.4 GB used", "212 songs · 5.6 GB free"),
- * with each of [values] set in the monospaced data face where it appears. The sentence keeps its
- * language's word order; only the values change face.
+ * with each of [values] in tabular figures where it appears. The sentence keeps its language's
+ * word order and its face; only the values' figures change.
  */
 fun withDataValues(text: String, vararg values: String): AnnotatedString = withDataValues(text, values.asList())
 
@@ -219,4 +235,6 @@ fun withDataValues(text: String, values: List<String>): AnnotatedString = buildA
     }
 }
 
-private val DataSpan = SpanStyle(fontFamily = FontFamily.Monospace, fontFeatureSettings = "tnum")
+private const val TABULAR_FIGURES = "tnum"
+
+private val DataSpan = SpanStyle(fontFeatureSettings = TABULAR_FIGURES)

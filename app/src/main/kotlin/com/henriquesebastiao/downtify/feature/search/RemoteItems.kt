@@ -62,9 +62,10 @@ import com.henriquesebastiao.downtify.core.model.formatDuration
 
 /**
  * A song the server can download, as a card of a separated list: tapping anywhere plays it in
- * full from the server. Its source and artist under the title, its duration in mono. Everything
- * else lives in the row's menu: what sounds like it, the download (then its progress), and — once
- * the song is in the library — the library actions (like, lyrics) instead of the download.
+ * full from the server. Its source and artist under the title, its duration in tabular figures.
+ * Everything else lives in the row's menu: what sounds like it, the download (then its progress),
+ * and — once the song is in the library — the library actions (like, lyrics) instead of the
+ * download.
  */
 @Composable
 internal fun RemoteSongRow(

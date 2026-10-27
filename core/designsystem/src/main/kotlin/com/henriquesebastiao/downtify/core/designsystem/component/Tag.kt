@@ -18,11 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
-import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyType
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 
 /**
@@ -32,9 +30,8 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 enum class TagTone { Surface, Primary, Secondary, Tertiary, Error, OnColor }
 
 /**
- * A static label in a pill: a version, a status, a value ("44.1 kHz", "FLAC"). [mono] sets it in
- * the monospaced data face, for technical values. Not a filter: selection is a FilterChip.
- * [small] is 32 dp tall instead of 40.
+ * A static label in a pill: a version, a status, a value ("44.1 kHz", "FLAC"), in the app's own
+ * face. Not a filter: selection is a FilterChip. [small] is 32 dp tall instead of 40.
  */
 @Composable
 fun Tag(
@@ -43,15 +40,9 @@ fun Tag(
     icon: Int? = null,
     tone: TagTone = TagTone.Surface,
     small: Boolean = false,
-    mono: Boolean = false,
 ) {
     val (container, content) = tone.colors()
-    val style = when {
-        mono && small -> DowntifyType.dataSmall.copy(fontWeight = FontWeight.Medium)
-        mono -> DowntifyType.dataMedium
-        small -> MaterialTheme.typography.labelMedium
-        else -> MaterialTheme.typography.labelLarge
-    }
+    val style = if (small) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge
     val padding = when {
         small && icon != null -> PaddingValues(start = Spacing.sm, end = Spacing.md)
         small -> PaddingValues(horizontal = Spacing.md)
@@ -101,9 +92,9 @@ private fun TagPreview() {
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
-                Tag("FLAC", mono = true, tone = TagTone.Secondary)
-                Tag("44.1 kHz", mono = true, small = true)
-                Tag("941 kbps", mono = true, small = true)
+                Tag("FLAC", tone = TagTone.Secondary)
+                Tag("44.1 kHz", small = true)
+                Tag("941 kbps", small = true)
                 Tag("Offline", icon = DowntifyIcons.CheckCircle, tone = TagTone.Primary)
             }
         }

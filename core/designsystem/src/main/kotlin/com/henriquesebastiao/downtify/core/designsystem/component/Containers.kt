@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyShape
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
-import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyType
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 
 /** A [SectionCard]'s container: a surface step, or a container tone for a highlight. */
@@ -157,10 +156,10 @@ private fun SectionTone.colors(): Pair<Color, Color?> {
 
 /**
  * A big number for a hero card ("12.4 GB", "318"): 40 sp bold over its label, on a wash of the
- * content color. [mono] for technical values (sizes, bitrates).
+ * content color.
  */
 @Composable
-fun KpiTile(value: String, label: String, modifier: Modifier = Modifier, mono: Boolean = false) {
+fun KpiTile(value: String, label: String, modifier: Modifier = Modifier) {
     Column(
         modifier
             .background(LocalContentColor.current.copy(alpha = KPI_WASH_ALPHA), DowntifyShape.Section)
@@ -170,8 +169,11 @@ fun KpiTile(value: String, label: String, modifier: Modifier = Modifier, mono: B
     ) {
         Text(
             value,
-            style = (if (mono) DowntifyType.dataLarge else MaterialTheme.typography.displayMedium)
-                .copy(fontSize = 40.sp, lineHeight = 44.sp, fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.displayMedium.copy(
+                fontSize = 40.sp,
+                lineHeight = 44.sp,
+                fontWeight = FontWeight.Bold,
+            ),
             maxLines = 1,
             softWrap = false,
             autoSize = KpiAutoSize,
@@ -211,7 +213,7 @@ private fun ContainersPreview() {
                     title = "On this phone",
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                        KpiTile("12.4 GB", "Used", Modifier.weight(1f), mono = true)
+                        KpiTile("12.4 GB", "Used", Modifier.weight(1f))
                         KpiTile("318", "Songs", Modifier.weight(1f))
                     }
                 }

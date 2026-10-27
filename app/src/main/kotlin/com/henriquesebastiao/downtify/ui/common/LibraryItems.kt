@@ -121,7 +121,7 @@ fun CoverCard(
 
 /**
  * A song as a card of a separated list (v3): its 64 dp cover (or its number, in an album), the
- * title over the artist and the duration in mono, the bars while it plays and a round "more"
+ * title over the artist and the duration in tabular figures, the bars while it plays and a round "more"
  * button with its menu. What's playing looks as in PixelPlayer: the row rounds into a pill in
  * primaryContainer and its cover into a circle (spatial spring), its text, bars and "more" turn
  * onPrimaryContainer (effects spring). [compact] is for the library's long list: a 56 dp cover,
@@ -170,7 +170,7 @@ fun TrackItem(
         MediaListItem(
             title = track.displayTitle,
             subtitle = track.displayArtist.ifBlank { stringResource(R.string.unknown_artist) },
-            // The duration is a technical value: its own line, in the monospaced face.
+            // The duration is a technical value: its own line, in tabular figures.
             meta = if (compact) null else formatDuration(track.duration),
             onClick = onClick,
             active = isCurrent,

@@ -360,9 +360,8 @@ fun PlayerToggles(toggles: List<PlayerToggle>, modifier: Modifier = Modifier) {
  * The song's position as Material's slider over a wavy track that flows while [playing] and lies
  * flat when paused. [progress] follows the player except while the finger is on it; [onSeek]
  * gets the fraction where it lets go. [timeAt] spells a fraction as a time for the labels below,
- * which follow the finger; [between] goes between them (the format, as a [Tag]). The times are in
- * the UI font, not the data face (the owner's choice for the player), bold, with tabular figures
- * so they don't jitter as they count.
+ * which follow the finger; [between] goes between them (the format, as a [Tag]). The times are
+ * bold, with tabular figures so they don't jitter as they count.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable

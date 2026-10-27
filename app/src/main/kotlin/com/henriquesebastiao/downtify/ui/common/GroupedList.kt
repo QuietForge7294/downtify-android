@@ -43,7 +43,7 @@ sealed interface RowAction {
 
 /**
  * One row of a [GroupedList]. [summaryValues] are the parts of [summary] that are technical values
- * (a size, a version), set in the data face. A [destructive] row (unpair) is in the error colors.
+ * (a size, a version), in tabular figures. A [destructive] row (unpair) is in the error colors.
  */
 data class GroupedRow(
     val title: String,

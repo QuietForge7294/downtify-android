@@ -95,7 +95,7 @@ class PodcastsScreensTest {
             }
         }
         compose.onNodeWithText("The Sweetest Thing").assertIsDisplayed()
-        // In words on their own line; the date and length keep the mono line to themselves.
+        // In words on their own line; the date and length keep the data line to themselves.
         compose.onNodeWithText("Resume at 12:34").assertIsDisplayed()
         compose.onNodeWithText("Played").assertIsDisplayed()
     }
