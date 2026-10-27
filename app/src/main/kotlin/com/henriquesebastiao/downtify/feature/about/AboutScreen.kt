@@ -92,7 +92,7 @@ private enum class AboutSheet { Terms, Donate }
 @Composable
 fun AboutScreen(versionLabel: String, actions: AboutActions, modifier: Modifier = Modifier) {
     var sheet by rememberSaveable { mutableStateOf<AboutSheet?>(null) }
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {

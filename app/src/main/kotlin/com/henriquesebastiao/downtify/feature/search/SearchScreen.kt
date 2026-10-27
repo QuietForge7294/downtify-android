@@ -167,11 +167,18 @@ fun SearchScreen(
     remote: RemoteActions = RemoteActions(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
-        topBar = { PageHeader(title = stringResource(R.string.nav_search), scrollBehavior = scrollBehavior) },
+        topBar = {
+            // A tab, as the library: its title in primary.
+            PageHeader(
+                title = stringResource(R.string.nav_search),
+                titleColor = MaterialTheme.colorScheme.primary,
+                scrollBehavior = scrollBehavior,
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {

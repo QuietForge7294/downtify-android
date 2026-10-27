@@ -96,7 +96,7 @@ private fun facesOf(font: AppFont) = when (font) {
 }
 
 /**
- * The v3 type scale in [font]: bold 48 sp page titles (displayLarge), semibold headlines, 18 sp
+ * The v3 type scale in [font]: bold 36 sp page titles (displayMedium), semibold headlines, 18 sp
  * titleMedium, 16/14 sp labels. Sizes, weights and line heights are the same for all three fonts.
  * Each emphasized style is its role one weight step up.
  */
