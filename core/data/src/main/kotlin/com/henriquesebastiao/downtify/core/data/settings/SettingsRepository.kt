@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.map
 class SettingsRepository @Inject constructor(private val store: DataStore<Preferences>) {
     val settings: Flow<UserSettings> = store.data.map { prefs ->
         val defaults = UserSettings()
+        val sort = enumOr(prefs[LIBRARY_SORT], defaults.librarySort)
         UserSettings(
             theme = enumOr(prefs[THEME], defaults.theme),
             dynamicColor = prefs[DYNAMIC_COLOR] ?: defaults.dynamicColor,
@@ -30,7 +31,9 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
             wifiQuality = StreamQuality.decode(prefs[WIFI_QUALITY]) ?: defaults.wifiQuality,
             mobileQuality = StreamQuality.decode(prefs[MOBILE_QUALITY]) ?: defaults.mobileQuality,
             libraryLayout = enumOr(prefs[LIBRARY_LAYOUT], defaults.libraryLayout),
-            librarySort = enumOr(prefs[LIBRARY_SORT], defaults.librarySort),
+            librarySort = sort,
+            // Saved only once the user flips it; until then each sort keeps its own order.
+            librarySortDescending = prefs[LIBRARY_SORT_DESCENDING] ?: sort.descendingByDefault,
             downloadWifiOnly = prefs[DOWNLOAD_WIFI_ONLY] ?: defaults.downloadWifiOnly,
             offlineLimitBytes = prefs[OFFLINE_LIMIT] ?: defaults.offlineLimitBytes,
             readAhead = ReadAheadPolicy(
@@ -73,8 +76,16 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
         store.edit { it[LIBRARY_LAYOUT] = value.name }
     }
 
+    /** Picking another sort starts it in its own order (see [LibrarySort.descendingByDefault]). */
     suspend fun setLibrarySort(value: LibrarySort) {
-        store.edit { it[LIBRARY_SORT] = value.name }
+        store.edit { prefs ->
+            if (enumOr(prefs[LIBRARY_SORT], UserSettings().librarySort) != value) prefs.remove(LIBRARY_SORT_DESCENDING)
+            prefs[LIBRARY_SORT] = value.name
+        }
+    }
+
+    suspend fun setLibrarySortDescending(value: Boolean) {
+        store.edit { it[LIBRARY_SORT_DESCENDING] = value }
     }
 
     suspend fun setDownloadWifiOnly(value: Boolean) {
@@ -118,6 +129,7 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
         val MOBILE_QUALITY = stringPreferencesKey("mobile_quality")
         val LIBRARY_LAYOUT = stringPreferencesKey("library_layout")
         val LIBRARY_SORT = stringPreferencesKey("library_sort")
+        val LIBRARY_SORT_DESCENDING = booleanPreferencesKey("library_sort_descending")
         val CLIENT_ID = stringPreferencesKey("client_id")
         val DOWNLOAD_WIFI_ONLY = booleanPreferencesKey("download_wifi_only")
         val OFFLINE_LIMIT = longPreferencesKey("offline_limit_bytes")

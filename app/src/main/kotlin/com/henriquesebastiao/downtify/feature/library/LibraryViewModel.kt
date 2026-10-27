@@ -39,6 +39,7 @@ data class LibraryUiState(
     val tab: LibraryTab = LibraryTab.Songs,
     val layout: LibraryLayout = LibraryLayout.Grid,
     val sort: LibrarySort = LibrarySort.RecentlyAdded,
+    val sortDescending: Boolean = sort.descendingByDefault,
     val albums: List<Album> = emptyList(),
     val artists: List<Artist> = emptyList(),
     val playlists: List<PlaylistItem> = emptyList(),
@@ -63,14 +64,15 @@ class LibraryViewModel @Inject constructor(
     /** Only the catalog and sort order can change these sorted lists. */
     private val sorted = combine(
         library.library,
-        settings.settings.map { it.librarySort }.distinctUntilChanged(),
-    ) { snapshot, sort ->
+        settings.settings.map { it.librarySort to it.librarySortDescending }.distinctUntilChanged(),
+    ) { snapshot, (sort, descending) ->
         snapshot to LibraryUiState(
             loading = snapshot == null,
             sort = sort,
-            albums = sortAlbums(snapshot?.albums.orEmpty(), sort),
-            artists = sortArtists(snapshot?.artists.orEmpty(), sort),
-            songs = sortSongs(snapshot?.tracks.orEmpty(), sort),
+            sortDescending = descending,
+            albums = snapshot?.albums.orEmpty().sortedWith(albumOrder(sort, descending)),
+            artists = snapshot?.artists.orEmpty().sortedWith(artistOrder(sort, descending)),
+            songs = snapshot?.tracks.orEmpty().sortedWith(songOrder(sort, descending)),
         )
     }.flowOn(Dispatchers.Default)
 
@@ -110,6 +112,10 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch { settings.setLibrarySort(value) }
     }
 
+    fun setSortDescending(value: Boolean) {
+        viewModelScope.launch { settings.setLibrarySortDescending(value) }
+    }
+
     fun toggleLayout() {
         val next = if (uiState.value.layout == LibraryLayout.Grid) LibraryLayout.List else LibraryLayout.Grid
         viewModelScope.launch { settings.setLibraryLayout(next) }
@@ -134,32 +140,36 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch { library.setLiked(track.id, track.id !in uiState.value.likedIds) }
     }
 
-    private fun sortAlbums(albums: List<Album>, sort: LibrarySort) = when (sort) {
-        LibrarySort.RecentlyAdded -> albums.sortedByDescending { it.added }
+    // [descending] reverses the first key only: an artist's albums stay by year, an album's songs by number.
+    private fun albumOrder(sort: LibrarySort, descending: Boolean): Comparator<Album> = when (sort) {
+        LibrarySort.RecentlyAdded -> compareBy<Album> { it.added }.directed(descending)
 
-        LibrarySort.Alphabetical -> albums.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
+        LibrarySort.Alphabetical ->
+            compareBy<Album, String>(String.CASE_INSENSITIVE_ORDER) { it.title }.directed(descending)
 
-        LibrarySort.Artist -> albums.sortedWith(
-            compareBy<Album, String>(String.CASE_INSENSITIVE_ORDER) { it.artist }.thenBy { it.year },
-        )
+        LibrarySort.Artist -> compareBy<Album, String>(String.CASE_INSENSITIVE_ORDER) { it.artist }
+            .directed(descending)
+            .thenBy { it.year }
     }
 
-    private fun sortArtists(artists: List<Artist>, sort: LibrarySort) = when (sort) {
-        LibrarySort.RecentlyAdded -> artists.sortedByDescending { a -> a.tracks.maxOfOrNull { it.added } ?: 0 }
-        else -> artists.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+    private fun artistOrder(sort: LibrarySort, descending: Boolean): Comparator<Artist> = when (sort) {
+        LibrarySort.RecentlyAdded -> compareBy<Artist> { a -> a.tracks.maxOfOrNull { it.added } ?: 0 }
+        else -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+    }.directed(descending)
+
+    private fun songOrder(sort: LibrarySort, descending: Boolean): Comparator<Track> = when (sort) {
+        LibrarySort.RecentlyAdded -> compareBy<Track> { it.added }.directed(descending)
+
+        LibrarySort.Alphabetical ->
+            compareBy<Track, String>(String.CASE_INSENSITIVE_ORDER) { it.displayTitle }.directed(descending)
+
+        LibrarySort.Artist -> compareBy<Track, String>(String.CASE_INSENSITIVE_ORDER) { it.albumArtist }
+            .directed(descending)
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.album }
+            .thenBy { it.trackNumber }
     }
 
-    private fun sortSongs(tracks: List<Track>, sort: LibrarySort) = when (sort) {
-        LibrarySort.RecentlyAdded -> tracks.sortedByDescending { it.added }
-
-        LibrarySort.Alphabetical -> tracks.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.displayTitle })
-
-        LibrarySort.Artist -> tracks.sortedWith(
-            compareBy<Track, String>(String.CASE_INSENSITIVE_ORDER) { it.albumArtist }
-                .thenBy(String.CASE_INSENSITIVE_ORDER) { it.album }
-                .thenBy { it.trackNumber },
-        )
-    }
+    private fun <T> Comparator<T>.directed(descending: Boolean): Comparator<T> = if (descending) reversed() else this
 
     private fun playlistItems(
         snapshot: LibrarySnapshot?,

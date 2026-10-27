@@ -77,6 +77,8 @@ Inspired by PixelPlayer:
 - grouped lists with large outer and small inner corners, and the settings' value tags;
 - the floating navigation bar, with the option of a full-width one;
 - the side menu opened from Home's menu button;
+- the library's one-row title, its icon buttons, its sort sheet and its scrollbar;
+- the song that's playing drawn as a pill with a round cover;
 - the mini player:
   - joined to the floating bar as one group;
   - its title sliding when it doesn't fit;

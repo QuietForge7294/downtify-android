@@ -4,7 +4,14 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.lerp
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 /**
@@ -55,6 +62,9 @@ object DowntifyShape {
     /** The floating navigation bar. */
     val FloatingNavBar = RoundedCornerShape(BarCorner)
 
+    /** What's playing in a list of songs: the row rounds into a pill, as in PixelPlayer. */
+    val PlayingRow = RoundedCornerShape(percent = 50)
+
     /** The side menu's sheet: flush with the screen's start edge, extra-large corners at its end. */
     val Drawer = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)
 
@@ -91,6 +101,49 @@ data class ListStyle(val outer: Dp, val inner: Dp, val gap: Dp) {
 
         /** Dense lists: 16 at the ends, 4 between, 2 apart. */
         val Compact = ListStyle(outer = 16.dp, inner = 4.dp, gap = 2.dp)
+    }
+}
+
+/**
+ * A shape [fraction] of the way from [start] to [stop], for corners that move on a spring (a row
+ * rounding into a pill, a squircle into a circle). Both should be rounded rectangles; any other
+ * outline snaps from one to the other halfway. The spring's overshoot is clamped.
+ */
+fun morphShape(start: Shape, stop: Shape, fraction: Float): Shape = when {
+    fraction <= 0f -> start
+    fraction >= 1f -> stop
+    else -> MorphedShape(start, stop, fraction)
+}
+
+private class MorphedShape(val start: Shape, val stop: Shape, val fraction: Float) : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+        val from = start.createOutline(size, layoutDirection, density).roundRect()
+        val to = stop.createOutline(size, layoutDirection, density).roundRect()
+        if (from == null || to == null) {
+            return (if (fraction < HALF) start else stop).createOutline(size, layoutDirection, density)
+        }
+        return Outline.Rounded(
+            RoundRect(
+                left = from.left,
+                top = from.top,
+                right = from.right,
+                bottom = from.bottom,
+                topLeftCornerRadius = lerp(from.topLeftCornerRadius, to.topLeftCornerRadius, fraction),
+                topRightCornerRadius = lerp(from.topRightCornerRadius, to.topRightCornerRadius, fraction),
+                bottomRightCornerRadius = lerp(from.bottomRightCornerRadius, to.bottomRightCornerRadius, fraction),
+                bottomLeftCornerRadius = lerp(from.bottomLeftCornerRadius, to.bottomLeftCornerRadius, fraction),
+            ),
+        )
+    }
+
+    private fun Outline.roundRect(): RoundRect? = when (this) {
+        is Outline.Rounded -> roundRect
+        is Outline.Rectangle -> RoundRect(rect)
+        is Outline.Generic -> null
+    }
+
+    private companion object {
+        const val HALF = 0.5f
     }
 }
 

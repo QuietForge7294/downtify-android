@@ -75,6 +75,10 @@
     <string name="library_sort_recent">Наскоро добавени</string>
     <string name="library_sort_alpha">По азбучен ред</string>
     <string name="library_sort_artist">Изпълнител</string>
+    <string name="library_sort_by">Подреди по</string>
+    <string name="library_sort_order">Ред</string>
+    <string name="library_sort_ascending">Възходящо</string>
+    <string name="library_sort_descending">Низходящо</string>
     <string name="library_show_list">Покажи като списък</string>
     <string name="library_show_grid">Покажи като мрежа</string>
     <string name="library_empty_albums">Още няма албуми</string>

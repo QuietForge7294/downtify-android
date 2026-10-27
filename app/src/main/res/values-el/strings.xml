@@ -75,6 +75,10 @@
     <string name="library_sort_recent">Προστέθηκαν πρόσφατα</string>
     <string name="library_sort_alpha">Αλφαβητικά</string>
     <string name="library_sort_artist">Καλλιτέχνης</string>
+    <string name="library_sort_by">Ταξινόμηση κατά</string>
+    <string name="library_sort_order">Σειρά</string>
+    <string name="library_sort_ascending">Αύξουσα</string>
+    <string name="library_sort_descending">Φθίνουσα</string>
     <string name="library_show_list">Εμφάνιση ως λίστα</string>
     <string name="library_show_grid">Εμφάνιση ως πλέγμα</string>
     <string name="library_empty_albums">Δεν υπάρχουν άλμπουμ ακόμα</string>

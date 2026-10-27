@@ -1,5 +1,7 @@
 package com.henriquesebastiao.downtify.ui.common
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -49,6 +52,7 @@ import com.henriquesebastiao.downtify.core.designsystem.component.PlayingBars
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyShape
 import com.henriquesebastiao.downtify.core.designsystem.theme.ListStyle
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
+import com.henriquesebastiao.downtify.core.designsystem.theme.morphShape
 import com.henriquesebastiao.downtify.core.model.Album
 import com.henriquesebastiao.downtify.core.model.Artist
 import com.henriquesebastiao.downtify.core.model.Track
@@ -118,9 +122,13 @@ fun CoverCard(
 /**
  * A song as a card of a separated list (v3): its 64 dp cover (or its number, in an album), the
  * title over the artist and the duration in mono, the bars while it plays and a round "more"
- * button with its menu.
+ * button with its menu. What's playing looks as in PixelPlayer: the row rounds into a pill in
+ * primaryContainer and its cover into a circle (spatial spring), its text, bars and "more" turn
+ * onPrimaryContainer (effects spring). [compact] is for the library's long list: a 56 dp cover,
+ * tighter padding and no duration line.
  * Swipes right to queue when [actions] can. [shape] comes from the list's [ListStyle].
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TrackItem(
     track: Track,
@@ -136,26 +144,55 @@ fun TrackItem(
     actions: TrackActions = TrackActions(),
     shape: Shape = ListStyle.Separated.shapeOf(0, 1),
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    compact: Boolean = false,
 ) {
+    val scheme = MaterialTheme.colorScheme
+    val motion = MaterialTheme.motionScheme
+    val playing by animateFloatAsState(if (isCurrent) 1f else 0f, motion.defaultSpatialSpec(), label = "playingShape")
+
+    @Composable
+    fun color(target: Color, label: String) = animateColorAsState(target, motion.defaultEffectsSpec(), label = label)
+    val container by color(if (isCurrent) scheme.primaryContainer else containerColor, "playingContainer")
+    val content by color(if (isCurrent) scheme.onPrimaryContainer else scheme.onSurface, "playingContent")
+    val supporting by color(
+        if (isCurrent) scheme.onPrimaryContainer.copy(alpha = PLAYING_SUBTITLE_ALPHA) else scheme.onSurfaceVariant,
+        "playingSupporting",
+    )
+    val more = TrackMenuColors(
+        container = color(
+            if (isCurrent) scheme.onPrimaryContainer else scheme.surfaceContainerHigh,
+            "moreContainer",
+        ).value,
+        content = color(if (isCurrent) scheme.primaryContainer else scheme.onSurface, "moreContent").value,
+    )
+    val rowShape = morphShape(shape, DowntifyShape.PlayingRow, playing)
     val item: @Composable (Modifier) -> Unit = { itemModifier ->
         MediaListItem(
             title = track.displayTitle,
             subtitle = track.displayArtist.ifBlank { stringResource(R.string.unknown_artist) },
             // The duration is a technical value: its own line, in the monospaced face.
-            meta = formatDuration(track.duration),
+            meta = if (compact) null else formatDuration(track.duration),
             onClick = onClick,
             active = isCurrent,
-            shape = shape,
-            containerColor = containerColor,
+            shape = rowShape,
+            containerColor = container,
+            compact = compact,
+            titleColor = content,
+            subtitleColor = supporting,
             modifier = itemModifier,
             leading = {
                 if (showCover) {
-                    Artwork(url = coverUrl, contentDescription = null, modifier = Modifier.size(ITEM_COVER))
+                    Artwork(
+                        url = coverUrl,
+                        contentDescription = null,
+                        shape = morphShape(DowntifyShape.ArtworkThumb, CircleShape, playing),
+                        modifier = Modifier.size(if (compact) COMPACT_COVER else ITEM_COVER),
+                    )
                 } else {
                     Text(
                         text = number?.toString().orEmpty(),
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = supporting,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.width(32.dp),
                     )
@@ -166,7 +203,7 @@ fun TrackItem(
                     Icon(
                         painterResource(DowntifyIcons.CheckCircle),
                         contentDescription = stringResource(R.string.downloads_downloaded),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = if (isCurrent) content else scheme.primary,
                         modifier = Modifier.padding(end = 6.dp).size(16.dp),
                     )
                 }
@@ -174,14 +211,14 @@ fun TrackItem(
                 null
             },
             trailing = {
-                if (isCurrent) PlayingBars(animate = isPlaying)
-                TrackMenu(track, isLiked, actions)
+                if (isCurrent) PlayingBars(animate = isPlaying, color = content)
+                TrackMenu(track, isLiked, actions, more)
             },
         )
     }
     val addToQueue = actions.onAddToQueue
     if (addToQueue != null) {
-        SwipeToQueue(onAddToQueue = { addToQueue(track) }, shape = shape, modifier = modifier) { item(Modifier) }
+        SwipeToQueue(onAddToQueue = { addToQueue(track) }, shape = rowShape, modifier = modifier) { item(Modifier) }
     } else {
         item(modifier)
     }
@@ -231,6 +268,8 @@ fun CoverItem(
 }
 
 private val ITEM_COVER = 64.dp
+private val COMPACT_COVER = 56.dp
+private const val PLAYING_SUBTITLE_ALPHA = 0.8f
 
 /** What a track row's menu can do. */
 data class TrackActions(
@@ -242,13 +281,22 @@ data class TrackActions(
     val onFindSimilar: ((artist: String, title: String) -> Unit)? = null,
 )
 
+/** The colors of a track row's "more" button: light on the row that's playing. */
+private data class TrackMenuColors(val container: Color, val content: Color)
+
 /** The track's "more" menu, behind the v3 rows' 48 dp tonal circle. */
 @Composable
-private fun TrackMenu(track: Track, isLiked: Boolean, actions: TrackActions) {
+private fun TrackMenu(track: Track, isLiked: Boolean, actions: TrackActions, colors: TrackMenuColors) {
     if (actions == TrackActions()) return
     var open by remember { mutableStateOf(false) }
     Box {
-        CircleButton(DowntifyIcons.MoreVert, stringResource(R.string.track_more, track.displayTitle), { open = true })
+        CircleButton(
+            DowntifyIcons.MoreVert,
+            stringResource(R.string.track_more, track.displayTitle),
+            { open = true },
+            containerColor = colors.container,
+            contentColor = colors.content,
+        )
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             actions.onAddToQueue?.let { add ->
                 DropdownMenuItem(

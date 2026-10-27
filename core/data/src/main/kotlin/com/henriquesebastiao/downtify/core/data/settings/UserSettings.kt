@@ -9,7 +9,15 @@ enum class ThemeMode { System, Dark, Light }
 
 enum class LibraryLayout { Grid, List }
 
-enum class LibrarySort { RecentlyAdded, Alphabetical, Artist }
+enum class LibrarySort {
+    RecentlyAdded,
+    Alphabetical,
+    Artist,
+    ;
+
+    /** The order a sort starts in when picked: newest first for the date added, A to Z for names. */
+    val descendingByDefault: Boolean get() = this == RecentlyAdded
+}
 
 data class UserSettings(
     val theme: ThemeMode = ThemeMode.System,
@@ -24,6 +32,8 @@ data class UserSettings(
     val mobileQuality: StreamQuality = StreamQuality.MobileDefault,
     val libraryLayout: LibraryLayout = LibraryLayout.Grid,
     val librarySort: LibrarySort = LibrarySort.RecentlyAdded,
+    /** Z to A, oldest first: the reverse of the sort's own order is up to the user. */
+    val librarySortDescending: Boolean = librarySort.descendingByDefault,
     /** Offline copies wait for an unmetered network. */
     val downloadWifiOnly: Boolean = true,
     /** Most bytes offline copies may take; [OfflinePlanner.UNLIMITED] for no limit. */

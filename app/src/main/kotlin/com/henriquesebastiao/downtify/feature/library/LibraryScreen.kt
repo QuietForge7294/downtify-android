@@ -1,8 +1,10 @@
 package com.henriquesebastiao.downtify.feature.library
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,24 +15,37 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.IconButtonShapes
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -38,19 +53,21 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.henriquesebastiao.downtify.R
@@ -59,9 +76,12 @@ import com.henriquesebastiao.downtify.core.data.settings.LibrarySort
 import com.henriquesebastiao.downtify.core.designsystem.component.CircleButton
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.EmptyState
-import com.henriquesebastiao.downtify.core.designsystem.component.PageHeader
+import com.henriquesebastiao.downtify.core.designsystem.component.IconAvatar
 import com.henriquesebastiao.downtify.core.designsystem.component.PhonePreviews
 import com.henriquesebastiao.downtify.core.designsystem.component.PillTabs
+import com.henriquesebastiao.downtify.core.designsystem.component.ScrollbarTouchWidth
+import com.henriquesebastiao.downtify.core.designsystem.component.VerticalScrollbar
+import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyShape
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.designsystem.theme.ListStyle
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
@@ -70,6 +90,7 @@ import com.henriquesebastiao.downtify.core.network.ServerUrls
 import com.henriquesebastiao.downtify.ui.common.ArtistCard
 import com.henriquesebastiao.downtify.ui.common.CoverCard
 import com.henriquesebastiao.downtify.ui.common.CoverItem
+import com.henriquesebastiao.downtify.ui.common.LocalBottomBarsInset
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
 import com.henriquesebastiao.downtify.ui.common.PreviewData
 import com.henriquesebastiao.downtify.ui.common.TrackActions
@@ -101,6 +122,7 @@ fun LibraryRoute(
         navigation = navigation,
         onSelectTab = viewModel::selectTab,
         onSort = viewModel::setSort,
+        onSortDescending = viewModel::setSortDescending,
         onToggleLayout = viewModel::toggleLayout,
         onShuffleSongs = viewModel::shuffleSongs,
         onRefresh = viewModel::refresh,
@@ -116,7 +138,11 @@ fun LibraryRoute(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+/**
+ * The library, after PixelPlayer's: the title on one row with its button, the pill tabs, and the
+ * content on its own panel with a scrollbar down its end.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LibraryScreen(
     state: LibraryUiState,
@@ -127,13 +153,13 @@ fun LibraryScreen(
     onRefresh: () -> Unit,
     onPlaySong: (Int) -> Unit,
     onShuffleSongs: () -> Unit = {},
+    onSortDescending: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
     trackActions: TrackActions = TrackActions(),
 ) {
     val scheme = MaterialTheme.colorScheme
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier,
         contentWindowInsets = WindowInsets(0),
         topBar = {
             // One wash of primary behind the title and the tabs, fading into the surface.
@@ -141,21 +167,7 @@ fun LibraryScreen(
                 listOf(scheme.primary.copy(alpha = TINT_ALPHA).compositeOver(scheme.surface), scheme.surface),
             )
             Column(Modifier.background(wash)) {
-                PageHeader(
-                    title = stringResource(R.string.library_title),
-                    titleColor = scheme.primary,
-                    transparent = true,
-                    scrollBehavior = scrollBehavior,
-                    actions = {
-                        CircleButton(
-                            DowntifyIcons.Search,
-                            stringResource(R.string.library_search),
-                            navigation.onSearch,
-                            containerColor = scheme.primaryContainer,
-                            contentColor = scheme.onPrimaryContainer,
-                        )
-                    },
-                )
+                Header(onSearch = navigation.onSearch)
                 PillTabs(
                     tabs = LibraryTab.entries.map { stringResource(it.label) },
                     selectedIndex = LibraryTab.entries.indexOf(state.tab),
@@ -172,7 +184,7 @@ fun LibraryScreen(
                 modifier = Modifier.fillMaxSize().padding(top = Spacing.xs),
             ) {
                 Column {
-                    Toolbar(state, onSort, onToggleLayout, onShuffleSongs)
+                    Toolbar(state, onSort, onSortDescending, onToggleLayout, onShuffleSongs)
                     PullToRefreshBox(
                         isRefreshing = state.refreshing,
                         onRefresh = onRefresh,
@@ -197,21 +209,60 @@ fun LibraryScreen(
     }
 }
 
-/** Shuffle (songs), then the sort and, for covers, list or grid. */
+/**
+ * The title in 36 sp bold primary on the row of its search button, as in PixelPlayer: one row,
+ * not a large title under a bar. A long word steps down to fit.
+ */
+@Composable
+private fun Header(onSearch: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(TopAppBarDefaults.windowInsets)
+            .padding(start = Spacing.xl, end = Spacing.md, top = Spacing.sm, bottom = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(R.string.library_title),
+            style = MaterialTheme.typography.displayMedium,
+            color = scheme.primary,
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = 24.sp,
+                maxFontSize = MaterialTheme.typography.displayMedium.fontSize,
+                stepSize = 2.sp,
+            ),
+            modifier = Modifier.weight(1f).semantics { heading() },
+        )
+        CircleButton(
+            DowntifyIcons.Search,
+            stringResource(R.string.library_search),
+            onSearch,
+            containerColor = scheme.primaryContainer,
+            contentColor = scheme.onPrimaryContainer,
+        )
+    }
+}
+
+/**
+ * Shuffle (songs) at the start; at the end, as icons, list or grid (covers) and the sort, which
+ * opens [SortSheet]. Side by side they're one connected button group.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun Toolbar(
     state: LibraryUiState,
     onSort: (LibrarySort) -> Unit,
+    onSortDescending: (Boolean) -> Unit,
     onToggleLayout: () -> Unit,
     onShuffle: () -> Unit,
 ) {
-    var open by remember { mutableStateOf(false) }
+    var sorting by rememberSaveable { mutableStateOf(false) }
     val scheme = MaterialTheme.colorScheme
     Row(
-        Modifier.fillMaxWidth().padding(start = Spacing.lg, end = Spacing.md, top = Spacing.lg, bottom = Spacing.sm),
+        Modifier.fillMaxWidth().padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.lg, bottom = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         if (state.tab == LibraryTab.Songs) {
             val height = ButtonDefaults.MediumContainerHeight
@@ -232,53 +283,142 @@ private fun Toolbar(
             }
         }
         Spacer(Modifier.weight(1f))
-        Box {
-            val sortLabel = stringResource(state.sort.label)
+        Row(horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)) {
+            val sortLabel = stringResource(R.string.library_sort, stringResource(state.sort.label))
             if (state.tab == LibraryTab.Songs) {
-                // Beside Shuffle the label doesn't fit a narrow phone: the button says it instead.
-                CircleButton(DowntifyIcons.Sort, stringResource(R.string.library_sort, sortLabel), { open = true })
+                // Songs are always a list: the sort stands alone.
+                ToolbarButton(DowntifyIcons.Sort, sortLabel, IconButtonDefaults.shapes()) { sorting = true }
             } else {
-                FilledTonalButton(
-                    onClick = { open = true },
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = scheme.surfaceContainerHigh,
-                        contentColor = scheme.onSurface,
+                val grid = state.layout == LibraryLayout.Grid
+                ToolbarButton(
+                    icon = if (grid) DowntifyIcons.ListView else DowntifyIcons.GridView,
+                    label = stringResource(if (grid) R.string.library_show_list else R.string.library_show_grid),
+                    shapes = IconButtonShapes(
+                        ButtonGroupDefaults.connectedLeadingButtonShape,
+                        ButtonGroupDefaults.connectedLeadingButtonPressShape,
                     ),
-                    modifier = Modifier.heightIn(min = 48.dp),
-                ) {
-                    Icon(
-                        painterResource(DowntifyIcons.Sort),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(Modifier.size(Spacing.sm))
-                    Text(sortLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+                    onClick = onToggleLayout,
+                )
+                ToolbarButton(
+                    icon = DowntifyIcons.Sort,
+                    label = sortLabel,
+                    shapes = IconButtonShapes(
+                        ButtonGroupDefaults.connectedTrailingButtonShape,
+                        ButtonGroupDefaults.connectedTrailingButtonPressShape,
+                    ),
+                ) { sorting = true }
             }
-            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                LibrarySort.entries.forEach { sort ->
-                    DropdownMenuItem(
-                        text = { Text(stringResource(sort.label)) },
-                        trailingIcon = if (sort == state.sort) {
-                            { Icon(painterResource(DowntifyIcons.Check), contentDescription = null) }
-                        } else {
-                            null
-                        },
-                        onClick = {
-                            open = false
-                            onSort(sort)
-                        },
-                    )
+        }
+    }
+    if (sorting) {
+        SortSheet(
+            sort = state.sort,
+            descending = state.sortDescending,
+            onSort = onSort,
+            onDescending = onSortDescending,
+            onDismiss = { sorting = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun ToolbarButton(icon: Int, label: String, shapes: IconButtonShapes, onClick: () -> Unit) {
+    FilledTonalIconButton(onClick = onClick, shapes = shapes, modifier = Modifier.size(TOOLBAR_BUTTON)) {
+        Icon(painterResource(icon), contentDescription = label)
+    }
+}
+
+/**
+ * How the library is sorted, after PixelPlayer's sheet: the order (ascending or descending) as one
+ * card that flips it, then the sorts as a segmented list of radio rows. It stays open, so both can
+ * change; the lists behind it follow at once.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SortSheet(
+    sort: LibrarySort,
+    descending: Boolean,
+    onSort: (LibrarySort) -> Unit,
+    onDescending: (Boolean) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = scheme.surfaceContainerHigh) {
+        Column(
+            Modifier.padding(horizontal = Spacing.screen).padding(bottom = Spacing.xl),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            Text(
+                stringResource(R.string.library_sort_by),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs).semantics { heading() },
+            )
+            OrderCard(descending, onToggle = { onDescending(!descending) })
+            Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(ListStyle.Segmented.gap)) {
+                LibrarySort.entries.forEachIndexed { index, option ->
+                    val selected = option == sort
+                    val shape = ListStyle.Segmented.shapeOf(index, LibrarySort.entries.size)
+                    SegmentedListItem(
+                        selected = selected,
+                        onClick = { onSort(option) },
+                        shapes = ListItemShapes(shape, shape, shape, shape, shape, shape),
+                        colors = ListItemDefaults.segmentedColors(
+                            containerColor = scheme.surfaceContainerLow,
+                            selectedContainerColor = scheme.secondaryContainer,
+                        ),
+                        trailingContent = { RadioButton(selected = selected, onClick = null) },
+                    ) {
+                        Text(stringResource(option.label), style = MaterialTheme.typography.bodyLarge)
+                    }
                 }
             }
         }
-        if (state.tab != LibraryTab.Songs) {
-            val grid = state.layout == LibraryLayout.Grid
-            CircleButton(
-                if (grid) DowntifyIcons.ListView else DowntifyIcons.GridView,
-                stringResource(if (grid) R.string.library_show_list else R.string.library_show_grid),
-                onToggleLayout,
+    }
+}
+
+/** "Order · Ascending" in primaryContainer: a tap flips it, and the arrow turns half a circle. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun OrderCard(descending: Boolean, onToggle: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val turn by animateFloatAsState(
+        if (descending) HALF_TURN else 0f,
+        MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "sortOrderArrow",
+    )
+    Surface(
+        onClick = onToggle,
+        shape = DowntifyShape.Section,
+        color = scheme.primaryContainer,
+        contentColor = scheme.onPrimaryContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            Modifier.padding(Spacing.lg),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
+        ) {
+            IconAvatar(
+                DowntifyIcons.ArrowUpward,
+                modifier = Modifier.rotate(turn),
+                container = scheme.onPrimaryContainer.copy(alpha = ORDER_ICON_ALPHA),
+                content = scheme.onPrimaryContainer,
+                size = 48.dp,
             )
+            Column {
+                Text(
+                    stringResource(R.string.library_sort_order),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = scheme.onPrimaryContainer.copy(alpha = ORDER_LABEL_ALPHA),
+                )
+                Text(
+                    stringResource(
+                        if (descending) R.string.library_sort_descending else R.string.library_sort_ascending,
+                    ),
+                    style = MaterialTheme.typography.titleLargeEmphasized,
+                )
+            }
         }
     }
 }
@@ -303,41 +443,76 @@ internal class AtLeastTwoColumns(private val minSize: Dp) : GridCells {
 
 private val CoverGridMinSize = 160.dp
 private val gridCells = AtLeastTwoColumns(CoverGridMinSize)
+
+// The end leaves room for the scrollbar; the bottom clears the mini player and the bar.
 private val gridPadding: PaddingValues
     @Composable get() =
-        PaddingValues(start = Spacing.screen, end = Spacing.screen, top = Spacing.sm, bottom = Spacing.xl)
+        PaddingValues(start = Spacing.screen, end = ScrollbarTouchWidth, top = Spacing.sm, bottom = Spacing.xl)
             .plusBottomBars()
 private val listPadding: PaddingValues
     @Composable get() = gridPadding
 private val listGap = Arrangement.spacedBy(ListStyle.Separated.gap)
+
+/** Songs are a long list: closer together, as PixelPlayer's. */
+private val songsGap = Arrangement.spacedBy(Spacing.xs)
 private val PANEL_CORNER = 32.dp
+private val TOOLBAR_BUTTON = 48.dp
 private const val TINT_ALPHA = 0.18f
+private const val HALF_TURN = 180f
+private const val ORDER_ICON_ALPHA = 0.12f
+private const val ORDER_LABEL_ALPHA = 0.8f
+
+/** The scrollbar along the panel's end, from the first row to just above the mini player and the bar. */
+@Composable
+private fun BoxScope.Scrollbar(state: LazyListState) {
+    VerticalScrollbar(state, scrollbarPlacement())
+}
+
+@Composable
+private fun BoxScope.Scrollbar(state: LazyGridState) {
+    VerticalScrollbar(state, scrollbarPlacement())
+}
+
+@Composable
+private fun BoxScope.scrollbarPlacement(): Modifier = Modifier
+    .align(Alignment.TopEnd)
+    .padding(top = Spacing.sm, bottom = Spacing.xl + LocalBottomBarsInset.current)
 
 @Composable
 private fun Albums(state: LibraryUiState, navigation: LibraryNavigation) {
     val covers = LocalCoverUrls.current
     if (state.albums.isEmpty()) return Empty(R.string.library_empty_albums)
-    if (state.layout == LibraryLayout.Grid) {
-        LazyVerticalGrid(
-            columns = gridCells,
-            contentPadding = gridPadding,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            items(state.albums, key = { it.id }) { album ->
-                CoverCard(album.title, albumSubtitle(album), covers.track(album.coverTrackId), {
-                    navigation.onAlbum(album.id)
-                })
+    Box(Modifier.fillMaxSize()) {
+        if (state.layout == LibraryLayout.Grid) {
+            val grid = rememberLazyGridState()
+            LazyVerticalGrid(
+                columns = gridCells,
+                state = grid,
+                contentPadding = gridPadding,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                items(state.albums, key = { it.id }) { album ->
+                    CoverCard(album.title, albumSubtitle(album), covers.track(album.coverTrackId), {
+                        navigation.onAlbum(album.id)
+                    })
+                }
             }
-        }
-    } else {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = listPadding, verticalArrangement = listGap) {
-            items(state.albums, key = { it.id }) { album ->
-                CoverItem(album.title, albumSubtitle(album), covers.track(album.coverTrackId, ServerUrls.COVER_SMALL), {
-                    navigation.onAlbum(album.id)
-                })
+            Scrollbar(grid)
+        } else {
+            val list = rememberLazyListState()
+            LazyColumn(Modifier.fillMaxSize(), list, contentPadding = listPadding, verticalArrangement = listGap) {
+                items(state.albums, key = { it.id }) { album ->
+                    CoverItem(
+                        album.title,
+                        albumSubtitle(album),
+                        covers.track(album.coverTrackId, ServerUrls.COVER_SMALL),
+                        { navigation.onAlbum(album.id) },
+                    )
+                }
             }
+            Scrollbar(list)
         }
     }
 }
@@ -346,32 +521,39 @@ private fun Albums(state: LibraryUiState, navigation: LibraryNavigation) {
 private fun Artists(state: LibraryUiState, navigation: LibraryNavigation) {
     val covers = LocalCoverUrls.current
     if (state.artists.isEmpty()) return Empty(R.string.library_empty_artists)
-    if (state.layout == LibraryLayout.Grid) {
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 104.dp),
-            contentPadding = gridPadding,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            items(state.artists, key = { it.id }) { artist ->
-                ArtistCard(artist.name, covers.track(artist.coverTrackId), {
-                    navigation.onArtist(artist.id)
-                }, size = 104.dp)
+    Box(Modifier.fillMaxSize()) {
+        if (state.layout == LibraryLayout.Grid) {
+            val grid = rememberLazyGridState()
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 104.dp),
+                state = grid,
+                contentPadding = gridPadding,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                items(state.artists, key = { it.id }) { artist ->
+                    ArtistCard(artist.name, covers.track(artist.coverTrackId), {
+                        navigation.onArtist(artist.id)
+                    }, size = 104.dp)
+                }
             }
-        }
-    } else {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = listPadding, verticalArrangement = listGap) {
-            items(state.artists, key = { it.id }) { artist ->
-                CoverItem(
-                    artist.name,
-                    artistSubtitle(artist),
-                    covers.track(artist.coverTrackId, ServerUrls.COVER_SMALL),
-                    { navigation.onArtist(artist.id) },
-                    round = true,
-                    placeholderIcon = DowntifyIcons.Artist,
-                )
+            Scrollbar(grid)
+        } else {
+            val list = rememberLazyListState()
+            LazyColumn(Modifier.fillMaxSize(), list, contentPadding = listPadding, verticalArrangement = listGap) {
+                items(state.artists, key = { it.id }) { artist ->
+                    CoverItem(
+                        artist.name,
+                        artistSubtitle(artist),
+                        covers.track(artist.coverTrackId, ServerUrls.COVER_SMALL),
+                        { navigation.onArtist(artist.id) },
+                        round = true,
+                        placeholderIcon = DowntifyIcons.Artist,
+                    )
+                }
             }
+            Scrollbar(list)
         }
     }
 }
@@ -386,47 +568,45 @@ private fun Playlists(state: LibraryUiState, navigation: LibraryNavigation) {
     fun cover(item: PlaylistItem, size: Int) =
         item.playlist?.let { covers.playlist(it, item.coverTrackId, size) } ?: covers.track(item.coverTrackId, size)
 
-    if (state.layout == LibraryLayout.Grid) {
-        LazyVerticalGrid(
-            columns = gridCells,
-            contentPadding = gridPadding,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            items(state.playlists, key = { it.playlist?.name ?: "" }) { item ->
-                CoverCard(
-                    title = item.playlist?.title ?: liked,
-                    subtitle = songsCount(item.count),
-                    coverUrl = cover(item, 300),
-                    onClick = { open(item) },
-                    placeholderIcon = if (item.playlist ==
-                        null
-                    ) {
-                        DowntifyIcons.FavoriteFilled
-                    } else {
-                        DowntifyIcons.Playlist
-                    },
-                )
+    fun placeholder(item: PlaylistItem) =
+        if (item.playlist == null) DowntifyIcons.FavoriteFilled else DowntifyIcons.Playlist
+
+    Box(Modifier.fillMaxSize()) {
+        if (state.layout == LibraryLayout.Grid) {
+            val grid = rememberLazyGridState()
+            LazyVerticalGrid(
+                columns = gridCells,
+                state = grid,
+                contentPadding = gridPadding,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                items(state.playlists, key = { it.playlist?.name ?: "" }) { item ->
+                    CoverCard(
+                        title = item.playlist?.title ?: liked,
+                        subtitle = songsCount(item.count),
+                        coverUrl = cover(item, 300),
+                        onClick = { open(item) },
+                        placeholderIcon = placeholder(item),
+                    )
+                }
             }
-        }
-    } else {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = listPadding, verticalArrangement = listGap) {
-            items(state.playlists, key = { it.playlist?.name ?: "" }) { item ->
-                CoverItem(
-                    title = item.playlist?.title ?: liked,
-                    subtitle = songsCount(item.count),
-                    coverUrl = cover(item, 150),
-                    onClick = { open(item) },
-                    placeholderIcon = if (item.playlist ==
-                        null
-                    ) {
-                        DowntifyIcons.FavoriteFilled
-                    } else {
-                        DowntifyIcons.Playlist
-                    },
-                )
+            Scrollbar(grid)
+        } else {
+            val list = rememberLazyListState()
+            LazyColumn(Modifier.fillMaxSize(), list, contentPadding = listPadding, verticalArrangement = listGap) {
+                items(state.playlists, key = { it.playlist?.name ?: "" }) { item ->
+                    CoverItem(
+                        title = item.playlist?.title ?: liked,
+                        subtitle = songsCount(item.count),
+                        coverUrl = cover(item, 150),
+                        onClick = { open(item) },
+                        placeholderIcon = placeholder(item),
+                    )
+                }
             }
+            Scrollbar(list)
         }
     }
 }
@@ -435,18 +615,23 @@ private fun Playlists(state: LibraryUiState, navigation: LibraryNavigation) {
 private fun Songs(state: LibraryUiState, onPlay: (Int) -> Unit, actions: TrackActions) {
     val covers = LocalCoverUrls.current
     if (state.songs.isEmpty()) return Empty(R.string.library_empty_songs)
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = listPadding, verticalArrangement = listGap) {
-        itemsIndexed(state.songs, key = { _, track: Track -> track.id }) { index, track ->
-            TrackItem(
-                track = track,
-                onClick = { onPlay(index) },
-                coverUrl = covers.track(track.id.takeIf { track.hasCover }, 150),
-                isCurrent = track.id == state.currentTrackId,
-                isPlaying = state.isPlaying,
-                isLiked = track.id in state.likedIds,
-                actions = actions,
-            )
+    Box(Modifier.fillMaxSize()) {
+        val list = rememberLazyListState()
+        LazyColumn(Modifier.fillMaxSize(), list, contentPadding = listPadding, verticalArrangement = songsGap) {
+            itemsIndexed(state.songs, key = { _, track: Track -> track.id }) { index, track ->
+                TrackItem(
+                    track = track,
+                    onClick = { onPlay(index) },
+                    coverUrl = covers.track(track.id.takeIf { track.hasCover }, 150),
+                    isCurrent = track.id == state.currentTrackId,
+                    isPlaying = state.isPlaying,
+                    isLiked = track.id in state.likedIds,
+                    actions = actions,
+                    compact = true,
+                )
+            }
         }
+        Scrollbar(list)
     }
 }
 
@@ -512,6 +697,17 @@ private fun LibrarySongsPreview() {
             onToggleLayout = {},
             onRefresh = {},
             onPlaySong = {},
+            trackActions = TrackActions(onAddToQueue = {}),
         )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun OrderCardPreview() {
+    DowntifyTheme {
+        Surface {
+            OrderCard(descending = false, onToggle = {})
+        }
     }
 }

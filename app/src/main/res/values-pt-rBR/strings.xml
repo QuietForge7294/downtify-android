@@ -75,6 +75,10 @@
     <string name="library_sort_recent">Adicionados recentemente</string>
     <string name="library_sort_alpha">Ordem alfabética</string>
     <string name="library_sort_artist">Artista</string>
+    <string name="library_sort_by">Ordenar por</string>
+    <string name="library_sort_order">Ordem</string>
+    <string name="library_sort_ascending">Crescente</string>
+    <string name="library_sort_descending">Decrescente</string>
     <string name="library_show_list">Mostrar como lista</string>
     <string name="library_show_grid">Mostrar como grade</string>
     <string name="library_empty_albums">Nenhum álbum ainda</string>

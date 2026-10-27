@@ -84,6 +84,9 @@ object DowntifyIcons {
 
     @DrawableRes val Sort = R.drawable.ic_sort
 
+    /** A sort's order: up for ascending, turned half a circle for descending. */
+    @DrawableRes val ArrowUpward = R.drawable.ic_arrow_upward
+
     @DrawableRes val GridView = R.drawable.ic_grid_view
 
     @DrawableRes val ListView = R.drawable.ic_view_list

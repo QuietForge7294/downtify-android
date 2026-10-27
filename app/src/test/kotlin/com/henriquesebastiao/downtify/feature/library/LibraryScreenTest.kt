@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.henriquesebastiao.downtify.core.data.settings.LibrarySort
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.model.formatDuration
 import com.henriquesebastiao.downtify.ui.common.PreviewData
@@ -74,7 +75,7 @@ class LibraryScreenTest {
     }
 
     @Test
-    fun aSongsDurationIsShownOnItsOwnLine() {
+    fun theSongsListIsCompactWithoutADurationLine() {
         compose.setContent {
             DowntifyTheme {
                 LibraryScreen(
@@ -89,7 +90,57 @@ class LibraryScreenTest {
             }
         }
         val track = PreviewData.tracks.first()
-        compose.onNodeWithText(formatDuration(track.duration), useUnmergedTree = true).assertExists()
+        compose.onNodeWithText(track.displayTitle).assertExists()
+        compose.onNodeWithText(formatDuration(track.duration), useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun theSortSheetPicksASortAndFlipsTheOrder() {
+        var sort: LibrarySort? = null
+        var descending: Boolean? = null
+        compose.setContent {
+            DowntifyTheme {
+                LibraryScreen(
+                    state = songsState(),
+                    navigation = LibraryNavigation(),
+                    onSelectTab = {},
+                    onSort = { sort = it },
+                    onSortDescending = { descending = it },
+                    onToggleLayout = {},
+                    onRefresh = {},
+                    onPlaySong = {},
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("Sort by: Recently added").performClick()
+        compose.onNodeWithText("Sort by").assertExists()
+        // Recently added starts newest first: the card says so, and a tap flips it.
+        compose.onNodeWithText("Descending").performClick()
+        assertEquals(false, descending)
+        compose.onNodeWithText("Artist").performClick()
+        assertEquals(LibrarySort.Artist, sort)
+    }
+
+    @Test
+    fun coversSwitchBetweenGridAndListFromAnIcon() {
+        var toggled = false
+        compose.setContent {
+            DowntifyTheme {
+                LibraryScreen(
+                    state = LibraryUiState(loading = false, tab = LibraryTab.Albums, albums = PreviewData.albums),
+                    navigation = LibraryNavigation(),
+                    onSelectTab = {},
+                    onSort = {},
+                    onToggleLayout = { toggled = true },
+                    onRefresh = {},
+                    onPlaySong = {},
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("Show as list").performClick()
+        assertEquals(true, toggled)
+        // Icons only: the sort's name is the button's description, not a label.
+        compose.onNodeWithText("Recently added").assertDoesNotExist()
     }
 
     @Test

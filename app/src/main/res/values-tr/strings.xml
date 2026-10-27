@@ -75,6 +75,10 @@
     <string name="library_sort_recent">Son eklenenler</string>
     <string name="library_sort_alpha">Alfabetik</string>
     <string name="library_sort_artist">Sanatçı</string>
+    <string name="library_sort_by">Sırala</string>
+    <string name="library_sort_order">Sıra</string>
+    <string name="library_sort_ascending">Artan</string>
+    <string name="library_sort_descending">Azalan</string>
     <string name="library_show_list">Liste olarak göster</string>
     <string name="library_show_grid">Izgara olarak göster</string>
     <string name="library_empty_albums">Henüz albüm yok</string>
