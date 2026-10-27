@@ -1,6 +1,10 @@
 package com.henriquesebastiao.downtify.feature.library
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -45,13 +49,40 @@ class LibraryScreenTest {
                     onToggleLayout = {},
                     onRefresh = {},
                     onPlaySong = {},
-                    onShuffleSongs = { shuffled = true },
+                    onShuffle = { shuffled = true },
                 )
             }
         }
         compose.onNodeWithText("Songs").assertIsSelected()
         compose.onNodeWithText("Shuffle").assertIsEnabled().performClick()
         assertEquals(true, shuffled)
+    }
+
+    @Test
+    fun everyTabOffersShuffle() {
+        var shuffled = 0
+        var state by mutableStateOf(
+            LibraryUiState(loading = false, tab = LibraryTab.Albums, albums = PreviewData.albums),
+        )
+        compose.setContent {
+            DowntifyTheme {
+                LibraryScreen(
+                    state = state,
+                    navigation = LibraryNavigation(),
+                    onSelectTab = {},
+                    onSort = {},
+                    onToggleLayout = {},
+                    onRefresh = {},
+                    onPlaySong = {},
+                    onShuffle = { shuffled++ },
+                )
+            }
+        }
+        compose.onNodeWithText("Shuffle").assertIsEnabled().performClick()
+        assertEquals(1, shuffled)
+        // Nothing to pick from: no shuffle.
+        state = LibraryUiState(loading = false, tab = LibraryTab.Artists)
+        compose.onNodeWithText("Shuffle").assertIsNotEnabled()
     }
 
     @Test

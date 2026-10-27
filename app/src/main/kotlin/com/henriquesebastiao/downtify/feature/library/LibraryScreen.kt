@@ -124,7 +124,7 @@ fun LibraryRoute(
         onSort = viewModel::setSort,
         onSortDescending = viewModel::setSortDescending,
         onToggleLayout = viewModel::toggleLayout,
-        onShuffleSongs = viewModel::shuffleSongs,
+        onShuffle = viewModel::shuffle,
         onRefresh = viewModel::refresh,
         onPlaySong = viewModel::playSong,
         trackActions = TrackActions(
@@ -152,7 +152,7 @@ fun LibraryScreen(
     onToggleLayout: () -> Unit,
     onRefresh: () -> Unit,
     onPlaySong: (Int) -> Unit,
-    onShuffleSongs: () -> Unit = {},
+    onShuffle: () -> Unit = {},
     onSortDescending: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
     trackActions: TrackActions = TrackActions(),
@@ -184,7 +184,7 @@ fun LibraryScreen(
                 modifier = Modifier.fillMaxSize().padding(top = Spacing.xs),
             ) {
                 Column {
-                    Toolbar(state, onSort, onSortDescending, onToggleLayout, onShuffleSongs)
+                    Toolbar(state, onSort, onSortDescending, onToggleLayout, onShuffle)
                     PullToRefreshBox(
                         isRefreshing = state.refreshing,
                         onRefresh = onRefresh,
@@ -246,8 +246,8 @@ private fun Header(onSearch: () -> Unit) {
 }
 
 /**
- * Shuffle (songs) at the start; at the end, as icons, list or grid (covers) and the sort, which
- * opens [SortSheet]. Side by side they're one connected button group.
+ * Shuffle at the start, on every tab (see [shufflePick]); at the end, as icons, list or grid
+ * (covers) and the sort, which opens [SortSheet]. Side by side they're one connected button group.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -264,23 +264,21 @@ private fun Toolbar(
         Modifier.fillMaxWidth().padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.lg, bottom = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (state.tab == LibraryTab.Songs) {
-            val height = ButtonDefaults.MediumContainerHeight
-            Button(
-                onClick = onShuffle,
-                enabled = state.songs.isNotEmpty(),
-                shapes = ButtonDefaults.shapesFor(height),
-                contentPadding = ButtonDefaults.contentPaddingFor(height),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = scheme.tertiaryContainer,
-                    contentColor = scheme.onTertiaryContainer,
-                ),
-                modifier = Modifier.heightIn(min = height),
-            ) {
-                Icon(painterResource(DowntifyIcons.Shuffle), contentDescription = null)
-                Spacer(Modifier.size(Spacing.sm))
-                Text(stringResource(R.string.collection_shuffle), style = MaterialTheme.typography.titleMedium)
-            }
+        val height = ButtonDefaults.MediumContainerHeight
+        Button(
+            onClick = onShuffle,
+            enabled = state.canShuffle,
+            shapes = ButtonDefaults.shapesFor(height),
+            contentPadding = ButtonDefaults.contentPaddingFor(height),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = scheme.tertiaryContainer,
+                contentColor = scheme.onTertiaryContainer,
+            ),
+            modifier = Modifier.heightIn(min = height),
+        ) {
+            Icon(painterResource(DowntifyIcons.Shuffle), contentDescription = null)
+            Spacer(Modifier.size(Spacing.sm))
+            Text(stringResource(R.string.collection_shuffle), style = MaterialTheme.typography.titleMedium)
         }
         Spacer(Modifier.weight(1f))
         Row(horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)) {
