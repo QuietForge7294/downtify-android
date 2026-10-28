@@ -97,6 +97,7 @@ import com.henriquesebastiao.downtify.feature.search.SearchNavigation
 import com.henriquesebastiao.downtify.feature.search.SearchRoute
 import com.henriquesebastiao.downtify.feature.settings.SettingsRoute
 import com.henriquesebastiao.downtify.feature.similar.SimilarRoute as SimilarScreenRoute
+import com.henriquesebastiao.downtify.feature.trash.LibraryTrashHost
 import com.henriquesebastiao.downtify.ui.common.CoverUrls
 import com.henriquesebastiao.downtify.ui.common.LocalBottomBarsInset
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
@@ -252,7 +253,9 @@ private fun MainShell() {
                     val covered = if (miniPlayer || floatingBar) stackHeight else 0.dp
                     CompositionLocalProvider(LocalBottomBarsInset provides covered) {
                         Box(Modifier.fillMaxSize().then(content)) {
-                            AppNavHost(navController, onOpenMenu = { scope.launch { drawerState.open() } })
+                            LibraryTrashHost {
+                                AppNavHost(navController, onOpenMenu = { scope.launch { drawerState.open() } })
+                            }
                         }
                     }
                     if (miniPlayer || floatingBar) {

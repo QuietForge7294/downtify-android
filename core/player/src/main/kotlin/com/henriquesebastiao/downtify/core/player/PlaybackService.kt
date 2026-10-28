@@ -145,10 +145,29 @@ class PlaybackService : MediaSessionService() {
         readAhead.start(player, scope)
         keepLikeButtonCurrent(player)
         stopWhenSignedOut(player)
+        removeDeletedLibraryTracks(player)
         persistence = PlaybackPersistence(player, playback, sessions, scope).also { it.start() }
     }
 
     /** Unpaired (here or from the web): the queue belongs to a server the app can't reach anymore. */
+    private fun removeDeletedLibraryTracks(player: Player) {
+        // A completed server sync is authoritative for library-track IDs.
+        // Do not clear a restored offline queue before that first sync.
+        combine(library.successfulSync, library.library) { count, snapshot -> count to snapshot }
+            .onEach { (count, snapshot) ->
+                if (count > 0 && snapshot != null) {
+                    for (index in player.mediaItemCount - 1 downTo 0) {
+                        val item = player.getMediaItemAt(index)
+                        val id = item.localConfiguration?.uri?.let(MediaItems::trackIdOf)
+                        if (id != null && id !in snapshot.byId) {
+                            if (index == player.currentMediaItemIndex) player.pause()
+                            player.removeMediaItem(index)
+                        }
+                    }
+                }
+            }.launchIn(scope)
+    }
+
     private fun stopWhenSignedOut(player: Player) {
         scope.launch {
             withContext(Dispatchers.IO) { sessions.ensureLoaded() }
