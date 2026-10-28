@@ -5,9 +5,9 @@ Native Android client for the Downtify self-hosted music server. Kotlin, Jetpack
 ## The server contract
 
 - The contract lives in the server repo: `~/git/downtify/docs/mobile-client-contract.md`, with details in `docs/api-reference.md` ("Server and sign-in", "Mobile API (v1)", "WebSocket") and user-facing behaviour in `docs/features/mobile-apps.md`.
-- **Don't invent endpoints.** If the app needs something the server doesn't offer, write it in `docs/server-requirements.md` and work around it (or leave the feature out).
-- When the docs and the server code disagree, the code wins; note the mismatch in `docs/server-requirements.md`.
-- **Never modify the server repo from here.** Read it only. To test against it, run it with `DOWNLOAD_DIR`/`DATABASE_DIR` pointed at a scratch directory and a spare `--port`; port 8000 may be the user's own instance. From 3.2 a fresh server has accounts: sign in as `admin`/`downtify` (`POST /api/auth/login`, keep the cookie, send an `Origin` header) to create pairing codes with `POST /api/auth/pairing`.
+- **Don't invent endpoints.** The app only calls what the server really has. If the app needs something the server doesn't offer, add it to the server in the same task (see [Server and client together](#server-and-client-together)); `docs/server-requirements.md` is for what is left for later.
+- When the docs and the server code disagree, the code wins; fix the server's docs to match it.
+- To test against the server, run it with `DOWNLOAD_DIR`/`DATABASE_DIR` pointed at a scratch directory and a spare `--port`; port 8000 may be the user's own instance. From 3.2 a fresh server has accounts: sign in as `admin`/`downtify` (`POST /api/auth/login`, keep the cookie, send an `Origin` header) to create pairing codes with `POST /api/auth/pairing`.
 - Every request carries `Authorization: Bearer <token>` (`AuthInterceptor`), even when the server doesn't require sign-in: a 401 is how the app learns it was unpaired. A 401 "revoked", a WebSocket close 4401, or a refused WebSocket handshake confirmed by `GET /api/auth/status` all end the session (`SessionStore.onRevoked`).
 
 ## Modules and dependency rules
@@ -66,7 +66,13 @@ Native Android client for the Downtify self-hosted music server. Kotlin, Jetpack
 - The version lives only in `app/build.gradle.kts` (`versionName`, and `versionCode`, which must rise with every release). Publishing a GitHub release tagged `v<versionName>` builds and attaches the signed APK in CI. Steps and the one-time key setup: `docs/releasing.md`.
 - The release build is minified by R8: a library that works by reflection needs a keep rule in `app/proguard-rules.pro`. Run the release APK on a device (pair, sync, play, open the QR scanner) after adding a dependency.
 
-## Commits
+## Server and client together
 
-- Don't commit or push; the maintainer commits by hand. When a piece of work is finished, write a suggested message to `commit-message.md` at the repo root (it's git-ignored).
-- Conventional Commits (`feat:`, `fix:`, `build:`, `docs:`, `test:`, `refactor:`), imperative subject ≤ 72 characters, body explaining why when it isn't obvious.
+The Android client lives in `~/git/downtify-android` (this repo), the server in `~/git/downtify`. They evolve as one product: when a task here needs a change on the other side — a new or changed `/api/v1` endpoint or field, a WebSocket frame, a server bug the app runs into, contract docs that are wrong — make that change in `~/git/downtify` in the same task, without stopping to ask. A session opened in the server repo may change this one the same way.
+
+- Before editing the other repo, read its `CLAUDE.md` and follow it there (ruff, tests, docs and translations rules, its quality bar). A server change the app relies on gets its docs (`docs/mobile-client-contract.md`, `docs/api-reference.md`) and tests in the same change. Installed apps keep calling the old shape, so add fields and endpoints rather than renaming or removing.
+- **Don't commit, stage or push, in either repo.** The maintainer commits by hand.
+- **No change goes undescribed.** Every edit to tracked files (code, tests, docs, config) is described in `commit-message.md` at the root of the repo it touched (git-ignored in both). A task that touched both repos leaves a message in each, and each mentions the other side ("Needs the server's …" / "Used by the Android app's …").
+- Write it before the final reply, as Conventional Commits (`feat:`, `fix:`, `build:`, `docs:`, `test:`, `refactor:`): imperative subject ≤ 72 characters, a body saying why, then what changed per file or area.
+- The file may hold an older message. If `git log` already has its subject, it was committed: replace it. If it describes changes still uncommitted, keep them: extend the message to cover everything pending, or add a separate message for unrelated work, separated by a `---` line and each naming the files it covers.
+- End the reply by naming every repo changed and its `commit-message.md`.
