@@ -312,6 +312,8 @@
     <string name="settings_change_server">Change server</string>
     <string name="settings_open_web">Server settings</string>
     <string name="settings_playback">Playback</string>
+    <string name="settings_normalize_volume">Normalize volume</string>
+    <string name="settings_normalize_volume_hint">Plays songs at a similar loudness, using the server’s measurements, from the next song. Songs without a measurement keep their original volume.</string>
     <string name="settings_quality_wifi">Streaming quality on Wi-Fi</string>
     <string name="settings_quality_mobile">Streaming quality on mobile data</string>
     <string name="settings_quality_no_transcoding">The server can\'t transcode (no ffmpeg): files stream as they are.</string>

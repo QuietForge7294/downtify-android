@@ -319,6 +319,8 @@
     <string name="settings_change_server">Trocar de servidor</string>
     <string name="settings_open_web">Configurações do servidor</string>
     <string name="settings_playback">Reprodução</string>
+    <string name="settings_normalize_volume">Normalizar volume</string>
+    <string name="settings_normalize_volume_hint">Toca as músicas com volume parecido usando as medições do servidor, a partir da próxima música. Músicas sem medição mantêm o volume original.</string>
     <string name="settings_quality_wifi">Qualidade da transmissão no Wi-Fi</string>
     <string name="settings_quality_mobile">Qualidade da transmissão no plano de dados</string>
     <string name="settings_quality_no_transcoding">O servidor não consegue transcodificar (sem ffmpeg): os arquivos são transmitidos como estão.</string>

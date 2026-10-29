@@ -7,6 +7,7 @@ import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.ResolvingDataSource
 import com.henriquesebastiao.downtify.core.data.NetworkMonitor
 import com.henriquesebastiao.downtify.core.data.di.ApplicationScope
+import com.henriquesebastiao.downtify.core.data.loudness.LoudnessProfiles
 import com.henriquesebastiao.downtify.core.data.offline.OfflineRepository
 import com.henriquesebastiao.downtify.core.data.session.ServerRepository
 import com.henriquesebastiao.downtify.core.data.settings.SettingsRepository
@@ -41,6 +42,7 @@ class StreamResolver @Inject constructor(
     private val server: ServerRepository,
     private val network: NetworkMonitor,
     private val offline: OfflineRepository,
+    private val loudness: LoudnessProfiles,
     settings: SettingsRepository,
     @ApplicationScope scope: CoroutineScope,
     private val cache: AudioCacheStore,
@@ -62,6 +64,7 @@ class StreamResolver @Inject constructor(
         offline.localFile(trackId)?.let { file ->
             chosen.put(trackId, StreamQuality.Original)
             local.put(trackId, true)
+            loudness.prepareLocalBlocking(trackId, file)
             return dataSpec.withUri(Uri.fromFile(file))
         }
         local.remove(trackId)
@@ -72,6 +75,8 @@ class StreamResolver @Inject constructor(
         } else {
             chosen[trackId]!!
         }
+        // Before its audio is decoded: the normalizer reads the gain at the stream's first sample.
+        loudness.prepareStreamBlocking(trackId, ask = dataSpec.position == 0L && network.status.value.online)
         return dataSpec.withUri(Uri.parse(ServerUrls.stream(session.baseUrl, trackId, quality))).buildUpon()
             .setKey(cache.key(trackId, quality.encode())).build()
     }

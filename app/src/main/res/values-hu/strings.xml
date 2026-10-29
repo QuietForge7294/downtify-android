@@ -310,6 +310,8 @@
     <string name="settings_change_server">Szerver váltása</string>
     <string name="settings_open_web">Szerverbeállítások</string>
     <string name="settings_playback">Lejátszás</string>
+    <string name="settings_normalize_volume">Hangerő normalizálása</string>
+    <string name="settings_normalize_volume_hint">A szerver mérései alapján hasonló hangerővel játssza le a dalokat, a következő daltól. A mérés nélküli dalok megtartják eredeti hangerejüket.</string>
     <string name="settings_quality_wifi">Streamelési minőség Wi-Fi-n</string>
     <string name="settings_quality_mobile">Streamelési minőség mobiladaton</string>
     <string name="settings_quality_no_transcoding">A szerver nem tud átkódolni (nincs ffmpeg): a fájlok eredeti formában streamelnek.</string>

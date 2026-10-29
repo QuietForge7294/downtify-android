@@ -310,6 +310,8 @@
     <string name="settings_change_server">Sunucuyu değiştir</string>
     <string name="settings_open_web">Sunucu ayarları</string>
     <string name="settings_playback">Oynatma</string>
+    <string name="settings_normalize_volume">Ses seviyesini normalleştir</string>
+    <string name="settings_normalize_volume_hint">Sunucunun ölçümlerini kullanarak şarkıları bir sonraki şarkıdan itibaren benzer ses seviyesinde çalar. Ölçümü olmayan şarkılar özgün ses seviyelerini korur.</string>
     <string name="settings_quality_wifi">Wi-Fi\'de akış kalitesi</string>
     <string name="settings_quality_mobile">Mobil veride akış kalitesi</string>
     <string name="settings_quality_no_transcoding">Sunucu kod dönüştüremiyor (ffmpeg yok): dosyalar olduğu gibi akar.</string>

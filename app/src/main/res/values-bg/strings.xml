@@ -310,6 +310,8 @@
     <string name="settings_change_server">Смяна на сървъра</string>
     <string name="settings_open_web">Настройки на сървъра</string>
     <string name="settings_playback">Възпроизвеждане</string>
+    <string name="settings_normalize_volume">Нормализиране на звука</string>
+    <string name="settings_normalize_volume_hint">Пуска песните с близка сила по измерванията на сървъра, от следващата песен. Песните без измерване запазват оригиналната си сила.</string>
     <string name="settings_quality_wifi">Качество на потока по Wi-Fi</string>
     <string name="settings_quality_mobile">Качество на потока по мобилни данни</string>
     <string name="settings_quality_no_transcoding">Сървърът не може да прекодира (няма ffmpeg): файловете се възпроизвеждат както са.</string>

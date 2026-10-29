@@ -310,6 +310,8 @@
     <string name="settings_change_server">Αλλαγή διακομιστή</string>
     <string name="settings_open_web">Ρυθμίσεις διακομιστή</string>
     <string name="settings_playback">Αναπαραγωγή</string>
+    <string name="settings_normalize_volume">Κανονικοποίηση έντασης</string>
+    <string name="settings_normalize_volume_hint">Παίζει τα τραγούδια σε παρόμοια ένταση με τις μετρήσεις του διακομιστή, από το επόμενο τραγούδι. Τα τραγούδια χωρίς μέτρηση κρατούν την αρχική τους ένταση.</string>
     <string name="settings_quality_wifi">Ποιότητα ροής μέσω Wi-Fi</string>
     <string name="settings_quality_mobile">Ποιότητα ροής με δεδομένα κινητής</string>
     <string name="settings_quality_no_transcoding">Ο διακομιστής δεν μπορεί να κάνει μετατροπή κωδικοποίησης (χωρίς ffmpeg): τα αρχεία παίζουν όπως είναι.</string>
