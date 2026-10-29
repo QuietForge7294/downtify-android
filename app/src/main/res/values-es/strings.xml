@@ -6,6 +6,7 @@
     <string name="nav_search">Buscar</string>
     <string name="nav_library">Biblioteca</string>
     <string name="nav_downloads">Descargas</string>
+    <string name="nav_trash">Papelera</string>
     <string name="action_back">Atrás</string>
     <string name="action_settings">Ajustes</string>
     <string name="action_open_menu">Abrir menú</string>
@@ -487,4 +488,74 @@
     <string name="settings_read_ahead_mobile_body">Permitir consumo adicional para preparar las próximas canciones.</string>
     <string name="settings_cache_apply">Aplicar</string>
     <string name="player_buffer_ready">Búfer sin conexión: %1$d/%2$d</string>
+
+    <!-- Music trash (admins, when the server has it on) -->
+    <string name="trash_title">Papelera</string>
+    <string name="trash_move">Mover a la papelera</string>
+    <string name="trash_checking">Comprobando los archivos…</string>
+    <string name="trash_checking_body">El servidor está comprobando exactamente qué archivos se moverían. Puede tardar un momento.</string>
+    <string name="trash_failed">No se pudo hacer</string>
+    <string name="trash_admin_only">Solo los administradores pueden ver esto</string>
+    <string name="trash_admin_only_body">Pide a un administrador de este servidor que restaure una canción.</string>
+    <string name="trash_tab_trash">En la papelera</string>
+    <string name="trash_tab_kept_out">Fuera de las descargas</string>
+    <string name="trash_search">Buscar en la papelera</string>
+    <string name="trash_empty">La papelera está vacía</string>
+    <string name="trash_empty_body">Las canciones movidas a la papelera aparecen aquí hasta que caducan.</string>
+    <string name="trash_no_match">Nada en la papelera coincide</string>
+    <string name="trash_show_more">Mostrar más</string>
+    <string name="trash_kept_out_body">Canciones cuyo plazo en la papelera terminó. Las descargas automáticas las saltan hasta que las vuelvas a permitir.</string>
+    <string name="trash_kept_out_empty">No hay nada fuera de las descargas</string>
+    <string name="trash_allow">Permitir descargas</string>
+    <string name="trash_allow_title">¿Permitir que «%1$s» se vuelva a descargar?</string>
+    <string name="trash_allow_body">Las descargas automáticas pueden volver a bajarla. No se descarga nada ahora.</string>
+    <string name="trash_kept_until">Se guarda hasta el %1$s</string>
+    <string name="trash_restore">Restaurar</string>
+    <string name="trash_error_admin">Solo un administrador puede usar la papelera.</string>
+    <string name="trash_error_changed">Un archivo cambió después de comprobarlo. No se perdió nada; elige la canción de nuevo.</string>
+    <string name="trash_error_missing">Falta un archivo. Revisa el almacenamiento del servidor y vuelve a intentarlo.</string>
+    <string name="trash_error_collision">Ya hay otro archivo en su lugar. No se sobrescribió nada; la canción sigue en la papelera.</string>
+    <string name="trash_error_playing">Alguien está reproduciendo esta canción. Páusala antes.</string>
+    <string name="trash_error_upgrade">La mejora de la biblioteca está en marcha. Espera o páusala antes.</string>
+    <string name="trash_error_confirmation">La comprobación caducó. Elige las canciones de nuevo.</string>
+    <string name="trash_error_identity">Las etiquetas de esta canción no bastan para mantenerla fuera de las descargas automáticas. No se movió nada.</string>
+    <string name="trash_error_busy">Algo sigue en camino. Espera a que termine.</string>
+    <string name="trash_error_expired">Su plazo en la papelera terminó.</string>
+    <string name="trash_error_folder">La carpeta de esta canción no la cubre la papelera.</string>
+    <string name="trash_error_storage">El almacenamiento del servidor no está listo. No se movió nada; revísalo y vuelve a intentarlo.</string>
+    <string name="trash_error_off">La papelera está desactivada en este servidor.</string>
+    <string name="trash_error">La papelera no respondió. No se movió ni se eliminó nada.</string>
+    <string name="trash_state_pending">Esperando para mover</string>
+    <string name="trash_state_moving">Moviendo</string>
+    <string name="trash_state_trashed">En la papelera</string>
+    <string name="trash_state_restoring">Restaurando</string>
+    <string name="trash_state_restored">Restaurada</string>
+    <string name="trash_state_expired">Caducada</string>
+    <string name="trash_state_error">Detenida — archivos conservados</string>
+    <string name="trash_state_unknown">Actualizando</string>
+    <plurals name="trash_moving">
+        <item quantity="one">Moviendo %1$d canción a la papelera</item>
+        <item quantity="many">Moviendo %1$d de canciones a la papelera</item>
+        <item quantity="other">Moviendo %1$d canciones a la papelera</item>
+    </plurals>
+    <plurals name="trash_confirm_title">
+        <item quantity="one">¿Mover %1$d canción a la papelera?</item>
+        <item quantity="many">¿Mover %1$d de canciones a la papelera?</item>
+        <item quantity="other">¿Mover %1$d canciones a la papelera?</item>
+    </plurals>
+    <plurals name="trash_confirm_body">
+        <item quantity="one">Solo se mueven estos archivos, con sus letras. Salen de la biblioteca para todos y se pueden restaurar durante %1$d día.</item>
+        <item quantity="many">Solo se mueven estos archivos, con sus letras. Salen de la biblioteca para todos y se pueden restaurar durante %1$d de días.</item>
+        <item quantity="other">Solo se mueven estos archivos, con sus letras. Salen de la biblioteca para todos y se pueden restaurar durante %1$d días.</item>
+    </plurals>
+    <plurals name="trash_summary">
+        <item quantity="one">%1$d canción · %2$s</item>
+        <item quantity="many">%1$d de canciones · %2$s</item>
+        <item quantity="other">%1$d canciones · %2$s</item>
+    </plurals>
+    <plurals name="trash_kept_days">
+        <item quantity="one">se guardan %1$d día tras moverlas</item>
+        <item quantity="many">se guardan %1$d de días tras moverlas</item>
+        <item quantity="other">se guardan %1$d días tras moverlas</item>
+    </plurals>
 </resources>

@@ -41,10 +41,11 @@ fun AppDrawer(
     selected: DrawerDestination?,
     onSelect: (DrawerDestination) -> Unit,
     modifier: Modifier = Modifier,
+    destinations: List<DrawerDestination> = DrawerDestination.entries,
     content: @Composable () -> Unit,
 ) {
     ModalNavigationDrawer(
-        drawerContent = { AppDrawerSheet(drawerState, selected, onSelect) },
+        drawerContent = { AppDrawerSheet(drawerState, selected, onSelect, destinations) },
         modifier = modifier,
         drawerState = drawerState,
         gesturesEnabled = drawerState.isOpen,
@@ -58,6 +59,7 @@ private fun AppDrawerSheet(
     drawerState: DrawerState,
     selected: DrawerDestination?,
     onSelect: (DrawerDestination) -> Unit,
+    destinations: List<DrawerDestination>,
 ) {
     ModalDrawerSheet(drawerState = drawerState, drawerShape = DowntifyShape.Drawer) {
         Row(
@@ -68,7 +70,7 @@ private fun AppDrawerSheet(
             DowntifyLogo(size = 40.dp)
             Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall)
         }
-        DrawerDestination.entries.forEach { destination ->
+        destinations.forEach { destination ->
             val isSelected = destination == selected
             NavigationDrawerItem(
                 label = { Text(stringResource(destination.label)) },

@@ -145,7 +145,29 @@ class PlaybackService : MediaSessionService() {
         readAhead.start(player, scope)
         keepLikeButtonCurrent(player)
         stopWhenSignedOut(player)
+        removeDeletedLibraryTracks(player)
         persistence = PlaybackPersistence(player, playback, sessions, scope).also { it.start() }
+    }
+
+    /**
+     * Songs that left the library (deleted, moved to the server's trash, hidden) leave the queue
+     * too — but only once a sync of this session has succeeded: until then the local library may be
+     * a stale copy, and a queue restored offline must survive.
+     */
+    private fun removeDeletedLibraryTracks(player: Player) {
+        combine(library.successfulSync, library.library) { count, snapshot -> count to snapshot }
+            .onEach { (count, snapshot) ->
+                if (count > 0 && snapshot != null) {
+                    for (index in player.mediaItemCount - 1 downTo 0) {
+                        val item = player.getMediaItemAt(index)
+                        val id = item.localConfiguration?.uri?.let(MediaItems::trackIdOf)
+                        if (id != null && id !in snapshot.byId) {
+                            if (index == player.currentMediaItemIndex) player.pause()
+                            player.removeMediaItem(index)
+                        }
+                    }
+                }
+            }.launchIn(scope)
     }
 
     /** Unpaired (here or from the web): the queue belongs to a server the app can't reach anymore. */

@@ -71,6 +71,8 @@ class LibraryRepository @Inject constructor(
 
     private val status = MutableStateFlow<SyncStatus>(SyncStatus.Idle)
     val syncStatus: StateFlow<SyncStatus> = status.asStateFlow()
+    private val successful = MutableStateFlow(0L)
+    val successfulSync: StateFlow<Long> = successful.asStateFlow()
 
     private val lyricsCache = LruCache<String, Lyrics>(LYRICS_CACHE_SIZE)
 
@@ -90,6 +92,7 @@ class LibraryRepository @Inject constructor(
             if (outcome != SyncOutcome.Unchanged) Log.i(TAG, "Library sync: $outcome")
             refreshPlaylists(api)
             refreshLikes(api)
+            successful.value += 1
             status.value = SyncStatus.Idle
             true
         } catch (e: CancellationException) {

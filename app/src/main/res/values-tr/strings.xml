@@ -6,6 +6,7 @@
     <string name="nav_search">Ara</string>
     <string name="nav_library">Kitaplık</string>
     <string name="nav_downloads">İndirilenler</string>
+    <string name="nav_trash">Çöp kutusu</string>
     <string name="action_back">Geri</string>
     <string name="action_settings">Ayarlar</string>
     <string name="action_open_menu">Menüyü aç</string>
@@ -478,4 +479,69 @@
     <string name="settings_read_ahead_mobile_body">Sonraki şarkıları hazırlamak için ek veri kullanımına izin ver.</string>
     <string name="settings_cache_apply">Uygula</string>
     <string name="player_buffer_ready">Çevrimdışı arabellek: %1$d/%2$d</string>
+
+    <!-- Music trash (admins, when the server has it on) -->
+    <string name="trash_title">Çöp kutusu</string>
+    <string name="trash_move">Çöp kutusuna taşı</string>
+    <string name="trash_checking">Dosyalar denetleniyor…</string>
+    <string name="trash_checking_body">Sunucu, tam olarak hangi dosyaların taşınacağını denetliyor. Bu biraz sürebilir.</string>
+    <string name="trash_failed">Olmadı</string>
+    <string name="trash_admin_only">Bunu yalnızca yöneticiler görebilir</string>
+    <string name="trash_admin_only_body">Bir parçayı geri yüklemesi için bu sunucunun bir yöneticisine başvur.</string>
+    <string name="trash_tab_trash">Çöp kutusunda</string>
+    <string name="trash_tab_kept_out">İndirmelerin dışında</string>
+    <string name="trash_search">Çöp kutusunda ara</string>
+    <string name="trash_empty">Çöp kutusu boş</string>
+    <string name="trash_empty_body">Çöp kutusuna taşınan parçalar süreleri dolana kadar burada görünür.</string>
+    <string name="trash_no_match">Çöp kutusunda eşleşen bir şey yok</string>
+    <string name="trash_show_more">Daha fazla göster</string>
+    <string name="trash_kept_out_body">Çöp kutusundaki süresi dolan parçalar. Otomatik indirmeler, sen yeniden izin verene kadar onları atlar.</string>
+    <string name="trash_kept_out_empty">İndirmelerin dışında tutulan bir şey yok</string>
+    <string name="trash_allow">İndirmelere izin ver</string>
+    <string name="trash_allow_title">“%1$s” yeniden indirilebilsin mi?</string>
+    <string name="trash_allow_body">Otomatik indirmeler onu yeniden alabilir. Şu anda hiçbir şey indirilmez.</string>
+    <string name="trash_kept_until">%1$s tarihine kadar saklanır</string>
+    <string name="trash_restore">Geri yükle</string>
+    <string name="trash_error_admin">Çöp kutusunu yalnızca bir yönetici kullanabilir.</string>
+    <string name="trash_error_changed">Bir dosya denetimden sonra değişti. Hiçbir şey kaybolmadı; parçayı yeniden seç.</string>
+    <string name="trash_error_missing">Bir dosya eksik. Sunucunun depolamasını denetle, sonra yeniden dene.</string>
+    <string name="trash_error_collision">Yerinde zaten başka bir dosya var. Hiçbir şeyin üzerine yazılmadı; parça çöp kutusunda kalıyor.</string>
+    <string name="trash_error_playing">Biri bu parçayı çalıyor. Önce duraklat.</string>
+    <string name="trash_error_upgrade">Kitaplık iyileştirme çalışıyor. Bitmesini bekle ya da önce duraklat.</string>
+    <string name="trash_error_confirmation">Denetimin süresi doldu. Parçaları yeniden seç.</string>
+    <string name="trash_error_identity">Bu parçanın etiketleri onu otomatik indirmelerin dışında tutmaya yetmiyor. Hiçbir şey taşınmadı.</string>
+    <string name="trash_error_busy">Bir işlem hâlâ sürüyor. Bitmesini bekle.</string>
+    <string name="trash_error_expired">Çöp kutusundaki süresi doldu.</string>
+    <string name="trash_error_folder">Bu parçanın klasörü çöp kutusunun kapsamında değil.</string>
+    <string name="trash_error_storage">Sunucunun depolaması hazır değil. Hiçbir şey taşınmadı; denetle, sonra yeniden dene.</string>
+    <string name="trash_error_off">Bu sunucuda çöp kutusu kapalı.</string>
+    <string name="trash_error">Çöp kutusu yanıt vermedi. Hiçbir şey taşınmadı ya da silinmedi.</string>
+    <string name="trash_state_pending">Taşınmayı bekliyor</string>
+    <string name="trash_state_moving">Taşınıyor</string>
+    <string name="trash_state_trashed">Çöp kutusunda</string>
+    <string name="trash_state_restoring">Geri yükleniyor</string>
+    <string name="trash_state_restored">Geri yüklendi</string>
+    <string name="trash_state_expired">Süresi doldu</string>
+    <string name="trash_state_error">Durdu — dosyalar korundu</string>
+    <string name="trash_state_unknown">Güncelleniyor</string>
+    <plurals name="trash_moving">
+        <item quantity="one">%1$d parça çöp kutusuna taşınıyor</item>
+        <item quantity="other">%1$d parça çöp kutusuna taşınıyor</item>
+    </plurals>
+    <plurals name="trash_confirm_title">
+        <item quantity="one">%1$d parça çöp kutusuna taşınsın mı?</item>
+        <item quantity="other">%1$d parça çöp kutusuna taşınsın mı?</item>
+    </plurals>
+    <plurals name="trash_confirm_body">
+        <item quantity="one">Yalnızca bu dosyalar, şarkı sözleriyle birlikte taşınır. Herkes için kitaplıktan çıkarlar ve %1$d gün boyunca geri yüklenebilirler.</item>
+        <item quantity="other">Yalnızca bu dosyalar, şarkı sözleriyle birlikte taşınır. Herkes için kitaplıktan çıkarlar ve %1$d gün boyunca geri yüklenebilirler.</item>
+    </plurals>
+    <plurals name="trash_summary">
+        <item quantity="one">%1$d parça · %2$s</item>
+        <item quantity="other">%1$d parça · %2$s</item>
+    </plurals>
+    <plurals name="trash_kept_days">
+        <item quantity="one">taşındıktan sonra %1$d gün saklanır</item>
+        <item quantity="other">taşındıktan sonra %1$d gün saklanır</item>
+    </plurals>
 </resources>
