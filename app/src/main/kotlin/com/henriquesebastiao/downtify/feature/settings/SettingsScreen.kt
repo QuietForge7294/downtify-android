@@ -100,6 +100,7 @@ fun SettingsRoute(
             onBack = onBack,
             onWifiQuality = viewModel::setWifiQuality,
             onMobileQuality = viewModel::setMobileQuality,
+            onNormalizeVolume = viewModel::setNormalizeVolume,
             onTheme = viewModel::setTheme,
             onDynamicColor = viewModel::setDynamicColor,
             onAmoled = viewModel::setAmoled,
@@ -125,6 +126,7 @@ data class SettingsActions(
     val onBack: () -> Unit = {},
     val onWifiQuality: (StreamQuality) -> Unit = {},
     val onMobileQuality: (StreamQuality) -> Unit = {},
+    val onNormalizeVolume: (Boolean) -> Unit = {},
     val onTheme: (ThemeMode) -> Unit = {},
     val onDynamicColor: (Boolean) -> Unit = {},
     val onAmoled: (Boolean) -> Unit = {},
@@ -176,7 +178,7 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, modifier: M
             ServerCard(state, onChangeServer = { dialog = SettingsDialog.Unpair }, onOpenWeb = actions.onOpenWeb)
 
             GroupTitle(stringResource(R.string.settings_playback))
-            GroupedList(playbackRows(state) { dialog = it })
+            GroupedList(playbackRows(state, actions) { dialog = it })
             Spacer(Modifier.height(Spacing.lg))
             GroupedList(bufferRows(state, actions) { dialog = it })
 
@@ -381,7 +383,17 @@ private fun ConnectionTag(connection: ConnectionState) {
 }
 
 @Composable
-private fun playbackRows(state: SettingsUiState, open: (SettingsDialog) -> Unit): List<GroupedRow> = listOf(
+private fun playbackRows(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    open: (SettingsDialog) -> Unit,
+): List<GroupedRow> = listOf(
+    GroupedRow(
+        title = stringResource(R.string.settings_normalize_volume),
+        summary = stringResource(R.string.settings_normalize_volume_hint),
+        icon = DowntifyIcons.Graphic,
+        action = RowAction.Toggle(state.settings.normalizeVolume, actions.onNormalizeVolume),
+    ),
     GroupedRow(
         title = stringResource(R.string.settings_quality_wifi),
         summary = qualitySummary(state.settings.wifiQuality),

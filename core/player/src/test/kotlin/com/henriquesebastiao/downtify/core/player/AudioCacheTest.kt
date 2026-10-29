@@ -10,6 +10,7 @@ import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import com.henriquesebastiao.downtify.core.data.settings.SettingsRepository
 import com.henriquesebastiao.downtify.core.data.settings.UserSettings
+import com.henriquesebastiao.downtify.core.data.sync.DeletedTrackRegistry
 import com.henriquesebastiao.downtify.core.model.StreamQuality
 import com.henriquesebastiao.downtify.core.network.session.Session
 import com.henriquesebastiao.downtify.core.network.session.SessionStore
@@ -61,9 +62,17 @@ class AudioCacheTest {
         val paired = MutableStateFlow<Session?>(Session("http://localhost", "server", "Test", "device", "fixture"))
         val sessions = mockk<SessionStore>(relaxed = true)
         every { sessions.current } answers { paired.value }
+        every { sessions.session } returns paired
         val settings = mockk<SettingsRepository>()
         every { settings.settings } returns MutableStateFlow(UserSettings())
-        val store = AudioCacheStore(RuntimeEnvironment.getApplication(), sessions, settings, backgroundScope)
+        val context = RuntimeEnvironment.getApplication()
+        val store = AudioCacheStore(
+            context = context,
+            sessions = sessions,
+            deletedTracks = DeletedTrackRegistry(context),
+            settings = settings,
+            scope = backgroundScope,
+        )
         try {
             val key = store.key("one", StreamQuality.Original.encode())
             write(store.cache, key, 4, total = 8)

@@ -30,6 +30,7 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
             floatingNavBar = prefs[FLOATING_NAV_BAR] ?: defaults.floatingNavBar,
             wifiQuality = StreamQuality.decode(prefs[WIFI_QUALITY]) ?: defaults.wifiQuality,
             mobileQuality = StreamQuality.decode(prefs[MOBILE_QUALITY]) ?: defaults.mobileQuality,
+            normalizeVolume = prefs[NORMALIZE_VOLUME] ?: defaults.normalizeVolume,
             libraryLayout = enumOr(prefs[LIBRARY_LAYOUT], defaults.libraryLayout),
             librarySort = sort,
             // Saved only once the user flips it; until then each sort keeps its own order.
@@ -70,6 +71,10 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
 
     suspend fun setMobileQuality(value: StreamQuality) {
         store.edit { it[MOBILE_QUALITY] = value.encode() }
+    }
+
+    suspend fun setNormalizeVolume(value: Boolean) {
+        store.edit { it[NORMALIZE_VOLUME] = value }
     }
 
     suspend fun setLibraryLayout(value: LibraryLayout) {
@@ -127,6 +132,7 @@ class SettingsRepository @Inject constructor(private val store: DataStore<Prefer
         val FLOATING_NAV_BAR = booleanPreferencesKey("floating_nav_bar")
         val WIFI_QUALITY = stringPreferencesKey("wifi_quality")
         val MOBILE_QUALITY = stringPreferencesKey("mobile_quality")
+        val NORMALIZE_VOLUME = booleanPreferencesKey("normalize_volume")
         val LIBRARY_LAYOUT = stringPreferencesKey("library_layout")
         val LIBRARY_SORT = stringPreferencesKey("library_sort")
         val LIBRARY_SORT_DESCENDING = booleanPreferencesKey("library_sort_descending")

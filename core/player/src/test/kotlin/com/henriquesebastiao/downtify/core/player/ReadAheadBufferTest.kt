@@ -12,6 +12,7 @@ import com.henriquesebastiao.downtify.core.data.NetworkMonitor
 import com.henriquesebastiao.downtify.core.data.session.ServerRepository
 import com.henriquesebastiao.downtify.core.data.settings.SettingsRepository
 import com.henriquesebastiao.downtify.core.data.settings.UserSettings
+import com.henriquesebastiao.downtify.core.data.sync.DeletedTrackRegistry
 import com.henriquesebastiao.downtify.core.model.ReadAheadPolicy
 import com.henriquesebastiao.downtify.core.network.session.Session
 import com.henriquesebastiao.downtify.core.network.session.SessionStore
@@ -118,7 +119,14 @@ class ReadAheadBufferTest {
             every { network.status } returns status
             val server = mockk<ServerRepository>(relaxed = true)
             every { server.serverInfo } returns MutableStateFlow(null)
-            val store = AudioCacheStore(RuntimeEnvironment.getApplication(), sessions, settings, scope)
+            val context = RuntimeEnvironment.getApplication()
+            val store = AudioCacheStore(
+                context = context,
+                sessions = sessions,
+                deletedTracks = DeletedTrackRegistry(context),
+                settings = settings,
+                scope = scope,
+            )
             val resolver = mockk<StreamResolver>()
             every { resolver.preloadSpec(any(), any()) } answers {
                 val id = firstArg<android.net.Uri>().lastPathSegment!!

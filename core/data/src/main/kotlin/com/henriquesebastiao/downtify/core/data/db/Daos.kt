@@ -7,6 +7,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TrackDao {
+    @Query("SELECT id FROM tracks")
+    suspend fun allIds(): List<String>
+
     @Query("SELECT * FROM tracks")
     fun observeAll(): Flow<List<TrackEntity>>
 

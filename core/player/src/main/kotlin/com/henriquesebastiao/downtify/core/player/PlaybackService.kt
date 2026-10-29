@@ -1,6 +1,7 @@
 package com.henriquesebastiao.downtify.core.player
 
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Process
@@ -11,7 +12,12 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSourceBitmapLoader
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.AudioCapabilities
+import androidx.media3.exoplayer.audio.AudioOffloadSupport
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import androidx.media3.session.CacheBitmapLoader
@@ -30,6 +36,7 @@ import com.henriquesebastiao.downtify.core.data.activity.PlaybackActivityReporte
 import com.henriquesebastiao.downtify.core.data.catalog.CatalogRepository
 import com.henriquesebastiao.downtify.core.data.library.LibraryRepository
 import com.henriquesebastiao.downtify.core.data.listens.ListenReporter
+import com.henriquesebastiao.downtify.core.data.loudness.LoudnessProfiles
 import com.henriquesebastiao.downtify.core.data.offline.OfflineRepository
 import com.henriquesebastiao.downtify.core.data.playback.PlaybackRepository
 import com.henriquesebastiao.downtify.core.data.playback.playbackOwner
@@ -89,6 +96,8 @@ class PlaybackService : MediaLibraryService() {
 
     @Inject lateinit var resolver: StreamResolver
 
+    @Inject lateinit var loudness: LoudnessProfiles
+
     @Inject lateinit var readAhead: ReadAheadBuffer
 
     @Inject lateinit var playback: PlaybackRepository
@@ -121,7 +130,20 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onCreate() {
         super.onCreate()
-        val player = ExoPlayer.Builder(this)
+        val normalizer = NormalizationAudioProcessor(loudness::gainDb) { loudness.enabled.value }
+        val renderers = object : DefaultRenderersFactory(this) {
+            override fun buildAudioSink(
+                context: Context,
+                enableFloatOutput: Boolean,
+                enableAudioTrackPlaybackParams: Boolean,
+            ): AudioSink = DefaultAudioSink.Builder(context)
+                .setAudioCapabilities(AudioCapabilities.DEFAULT_AUDIO_CAPABILITIES)
+                .setAudioProcessors(arrayOf(normalizer))
+                .setEnableFloatOutput(false)
+                .setAudioOffloadSupportProvider { _, _ -> AudioOffloadSupport.DEFAULT_UNSUPPORTED }
+                .build()
+        }
+        val player = ExoPlayer.Builder(this, renderers)
             .setMediaSourceFactory(DefaultMediaSourceFactory(audioDataSource))
             .setAudioAttributes(
                 AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),
@@ -167,7 +189,29 @@ class PlaybackService : MediaLibraryService() {
         readAhead.start(player, scope)
         keepLikeButtonCurrent(player)
         stopWhenSignedOut(player)
+        removeDeletedLibraryTracks(player)
         persistence = PlaybackPersistence(player, playback, sessions, scope).also { it.start() }
+    }
+
+    /**
+     * Songs that left the library (deleted, moved to the server's trash, hidden) leave the queue
+     * too — but only once a sync of this session has succeeded: until then the local library may be
+     * a stale copy, and a queue restored offline must survive.
+     */
+    private fun removeDeletedLibraryTracks(player: Player) {
+        combine(library.successfulSync, library.library) { count, snapshot -> count to snapshot }
+            .onEach { (count, snapshot) ->
+                if (count > 0 && snapshot != null) {
+                    for (index in player.mediaItemCount - 1 downTo 0) {
+                        val item = player.getMediaItemAt(index)
+                        val id = item.localConfiguration?.uri?.let(MediaItems::trackIdOf)
+                        if (id != null && id !in snapshot.byId) {
+                            if (index == player.currentMediaItemIndex) player.pause()
+                            player.removeMediaItem(index)
+                        }
+                    }
+                }
+            }.launchIn(scope)
     }
 
     /** Unpaired (here or from the web): the queue belongs to a server the app can't reach anymore. */

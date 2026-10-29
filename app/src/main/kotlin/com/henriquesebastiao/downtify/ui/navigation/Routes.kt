@@ -14,6 +14,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object DownloadsRoute
 
+/** The server's music trash (an admin's pairing, while the server has it on). */
+@Serializable data object TrashRoute
+
 @Serializable data object SettingsRoute
 
 @Serializable data object AboutRoute
@@ -61,6 +64,9 @@ enum class DrawerDestination(
     @StringRes val label: Int,
     @DrawableRes val icon: Int,
     @DrawableRes val selectedIcon: Int,
+    /** Shown only to an admin's pairing on a server that has the music trash on. */
+    val trashOnly: Boolean = false,
 ) {
     Downloads(DownloadsRoute, R.string.nav_downloads, DowntifyIcons.Downloads, DowntifyIcons.DownloadsFilled),
+    Trash(TrashRoute, R.string.nav_trash, DowntifyIcons.Delete, DowntifyIcons.Delete, trashOnly = true),
 }

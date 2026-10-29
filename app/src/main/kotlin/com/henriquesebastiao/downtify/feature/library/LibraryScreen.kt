@@ -87,6 +87,7 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.ListStyle
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 import com.henriquesebastiao.downtify.core.model.Track
 import com.henriquesebastiao.downtify.core.network.ServerUrls
+import com.henriquesebastiao.downtify.feature.trash.LocalMoveToTrash
 import com.henriquesebastiao.downtify.ui.common.ArtistCard
 import com.henriquesebastiao.downtify.ui.common.CoverCard
 import com.henriquesebastiao.downtify.ui.common.CoverItem
@@ -133,6 +134,7 @@ fun LibraryRoute(
             onGoToAlbum = { navigation.onAlbum(it.albumId) },
             onGoToArtist = { navigation.onArtist(it.artistId) },
             onFindSimilar = { artist, title -> navigation.onSimilar(artist, title) },
+            onMoveToTrash = LocalMoveToTrash.current,
         ),
         modifier = modifier,
     )

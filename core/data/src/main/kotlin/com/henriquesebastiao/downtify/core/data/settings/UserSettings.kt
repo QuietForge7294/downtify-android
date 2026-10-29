@@ -30,6 +30,7 @@ data class UserSettings(
     val floatingNavBar: Boolean = true,
     val wifiQuality: StreamQuality = StreamQuality.Original,
     val mobileQuality: StreamQuality = StreamQuality.MobileDefault,
+    val normalizeVolume: Boolean = false,
     val libraryLayout: LibraryLayout = LibraryLayout.Grid,
     val librarySort: LibrarySort = LibrarySort.RecentlyAdded,
     /** Z to A, oldest first: the reverse of the sort's own order is up to the user. */

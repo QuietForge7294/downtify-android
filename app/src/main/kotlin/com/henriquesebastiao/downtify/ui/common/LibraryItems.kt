@@ -24,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -279,6 +280,8 @@ data class TrackActions(
     val onGoToAlbum: ((Track) -> Unit)? = null,
     val onGoToArtist: ((Track) -> Unit)? = null,
     val onFindSimilar: ((artist: String, title: String) -> Unit)? = null,
+    /** Only for an admin's pairing while the server has the music trash on (see `LocalMoveToTrash`). */
+    val onMoveToTrash: ((Track) -> Unit)? = null,
 )
 
 /** The colors of a track row's "more" button: light on the row that's playing. */
@@ -358,6 +361,18 @@ private fun TrackMenu(track: Track, isLiked: Boolean, actions: TrackActions, col
                         },
                     )
                 }
+            }
+            actions.onMoveToTrash?.let { move ->
+                val danger = MaterialTheme.colorScheme.error
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.trash_move)) },
+                    leadingIcon = { Icon(painterResource(DowntifyIcons.Delete), contentDescription = null) },
+                    colors = MenuDefaults.itemColors(textColor = danger, leadingIconColor = danger),
+                    onClick = {
+                        open = false
+                        move(track)
+                    },
+                )
             }
         }
     }

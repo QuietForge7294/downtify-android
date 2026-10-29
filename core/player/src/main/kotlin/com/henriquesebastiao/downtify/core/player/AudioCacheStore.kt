@@ -4,13 +4,17 @@ import android.content.Context
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
+import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.ContentMetadata
 import androidx.media3.datasource.cache.SimpleCache
 import com.henriquesebastiao.downtify.core.data.di.ApplicationScope
 import com.henriquesebastiao.downtify.core.data.settings.SettingsRepository
+import com.henriquesebastiao.downtify.core.data.sync.DeletedTrackRegistry
 import com.henriquesebastiao.downtify.core.model.ReadAheadPolicy
 import com.henriquesebastiao.downtify.core.model.StreamQuality
+import com.henriquesebastiao.downtify.core.network.session.Session
 import com.henriquesebastiao.downtify.core.network.session.SessionStore
+import com.henriquesebastiao.downtify.core.network.session.cacheOwner
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.security.MessageDigest
@@ -18,6 +22,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -28,6 +35,7 @@ import kotlinx.coroutines.launch
 class AudioCacheStore @Inject constructor(
     @ApplicationContext context: Context,
     private val sessions: SessionStore,
+    private val deletedTracks: DeletedTrackRegistry,
     settings: SettingsRepository,
     @ApplicationScope scope: CoroutineScope,
 ) {
@@ -43,6 +51,33 @@ class AudioCacheStore @Inject constructor(
             settings.settings.map { it.readAhead.cacheBytes }.distinctUntilChanged().collect {
                 limit = it
                 quota.setLimit(cache, it)
+            }
+        }
+        scope.launch(Dispatchers.IO) {
+            combine(deletedTracks.revision, sessions.session) { _, session -> session }.collectLatest { session ->
+                if (session == null) return@collectLatest
+                val owner = session.cacheOwner
+                while (true) {
+                    val pending = deletedTracks.pending(owner)
+                    if (pending.isEmpty()) break
+                    val completed = mutableSetOf<String>()
+                    for (id in pending) {
+                        try {
+                            val prefix = prefix(id, session)
+                            cache.keys.filter { it.startsWith(prefix) }.forEach { cache.removeResource(it) }
+                            completed += id
+                        } catch (_: Cache.CacheException) {
+                            // Keep the receipt; retry while a cached span is in use.
+                        } catch (_: IllegalStateException) {
+                            // Cache is temporarily unavailable; retry later.
+                        }
+                    }
+                    if (completed.isNotEmpty() && !deletedTracks.acknowledge(owner, completed)) {
+                        delay(30_000L)
+                    } else if (completed.size != pending.size) {
+                        delay(30_000L)
+                    }
+                }
             }
         }
     }
@@ -89,9 +124,8 @@ class AudioCacheStore @Inject constructor(
         }
     }
 
-    private fun prefix(mediaId: String): String {
-        val paired = sessions.current
-        val owner = paired?.let { "${it.serverId.ifBlank { it.baseUrl }}\u0000${it.deviceId}" }.orEmpty()
+    private fun prefix(mediaId: String, paired: Session? = sessions.current): String {
+        val owner = paired?.cacheOwner.orEmpty()
         return "audio-v1:${digest(owner)}:${digest(mediaId)}:"
     }
 
