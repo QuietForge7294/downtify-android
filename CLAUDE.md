@@ -61,6 +61,14 @@ Native Android client for the Downtify self-hosted music server. Kotlin, Jetpack
 - Compose UI tests run on the JVM with Robolectric (`app/src/test`, SDK 34 — newer sandboxes need a Java 21 test JVM). Test the stateless `XScreen`s.
 - When a change affects behaviour against the server, verify it for real (emulator + a scratch server instance) and say exactly what you ran and what you didn't.
 
+## Final reply
+
+Every task ends with a reply that lets the maintainer check the change by hand, in this order:
+
+- **How to test it.** Concrete steps, not "run the tests": the commands (`./gradlew build detekt spotlessCheck`, a single `./gradlew :core:model:test --tests '*TrashTest'`, `./gradlew installDebug`), the server setup it needs (a scratch instance as in [The server contract](#the-server-contract), an env var such as `DOWNTIFY_TRASH=true`, an admin pairing), what to do on the phone or emulator, and what they should see when it works. Say which of these you already ran and which are left to them.
+- **Where it shows in the interface.** When a screen changed, name the way in, then the screen and the control: the tab (Home, Search, Library) or side menu entry, the screen, and the menu, sheet, dialog or setting — e.g. "Library → any song's ⋮ menu → *Move to trash*" or "side menu → Trash, the *Restore* button on each row". Say who sees it (admin pairings only, servers with a capability, a setting that must be on, phones vs. the navigation rail). When the server's web UI changed too, say where there (page and route). If nothing visible changed, say so in one line.
+- Then name every repo changed and its `commit-message.md`.
+
 ## Releases
 
 - The version lives only in `app/build.gradle.kts` (`versionName`, and `versionCode`, which must rise with every release). Publishing a GitHub release tagged `v<versionName>` builds and attaches the signed APK in CI. Steps and the one-time key setup: `docs/releasing.md`.
