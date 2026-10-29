@@ -48,7 +48,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -88,7 +87,7 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.ListStyle
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 import com.henriquesebastiao.downtify.core.model.Track
 import com.henriquesebastiao.downtify.core.network.ServerUrls
-import com.henriquesebastiao.downtify.feature.trash.LocalTrashController
+import com.henriquesebastiao.downtify.feature.trash.LocalMoveToTrash
 import com.henriquesebastiao.downtify.ui.common.ArtistCard
 import com.henriquesebastiao.downtify.ui.common.CoverCard
 import com.henriquesebastiao.downtify.ui.common.CoverItem
@@ -135,6 +134,7 @@ fun LibraryRoute(
             onGoToAlbum = { navigation.onAlbum(it.albumId) },
             onGoToArtist = { navigation.onArtist(it.artistId) },
             onFindSimilar = { artist, title -> navigation.onSimilar(artist, title) },
+            onMoveToTrash = LocalMoveToTrash.current,
         ),
         modifier = modifier,
     )
@@ -169,17 +169,6 @@ fun LibraryScreen(
                 listOf(scheme.primary.copy(alpha = TINT_ALPHA).compositeOver(scheme.surface), scheme.surface),
             )
             Column(Modifier.background(wash)) {
-                val trash = LocalTrashController.current
-                if (trash.canManage) {
-                    Row {
-                        TextButton(onClick = trash.open) { Text(stringResource(R.string.trash_title)) }
-                        if (state.tab == LibraryTab.Songs && state.songs.isNotEmpty()) {
-                            TextButton(onClick = { trash.choose(state.songs) }) {
-                                Text(stringResource(R.string.trash_select))
-                            }
-                        }
-                    }
-                }
                 Header(onSearch = navigation.onSearch)
                 PillTabs(
                     tabs = LibraryTab.entries.map { stringResource(it.label) },

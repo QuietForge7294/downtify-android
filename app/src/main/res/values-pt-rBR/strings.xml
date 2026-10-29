@@ -6,6 +6,7 @@
     <string name="nav_search">Buscar</string>
     <string name="nav_library">Biblioteca</string>
     <string name="nav_downloads">Downloads</string>
+    <string name="nav_trash">Lixeira</string>
     <string name="action_back">Voltar</string>
     <string name="action_settings">Configurações</string>
     <string name="action_open_menu">Abrir menu</string>
@@ -487,4 +488,74 @@
     <string name="settings_read_ahead_mobile_body">Permitir consumo adicional para preparar as próximas músicas.</string>
     <string name="settings_cache_apply">Aplicar</string>
     <string name="player_buffer_ready">Buffer offline: %1$d/%2$d</string>
+
+    <!-- Music trash (admins, when the server has it on) -->
+    <string name="trash_title">Lixeira</string>
+    <string name="trash_move">Mover para a lixeira</string>
+    <string name="trash_checking">Verificando os arquivos…</string>
+    <string name="trash_checking_body">O servidor está verificando exatamente quais arquivos seriam movidos. Isso pode levar um instante.</string>
+    <string name="trash_failed">Não deu certo</string>
+    <string name="trash_admin_only">Só administradores podem ver isto</string>
+    <string name="trash_admin_only_body">Peça a um administrador deste servidor para restaurar uma música.</string>
+    <string name="trash_tab_trash">Na lixeira</string>
+    <string name="trash_tab_kept_out">Fora dos downloads</string>
+    <string name="trash_search">Buscar na lixeira</string>
+    <string name="trash_empty">A lixeira está vazia</string>
+    <string name="trash_empty_body">As músicas movidas para a lixeira aparecem aqui até expirarem.</string>
+    <string name="trash_no_match">Nada na lixeira corresponde</string>
+    <string name="trash_show_more">Mostrar mais</string>
+    <string name="trash_kept_out_body">Músicas cujo prazo na lixeira acabou. Os downloads automáticos as pulam até você liberar de novo.</string>
+    <string name="trash_kept_out_empty">Nada está fora dos downloads</string>
+    <string name="trash_allow">Liberar downloads</string>
+    <string name="trash_allow_title">Liberar “%1$s” para ser baixada de novo?</string>
+    <string name="trash_allow_body">Os downloads automáticos podem baixá-la outra vez. Nada é baixado agora.</string>
+    <string name="trash_kept_until">Guardada até %1$s</string>
+    <string name="trash_restore">Restaurar</string>
+    <string name="trash_error_admin">Só um administrador pode usar a lixeira.</string>
+    <string name="trash_error_changed">Um arquivo mudou depois de verificado. Nada se perdeu; escolha a música de novo.</string>
+    <string name="trash_error_missing">Falta um arquivo. Confira o armazenamento do servidor e tente de novo.</string>
+    <string name="trash_error_collision">Já existe outro arquivo no lugar dela. Nada foi sobrescrito; a música continua na lixeira.</string>
+    <string name="trash_error_playing">Alguém está tocando esta música. Pause-a antes.</string>
+    <string name="trash_error_upgrade">A melhoria da biblioteca está rodando. Espere ou pause-a antes.</string>
+    <string name="trash_error_confirmation">A verificação expirou. Escolha as músicas de novo.</string>
+    <string name="trash_error_identity">As tags desta música são insuficientes para mantê-la fora dos downloads automáticos. Nada foi movido.</string>
+    <string name="trash_error_busy">Algo ainda está a caminho. Espere terminar.</string>
+    <string name="trash_error_expired">O prazo dela na lixeira acabou.</string>
+    <string name="trash_error_folder">A pasta desta música não é coberta pela lixeira.</string>
+    <string name="trash_error_storage">O armazenamento do servidor não está pronto. Nada foi movido; confira-o e tente de novo.</string>
+    <string name="trash_error_off">A lixeira está desligada neste servidor.</string>
+    <string name="trash_error">A lixeira não respondeu. Nada foi movido nem excluído.</string>
+    <string name="trash_state_pending">Aguardando para mover</string>
+    <string name="trash_state_moving">Movendo</string>
+    <string name="trash_state_trashed">Na lixeira</string>
+    <string name="trash_state_restoring">Restaurando</string>
+    <string name="trash_state_restored">Restaurada</string>
+    <string name="trash_state_expired">Expirada</string>
+    <string name="trash_state_error">Parada — arquivos mantidos</string>
+    <string name="trash_state_unknown">Atualizando</string>
+    <plurals name="trash_moving">
+        <item quantity="one">Movendo %1$d música para a lixeira</item>
+        <item quantity="many">Movendo %1$d de músicas para a lixeira</item>
+        <item quantity="other">Movendo %1$d músicas para a lixeira</item>
+    </plurals>
+    <plurals name="trash_confirm_title">
+        <item quantity="one">Mover %1$d música para a lixeira?</item>
+        <item quantity="many">Mover %1$d de músicas para a lixeira?</item>
+        <item quantity="other">Mover %1$d músicas para a lixeira?</item>
+    </plurals>
+    <plurals name="trash_confirm_body">
+        <item quantity="one">Só estes arquivos são movidos, com suas letras. Eles saem da biblioteca para todos e podem ser restaurados por %1$d dia.</item>
+        <item quantity="many">Só estes arquivos são movidos, com suas letras. Eles saem da biblioteca para todos e podem ser restaurados por %1$d de dias.</item>
+        <item quantity="other">Só estes arquivos são movidos, com suas letras. Eles saem da biblioteca para todos e podem ser restaurados por %1$d dias.</item>
+    </plurals>
+    <plurals name="trash_summary">
+        <item quantity="one">%1$d música · %2$s</item>
+        <item quantity="many">%1$d de músicas · %2$s</item>
+        <item quantity="other">%1$d músicas · %2$s</item>
+    </plurals>
+    <plurals name="trash_kept_days">
+        <item quantity="one">guardadas por %1$d dia depois de movidas</item>
+        <item quantity="many">guardadas por %1$d de dias depois de movidas</item>
+        <item quantity="other">guardadas por %1$d dias depois de movidas</item>
+    </plurals>
 </resources>

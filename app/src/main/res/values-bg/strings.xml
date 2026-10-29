@@ -6,6 +6,7 @@
     <string name="nav_search">Търсене</string>
     <string name="nav_library">Библиотека</string>
     <string name="nav_downloads">Изтегляния</string>
+    <string name="nav_trash">Кошче</string>
     <string name="action_back">Назад</string>
     <string name="action_settings">Настройки</string>
     <string name="action_open_menu">Отваряне на менюто</string>
@@ -478,4 +479,69 @@
     <string name="settings_read_ahead_mobile_body">Разрешаване на допълнителни данни за подготовка на следващите песни.</string>
     <string name="settings_cache_apply">Прилагане</string>
     <string name="player_buffer_ready">Офлайн буфер: %1$d/%2$d</string>
+
+    <!-- Music trash (admins, when the server has it on) -->
+    <string name="trash_title">Кошче</string>
+    <string name="trash_move">Премести в кошчето</string>
+    <string name="trash_checking">Файловете се проверяват…</string>
+    <string name="trash_checking_body">Сървърът проверява точно кои файлове ще бъдат преместени. Може да отнеме момент.</string>
+    <string name="trash_failed">Не се получи</string>
+    <string name="trash_admin_only">Само администратори могат да виждат това</string>
+    <string name="trash_admin_only_body">Помоли администратор на този сървър да възстанови песен.</string>
+    <string name="trash_tab_trash">В кошчето</string>
+    <string name="trash_tab_kept_out">Извън изтеглянията</string>
+    <string name="trash_search">Търси в кошчето</string>
+    <string name="trash_empty">Кошчето е празно</string>
+    <string name="trash_empty_body">Песните, преместени в кошчето, се показват тук, докато изтекат.</string>
+    <string name="trash_no_match">Нищо в кошчето не съвпада</string>
+    <string name="trash_show_more">Покажи още</string>
+    <string name="trash_kept_out_body">Песни, чийто срок в кошчето е изтекъл. Автоматичните изтегляния ги пропускат, докато не ги разрешиш отново.</string>
+    <string name="trash_kept_out_empty">Нищо не е извън изтеглянията</string>
+    <string name="trash_allow">Разреши изтеглянията</string>
+    <string name="trash_allow_title">Да се разреши „%1$s“ да се изтегли отново?</string>
+    <string name="trash_allow_body">Автоматичните изтегляния може да я изтеглят пак. Сега нищо не се изтегля.</string>
+    <string name="trash_kept_until">Пази се до %1$s</string>
+    <string name="trash_restore">Възстанови</string>
+    <string name="trash_error_admin">Само администратор може да използва кошчето.</string>
+    <string name="trash_error_changed">Файл се промени след проверката. Нищо не е изгубено; избери песента отново.</string>
+    <string name="trash_error_missing">Липсва файл. Провери хранилището на сървъра и опитай пак.</string>
+    <string name="trash_error_collision">На мястото ѝ вече има друг файл. Нищо не е презаписано; песента остава в кошчето.</string>
+    <string name="trash_error_playing">Някой слуша тази песен. Първо я спри на пауза.</string>
+    <string name="trash_error_upgrade">Подобряването на библиотеката работи. Изчакай го или първо го спри на пауза.</string>
+    <string name="trash_error_confirmation">Проверката изтече. Избери песните отново.</string>
+    <string name="trash_error_identity">Таговете на тази песен не стигат, за да остане извън автоматичните изтегляния. Нищо не е преместено.</string>
+    <string name="trash_error_busy">Нещо все още е на път. Изчакай да приключи.</string>
+    <string name="trash_error_expired">Срокът ѝ в кошчето изтече.</string>
+    <string name="trash_error_folder">Папката на тази песен не е покрита от кошчето.</string>
+    <string name="trash_error_storage">Хранилището на сървъра не е готово. Нищо не е преместено; провери го и опитай пак.</string>
+    <string name="trash_error_off">Кошчето е изключено на този сървър.</string>
+    <string name="trash_error">Кошчето не отговори. Нищо не е преместено или изтрито.</string>
+    <string name="trash_state_pending">Чака преместване</string>
+    <string name="trash_state_moving">Премества се</string>
+    <string name="trash_state_trashed">В кошчето</string>
+    <string name="trash_state_restoring">Възстановява се</string>
+    <string name="trash_state_restored">Възстановена</string>
+    <string name="trash_state_expired">Изтекла</string>
+    <string name="trash_state_error">Спряна — файловете са запазени</string>
+    <string name="trash_state_unknown">Обновява се</string>
+    <plurals name="trash_moving">
+        <item quantity="one">%1$d песен се премества в кошчето</item>
+        <item quantity="other">%1$d песни се преместват в кошчето</item>
+    </plurals>
+    <plurals name="trash_confirm_title">
+        <item quantity="one">Да се премести %1$d песен в кошчето?</item>
+        <item quantity="other">Да се преместят %1$d песни в кошчето?</item>
+    </plurals>
+    <plurals name="trash_confirm_body">
+        <item quantity="one">Преместват се само тези файлове, с текстовете им. Те излизат от библиотеката за всички и могат да се възстановят в продължение на %1$d ден.</item>
+        <item quantity="other">Преместват се само тези файлове, с текстовете им. Те излизат от библиотеката за всички и могат да се възстановят в продължение на %1$d дни.</item>
+    </plurals>
+    <plurals name="trash_summary">
+        <item quantity="one">%1$d песен · %2$s</item>
+        <item quantity="other">%1$d песни · %2$s</item>
+    </plurals>
+    <plurals name="trash_kept_days">
+        <item quantity="one">пазят се %1$d ден след преместването</item>
+        <item quantity="other">пазят се %1$d дни след преместването</item>
+    </plurals>
 </resources>

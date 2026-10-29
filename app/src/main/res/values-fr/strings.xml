@@ -6,6 +6,7 @@
     <string name="nav_search">Recherche</string>
     <string name="nav_library">Bibliothèque</string>
     <string name="nav_downloads">Téléchargements</string>
+    <string name="nav_trash">Corbeille</string>
     <string name="action_back">Retour</string>
     <string name="action_settings">Paramètres</string>
     <string name="action_open_menu">Ouvrir le menu</string>
@@ -487,4 +488,74 @@
     <string name="settings_read_ahead_mobile_body">Autoriser une consommation supplémentaire pour préparer les prochains morceaux.</string>
     <string name="settings_cache_apply">Appliquer</string>
     <string name="player_buffer_ready">Tampon hors ligne : %1$d/%2$d</string>
+
+    <!-- Music trash (admins, when the server has it on) -->
+    <string name="trash_title">Corbeille</string>
+    <string name="trash_move">Mettre à la corbeille</string>
+    <string name="trash_checking">Vérification des fichiers…</string>
+    <string name="trash_checking_body">Le serveur vérifie exactement quels fichiers seraient déplacés. Cela peut prendre un instant.</string>
+    <string name="trash_failed">Ça n’a pas abouti</string>
+    <string name="trash_admin_only">Réservé aux administrateurs</string>
+    <string name="trash_admin_only_body">Demandez à un administrateur de ce serveur de restaurer un morceau.</string>
+    <string name="trash_tab_trash">Dans la corbeille</string>
+    <string name="trash_tab_kept_out">Exclus des téléchargements</string>
+    <string name="trash_search">Rechercher dans la corbeille</string>
+    <string name="trash_empty">La corbeille est vide</string>
+    <string name="trash_empty_body">Les morceaux mis à la corbeille apparaissent ici jusqu’à leur expiration.</string>
+    <string name="trash_no_match">Rien dans la corbeille ne correspond</string>
+    <string name="trash_show_more">Afficher plus</string>
+    <string name="trash_kept_out_body">Les morceaux dont le délai dans la corbeille est écoulé. Les téléchargements automatiques les ignorent jusqu’à ce que vous les réautorisiez.</string>
+    <string name="trash_kept_out_empty">Rien n’est exclu des téléchargements</string>
+    <string name="trash_allow">Réautoriser</string>
+    <string name="trash_allow_title">Autoriser « %1$s » à être téléchargé de nouveau ?</string>
+    <string name="trash_allow_body">Les téléchargements automatiques pourront le récupérer de nouveau. Rien n’est téléchargé maintenant.</string>
+    <string name="trash_kept_until">Gardé jusqu’au %1$s</string>
+    <string name="trash_restore">Restaurer</string>
+    <string name="trash_error_admin">Seul un administrateur peut utiliser la corbeille.</string>
+    <string name="trash_error_changed">Un fichier a changé après la vérification. Rien n’est perdu ; choisissez de nouveau le morceau.</string>
+    <string name="trash_error_missing">Un fichier manque. Vérifiez le stockage du serveur, puis réessayez.</string>
+    <string name="trash_error_collision">Un autre fichier occupe déjà sa place. Rien n’a été écrasé ; le morceau reste dans la corbeille.</string>
+    <string name="trash_error_playing">Quelqu’un écoute ce morceau. Mettez-le en pause d’abord.</string>
+    <string name="trash_error_upgrade">L’amélioration de la bibliothèque est en cours. Attendez-la ou mettez-la en pause.</string>
+    <string name="trash_error_confirmation">La vérification a expiré. Choisissez de nouveau les morceaux.</string>
+    <string name="trash_error_identity">Les tags de ce morceau ne suffisent pas à l’exclure des téléchargements automatiques. Rien n’a été déplacé.</string>
+    <string name="trash_error_busy">Une opération est encore en cours. Attendez qu’elle se termine.</string>
+    <string name="trash_error_expired">Son délai dans la corbeille est écoulé.</string>
+    <string name="trash_error_folder">Le dossier de ce morceau n’est pas couvert par la corbeille.</string>
+    <string name="trash_error_storage">Le stockage du serveur n’est pas prêt. Rien n’a été déplacé ; vérifiez-le, puis réessayez.</string>
+    <string name="trash_error_off">La corbeille est désactivée sur ce serveur.</string>
+    <string name="trash_error">La corbeille n’a pas répondu. Rien n’a été déplacé ni supprimé.</string>
+    <string name="trash_state_pending">En attente de déplacement</string>
+    <string name="trash_state_moving">Déplacement</string>
+    <string name="trash_state_trashed">Dans la corbeille</string>
+    <string name="trash_state_restoring">Restauration</string>
+    <string name="trash_state_restored">Restauré</string>
+    <string name="trash_state_expired">Expiré</string>
+    <string name="trash_state_error">Arrêté — fichiers conservés</string>
+    <string name="trash_state_unknown">Mise à jour</string>
+    <plurals name="trash_moving">
+        <item quantity="one">Mise à la corbeille de %1$d morceau</item>
+        <item quantity="many">Mise à la corbeille de %1$d de morceaux</item>
+        <item quantity="other">Mise à la corbeille de %1$d morceaux</item>
+    </plurals>
+    <plurals name="trash_confirm_title">
+        <item quantity="one">Mettre %1$d morceau à la corbeille ?</item>
+        <item quantity="many">Mettre %1$d de morceaux à la corbeille ?</item>
+        <item quantity="other">Mettre %1$d morceaux à la corbeille ?</item>
+    </plurals>
+    <plurals name="trash_confirm_body">
+        <item quantity="one">Seuls ces fichiers sont déplacés, avec leurs paroles. Ils quittent la bibliothèque pour tout le monde et peuvent être restaurés pendant %1$d jour.</item>
+        <item quantity="many">Seuls ces fichiers sont déplacés, avec leurs paroles. Ils quittent la bibliothèque pour tout le monde et peuvent être restaurés pendant %1$d de jours.</item>
+        <item quantity="other">Seuls ces fichiers sont déplacés, avec leurs paroles. Ils quittent la bibliothèque pour tout le monde et peuvent être restaurés pendant %1$d jours.</item>
+    </plurals>
+    <plurals name="trash_summary">
+        <item quantity="one">%1$d morceau · %2$s</item>
+        <item quantity="many">%1$d de morceaux · %2$s</item>
+        <item quantity="other">%1$d morceaux · %2$s</item>
+    </plurals>
+    <plurals name="trash_kept_days">
+        <item quantity="one">gardés %1$d jour après le déplacement</item>
+        <item quantity="many">gardés %1$d de jours après le déplacement</item>
+        <item quantity="other">gardés %1$d jours après le déplacement</item>
+    </plurals>
 </resources>

@@ -14,6 +14,7 @@ import com.henriquesebastiao.downtify.core.model.ReadAheadPolicy
 import com.henriquesebastiao.downtify.core.model.StreamQuality
 import com.henriquesebastiao.downtify.core.network.session.Session
 import com.henriquesebastiao.downtify.core.network.session.SessionStore
+import com.henriquesebastiao.downtify.core.network.session.cacheOwner
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.security.MessageDigest
@@ -55,7 +56,7 @@ class AudioCacheStore @Inject constructor(
         scope.launch(Dispatchers.IO) {
             combine(deletedTracks.revision, sessions.session) { _, session -> session }.collectLatest { session ->
                 if (session == null) return@collectLatest
-                val owner = "${session.serverId.ifBlank { session.baseUrl }}\u0000${session.deviceId}"
+                val owner = session.cacheOwner
                 while (true) {
                     val pending = deletedTracks.pending(owner)
                     if (pending.isEmpty()) break
@@ -124,7 +125,7 @@ class AudioCacheStore @Inject constructor(
     }
 
     private fun prefix(mediaId: String, paired: Session? = sessions.current): String {
-        val owner = paired?.let { "${it.serverId.ifBlank { it.baseUrl }}\u0000${it.deviceId}" }.orEmpty()
+        val owner = paired?.cacheOwner.orEmpty()
         return "audio-v1:${digest(owner)}:${digest(mediaId)}:"
     }
 

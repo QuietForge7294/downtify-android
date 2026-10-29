@@ -72,6 +72,7 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.ListStyle
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 import com.henriquesebastiao.downtify.core.model.totalMinutes
 import com.henriquesebastiao.downtify.core.network.ServerUrls
+import com.henriquesebastiao.downtify.feature.trash.LocalMoveToTrash
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
 import com.henriquesebastiao.downtify.ui.common.PreviewData
 import com.henriquesebastiao.downtify.ui.common.TrackActions
@@ -103,6 +104,7 @@ fun CollectionRoute(
             onAddToQueue = viewModel::addToQueue,
             onGoToAlbum = if (state.kind == CollectionKind.Album) null else { t -> onAlbum(t.albumId) },
             onGoToArtist = { onArtist(it.artistId) },
+            onMoveToTrash = LocalMoveToTrash.current,
         ),
         modifier = modifier,
         onToggleFavorite = viewModel::toggleFavorite,

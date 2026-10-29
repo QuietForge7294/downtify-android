@@ -6,6 +6,7 @@
     <string name="nav_search">Keresés</string>
     <string name="nav_library">Könyvtár</string>
     <string name="nav_downloads">Letöltések</string>
+    <string name="nav_trash">Kuka</string>
     <string name="action_back">Vissza</string>
     <string name="action_settings">Beállítások</string>
     <string name="action_open_menu">Menü megnyitása</string>
@@ -478,4 +479,69 @@
     <string name="settings_read_ahead_mobile_body">Többlet adatforgalom engedélyezése a következő számokhoz.</string>
     <string name="settings_cache_apply">Alkalmaz</string>
     <string name="player_buffer_ready">Offline puffer: %1$d/%2$d</string>
+
+    <!-- Music trash (admins, when the server has it on) -->
+    <string name="trash_title">Kuka</string>
+    <string name="trash_move">Áthelyezés a kukába</string>
+    <string name="trash_checking">Fájlok ellenőrzése…</string>
+    <string name="trash_checking_body">A szerver ellenőrzi, pontosan mely fájlok kerülnének át. Ez eltarthat egy pillanatig.</string>
+    <string name="trash_failed">Nem sikerült</string>
+    <string name="trash_admin_only">Ezt csak adminisztrátorok láthatják</string>
+    <string name="trash_admin_only_body">Kérd meg a szerver egyik adminisztrátorát, hogy állítson vissza egy számot.</string>
+    <string name="trash_tab_trash">A kukában</string>
+    <string name="trash_tab_kept_out">Letöltésekből kizárva</string>
+    <string name="trash_search">Keresés a kukában</string>
+    <string name="trash_empty">A kuka üres</string>
+    <string name="trash_empty_body">A kukába tett számok itt látszanak, amíg le nem járnak.</string>
+    <string name="trash_no_match">Semmi sem egyezik a kukában</string>
+    <string name="trash_show_more">Több megjelenítése</string>
+    <string name="trash_kept_out_body">Számok, amelyek ideje lejárt a kukában. Az automatikus letöltések kihagyják őket, amíg újra nem engedélyezed.</string>
+    <string name="trash_kept_out_empty">Semmi sincs kizárva a letöltésekből</string>
+    <string name="trash_allow">Letöltés engedélyezése</string>
+    <string name="trash_allow_title">Újra letölthető legyen ez: „%1$s”?</string>
+    <string name="trash_allow_body">Az automatikus letöltések újra letölthetik. Most semmi sem töltődik le.</string>
+    <string name="trash_kept_until">Megőrizve eddig: %1$s</string>
+    <string name="trash_restore">Visszaállítás</string>
+    <string name="trash_error_admin">Csak adminisztrátor használhatja a kukát.</string>
+    <string name="trash_error_changed">Egy fájl az ellenőrzés után megváltozott. Semmi sem veszett el; válaszd ki újra a számot.</string>
+    <string name="trash_error_missing">Hiányzik egy fájl. Ellenőrizd a szerver tárhelyét, majd próbáld újra.</string>
+    <string name="trash_error_collision">A helyén már van egy másik fájl. Semmi sem lett felülírva; a szám a kukában marad.</string>
+    <string name="trash_error_playing">Valaki épp ezt a számot hallgatja. Előbb szüneteltesd.</string>
+    <string name="trash_error_upgrade">A könyvtár feljavítása fut. Várd meg, vagy előbb szüneteltesd.</string>
+    <string name="trash_error_confirmation">Az ellenőrzés lejárt. Válaszd ki újra a számokat.</string>
+    <string name="trash_error_identity">Ennek a számnak a címkéi kevesek ahhoz, hogy kimaradjon az automatikus letöltésekből. Semmi sem került át.</string>
+    <string name="trash_error_busy">Valami még folyamatban van. Várd meg, amíg befejeződik.</string>
+    <string name="trash_error_expired">Lejárt az ideje a kukában.</string>
+    <string name="trash_error_folder">Ennek a számnak a mappáját nem fedi le a kuka.</string>
+    <string name="trash_error_storage">A szerver tárhelye nem áll készen. Semmi sem került át; ellenőrizd, majd próbáld újra.</string>
+    <string name="trash_error_off">A kuka ki van kapcsolva ezen a szerveren.</string>
+    <string name="trash_error">A kuka nem válaszolt. Semmi sem került át és semmi sem törlődött.</string>
+    <string name="trash_state_pending">Áthelyezésre vár</string>
+    <string name="trash_state_moving">Áthelyezés</string>
+    <string name="trash_state_trashed">A kukában</string>
+    <string name="trash_state_restoring">Visszaállítás</string>
+    <string name="trash_state_restored">Visszaállítva</string>
+    <string name="trash_state_expired">Lejárt</string>
+    <string name="trash_state_error">Leállt — a fájlok megmaradtak</string>
+    <string name="trash_state_unknown">Frissítés</string>
+    <plurals name="trash_moving">
+        <item quantity="one">%1$d szám áthelyezése a kukába</item>
+        <item quantity="other">%1$d szám áthelyezése a kukába</item>
+    </plurals>
+    <plurals name="trash_confirm_title">
+        <item quantity="one">Áthelyezel %1$d számot a kukába?</item>
+        <item quantity="other">Áthelyezel %1$d számot a kukába?</item>
+    </plurals>
+    <plurals name="trash_confirm_body">
+        <item quantity="one">Csak ezek a fájlok kerülnek át, a dalszövegeikkel. Mindenkinél eltűnnek a könyvtárból, és %1$d napig visszaállíthatók.</item>
+        <item quantity="other">Csak ezek a fájlok kerülnek át, a dalszövegeikkel. Mindenkinél eltűnnek a könyvtárból, és %1$d napig visszaállíthatók.</item>
+    </plurals>
+    <plurals name="trash_summary">
+        <item quantity="one">%1$d szám · %2$s</item>
+        <item quantity="other">%1$d szám · %2$s</item>
+    </plurals>
+    <plurals name="trash_kept_days">
+        <item quantity="one">az áthelyezés után %1$d napig megmaradnak</item>
+        <item quantity="other">az áthelyezés után %1$d napig megmaradnak</item>
+    </plurals>
 </resources>

@@ -97,7 +97,9 @@ import com.henriquesebastiao.downtify.feature.search.SearchNavigation
 import com.henriquesebastiao.downtify.feature.search.SearchRoute
 import com.henriquesebastiao.downtify.feature.settings.SettingsRoute
 import com.henriquesebastiao.downtify.feature.similar.SimilarRoute as SimilarScreenRoute
-import com.henriquesebastiao.downtify.feature.trash.LibraryTrashHost
+import com.henriquesebastiao.downtify.feature.trash.MoveToTrashHost
+import com.henriquesebastiao.downtify.feature.trash.MoveToTrashViewModel
+import com.henriquesebastiao.downtify.feature.trash.TrashRoute as TrashScreenRoute
 import com.henriquesebastiao.downtify.ui.common.CoverUrls
 import com.henriquesebastiao.downtify.ui.common.LocalBottomBarsInset
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
@@ -122,6 +124,7 @@ import com.henriquesebastiao.downtify.ui.navigation.SettingsRoute as SettingsDes
 import com.henriquesebastiao.downtify.ui.navigation.ShowRoute as ShowDestination
 import com.henriquesebastiao.downtify.ui.navigation.SimilarRoute
 import com.henriquesebastiao.downtify.ui.navigation.TopLevelDestination
+import com.henriquesebastiao.downtify.ui.navigation.TrashRoute as TrashDestination
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
 
@@ -207,6 +210,9 @@ private fun MainShell() {
     val noBar = onSettings || floatingBar || (onDetail && phone)
     val miniPlayer = hasMedia && !onSettings
 
+    // The same instance MoveToTrashHost uses: whether this pairing gets the music trash.
+    val trash: MoveToTrashViewModel = hiltViewModel()
+    val trashOn by trash.canManage.collectAsStateWithLifecycle()
     AppDrawer(
         drawerState = drawerState,
         selected = DrawerDestination.entries.firstOrNull { destination?.hasRoute(it.route::class) == true },
@@ -214,6 +220,7 @@ private fun MainShell() {
             scope.launch { drawerState.close() }
             navController.navigate(item.route) { launchSingleTop = true }
         },
+        destinations = DrawerDestination.entries.filter { trashOn || !it.trashOnly },
     ) {
         Box(Modifier.fillMaxSize()) {
             NavigationSuiteScaffold(
@@ -253,7 +260,7 @@ private fun MainShell() {
                     val covered = if (miniPlayer || floatingBar) stackHeight else 0.dp
                     CompositionLocalProvider(LocalBottomBarsInset provides covered) {
                         Box(Modifier.fillMaxSize().then(content)) {
-                            LibraryTrashHost {
+                            MoveToTrashHost(onMessage = { text -> scope.launch { snackbar.showSnackbar(text) } }) {
                                 AppNavHost(navController, onOpenMenu = { scope.launch { drawerState.open() } })
                             }
                         }
@@ -379,6 +386,7 @@ private fun AppNavHost(navController: NavHostController, onOpenMenu: () -> Unit)
                 },
             )
         }
+        composable<TrashDestination> { TrashScreenRoute(onBack = navController::popBackStack) }
         composable<SettingsDestination> {
             SettingsRoute(
                 onBack = navController::popBackStack,

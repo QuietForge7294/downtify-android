@@ -149,10 +149,12 @@ class PlaybackService : MediaSessionService() {
         persistence = PlaybackPersistence(player, playback, sessions, scope).also { it.start() }
     }
 
-    /** Unpaired (here or from the web): the queue belongs to a server the app can't reach anymore. */
+    /**
+     * Songs that left the library (deleted, moved to the server's trash, hidden) leave the queue
+     * too — but only once a sync of this session has succeeded: until then the local library may be
+     * a stale copy, and a queue restored offline must survive.
+     */
     private fun removeDeletedLibraryTracks(player: Player) {
-        // A completed server sync is authoritative for library-track IDs.
-        // Do not clear a restored offline queue before that first sync.
         combine(library.successfulSync, library.library) { count, snapshot -> count to snapshot }
             .onEach { (count, snapshot) ->
                 if (count > 0 && snapshot != null) {
@@ -168,6 +170,7 @@ class PlaybackService : MediaSessionService() {
             }.launchIn(scope)
     }
 
+    /** Unpaired (here or from the web): the queue belongs to a server the app can't reach anymore. */
     private fun stopWhenSignedOut(player: Player) {
         scope.launch {
             withContext(Dispatchers.IO) { sessions.ensureLoaded() }

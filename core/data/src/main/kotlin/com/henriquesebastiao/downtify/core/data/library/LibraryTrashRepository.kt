@@ -1,93 +1,140 @@
 package com.henriquesebastiao.downtify.core.data.library
 
+import android.util.Log
+import com.henriquesebastiao.downtify.core.data.di.ApplicationScope
+import com.henriquesebastiao.downtify.core.model.TrashCapability
 import com.henriquesebastiao.downtify.core.model.TrashItem
-import com.henriquesebastiao.downtify.core.model.TrashListing
-import com.henriquesebastiao.downtify.core.model.TrashMetadata
+import com.henriquesebastiao.downtify.core.model.TrashPage
 import com.henriquesebastiao.downtify.core.model.TrashPreview
 import com.henriquesebastiao.downtify.core.network.ApiFactory
+import com.henriquesebastiao.downtify.core.network.NetworkJson
 import com.henriquesebastiao.downtify.core.network.TrashApi
 import com.henriquesebastiao.downtify.core.network.dto.TrashConfirmationDto
 import com.henriquesebastiao.downtify.core.network.dto.TrashIdsDto
-import com.henriquesebastiao.downtify.core.network.dto.TrashItemDto
-import com.henriquesebastiao.downtify.core.network.dto.TrashListingDto
-import com.henriquesebastiao.downtify.core.network.dto.TrashPreviewDto
 import com.henriquesebastiao.downtify.core.network.dto.TrashSelectionDto
+import com.henriquesebastiao.downtify.core.network.session.Session
 import com.henriquesebastiao.downtify.core.network.session.SessionStore
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import retrofit2.HttpException
 
+/** A trash request the server refused or couldn't take: [code] is its `detail.code` (or `unavailable`). */
 class TrashFailure(val code: String, cause: Throwable? = null) : Exception(code, cause)
 
+/**
+ * The server's music trash, for an admin's pairing (contract: "Music trash (admins)"). The server
+ * does the moves in the background and checks the account on every request; [capability] says
+ * whether to offer any of it, and drops to off on a server without it or a 403.
+ */
 @Singleton
-class LibraryTrashRepository @Inject constructor(private val sessions: SessionStore, private val apis: ApiFactory) {
-    val session get() = sessions.session
+class LibraryTrashRepository @Inject constructor(
+    private val sessions: SessionStore,
+    private val apis: ApiFactory,
+    @ApplicationScope scope: CoroutineScope,
+) {
+    private val capabilityState = MutableStateFlow(TrashCapability())
+    val capability: StateFlow<TrashCapability> = capabilityState.asStateFlow()
+
+    /** The pairing the trash belongs to: a change of it ends whatever was under way. */
+    val session: StateFlow<Session?> get() = sessions.session
+
+    init {
+        scope.launch(Dispatchers.IO) {
+            sessions.session.collectLatest { session ->
+                capabilityState.value = TrashCapability()
+                if (session != null) refreshCapability()
+            }
+        }
+    }
+
+    /** Ask the server again (the account may have stopped, or started, being an admin). */
+    suspend fun refreshCapability() {
+        val paired = sessions.current ?: return
+        val found = try {
+            call { it.trashCapabilities().toModel() }
+        } catch (_: TrashFailure) {
+            TrashCapability()
+        }
+        if (sessions.current == paired) capabilityState.value = found
+    }
+
+    /** Has the server check exactly what would move; resolves when its answer is ready. */
+    suspend fun preview(trackIds: List<String>): TrashPreview {
+        val started = call { it.trashPreview(TrashSelectionDto(trackIds)) }
+        repeat(PREVIEW_POLLS) {
+            val status = call { it.trashPreviewStatus(started.requestId) }
+            status.preview?.takeIf { status.state == "ready" }?.let { return it.toModel() }
+            delay(PREVIEW_POLL_MS)
+        }
+        throw TrashFailure("preview_unavailable")
+    }
+
+    /** Confirms a [preview]; the songs leave the library now and move soon after. Returns how many. */
+    suspend fun confirm(confirmation: String): Int =
+        call { it.trashConfirm(TrashConfirmationDto(confirmation)).ids.size }
+
+    suspend fun page(offset: Int, search: String): TrashPage = call {
+        it.trashList(offset, PAGE_SIZE, search).toModel()
+    }
+
+    suspend fun exclusions(): List<TrashItem> = call { api -> api.trashExclusions().items.map { it.toModel() } }
+
+    suspend fun restore(ids: List<String>) {
+        call { it.trashRestore(TrashIdsDto(ids)) }
+    }
+
+    suspend fun retry(ids: List<String>) {
+        call { it.trashRetry(TrashIdsDto(ids)) }
+    }
+
+    suspend fun allowDownload(ids: List<String>) {
+        call { it.trashAllowDownload(TrashIdsDto(ids)) }
+    }
 
     private suspend fun <T> call(block: suspend (TrashApi) -> T): T = withContext(Dispatchers.IO) {
-        val session = sessions.current ?: throw TrashFailure("unavailable")
+        val session = sessions.current ?: throw TrashFailure(UNAVAILABLE)
         try {
-            block(apis.createTrashPatient(session.baseUrl))
-        } catch (e: CancellationException) {
-            throw e
+            block(apis.createTrash(session.baseUrl))
         } catch (e: HttpException) {
-            val code = runCatching {
-                Json.parseToJsonElement(e.response()?.errorBody()?.string().orEmpty())
-                    .jsonObject["detail"]?.jsonObject?.get("code")?.jsonPrimitive?.content
-            }.getOrNull()
-            throw TrashFailure(code ?: if (e.code() == 403) "admin_required" else "unavailable", e)
+            val code = codeOf(e) ?: if (e.code() == HTTP_FORBIDDEN) ADMIN_REQUIRED else UNAVAILABLE
+            Log.w(TAG, "Trash request refused: ${e.code()} $code")
+            if (code == ADMIN_REQUIRED) capabilityState.update { it.copy(canManage = false) }
+            throw TrashFailure(code, e)
         } catch (e: IOException) {
-            throw TrashFailure("unavailable", e)
+            throw TrashFailure(UNAVAILABLE, e)
         } catch (e: SerializationException) {
-            throw TrashFailure("unavailable", e)
+            throw TrashFailure(UNAVAILABLE, e)
         }
     }
 
-    suspend fun canManage(): Boolean = try {
-        call { it.trashCapabilities().canManage }
-    } catch (_: TrashFailure) {
-        false
-    }
+    private fun codeOf(e: HttpException): String? = runCatching {
+        val body = e.response()?.errorBody()?.string().orEmpty()
+        NetworkJson.parseToJsonElement(body).jsonObject["detail"]?.jsonObject?.get("code")?.jsonPrimitive?.content
+    }.getOrNull()
 
-    suspend fun preview(trackIds: List<String>) = withTimeoutOrNull(30 * 60 * 1000L) {
-        val request = call { it.trashPreview(TrashSelectionDto(trackIds)) }
-        repeat(1800) {
-            val result = call { it.trashPreviewStatus(request.requestId) }
-            if (result.state == "failed") throw TrashFailure(result.error.ifBlank { "preview_unavailable" })
-            if (result.state ==
-                "ready"
-            ) {
-                return@withTimeoutOrNull result.preview?.toModel() ?: throw TrashFailure("preview_unavailable")
-            }
-            delay(1000)
-        }
-        null
-    } ?: throw TrashFailure("preview_unavailable")
-    suspend fun confirm(token: String) = call { it.trashConfirm(TrashConfirmationDto(token)) }
-    suspend fun list(offset: Int, search: String) = call { it.trashList(offset, search).toModel() }
-    suspend fun restore(ids: List<String>) = call { it.trashRestore(TrashIdsDto(ids)) }
-    suspend fun retry(ids: List<String>) = call { it.trashRetry(TrashIdsDto(ids)) }
-    suspend fun exclusions() = call { it.trashExclusions().toModel() }
-    suspend fun allowDownload(ids: List<String>) = call { it.trashAllowDownload(TrashIdsDto(ids)) }
+    companion object {
+        const val PAGE_SIZE = 50
+        const val UNAVAILABLE = "unavailable"
+        const val ADMIN_REQUIRED = "admin_required"
+        private const val TAG = "LibraryTrash"
+        private const val HTTP_FORBIDDEN = 403
+        private const val PREVIEW_POLL_MS = 1_000L
+
+        // Half an hour of checking at most, as the web app allows.
+        private const val PREVIEW_POLLS = 1_800
+    }
 }
-
-private fun TrashItemDto.toModel() = TrashItem(
-    id,
-    file,
-    TrashMetadata(metadata.title, metadata.artist, metadata.codec),
-    state,
-    size,
-    expiresAt,
-    error,
-)
-private fun TrashPreviewDto.toModel() = TrashPreview(confirmation, items.map { it.toModel() })
-private fun TrashListingDto.toModel() = TrashListing(items.map { it.toModel() }, total, size)

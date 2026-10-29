@@ -56,6 +56,7 @@ import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.designsystem.theme.ListStyle
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 import com.henriquesebastiao.downtify.core.network.ServerUrls
+import com.henriquesebastiao.downtify.feature.trash.LocalMoveToTrash
 import com.henriquesebastiao.downtify.ui.common.CoverCard
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
 import com.henriquesebastiao.downtify.ui.common.PreviewData
@@ -83,6 +84,7 @@ fun ArtistRoute(
             onToggleLike = viewModel::toggleLike,
             onAddToQueue = viewModel::addToQueue,
             onGoToAlbum = { onAlbum(it.albumId) },
+            onMoveToTrash = LocalMoveToTrash.current,
         ),
         modifier = modifier,
     )

@@ -6,6 +6,7 @@ import com.henriquesebastiao.downtify.core.data.db.SyncStateEntity
 import com.henriquesebastiao.downtify.core.data.db.TrackEntity
 import com.henriquesebastiao.downtify.core.model.Track
 import com.henriquesebastiao.downtify.core.network.session.SessionStore
+import com.henriquesebastiao.downtify.core.network.session.cacheOwner
 import java.io.IOException
 import javax.inject.Inject
 
@@ -41,12 +42,15 @@ class RoomLibraryStore @Inject constructor(
         }
     }
 
+    /**
+     * Tracks gone from the server (deleted, moved to its trash, hidden): their read-ahead copies go
+     * too ([DeletedTrackRegistry]), even when the app is closed before the cache gets to them.
+     */
     private suspend fun recordRemoved(serverId: String, ids: List<String>) {
         if (ids.isEmpty()) return
         val session = sessions.current ?: throw IOException("session unavailable")
         if (session.serverId != serverId) throw IOException("session changed")
-        val owner = "${session.serverId.ifBlank { session.baseUrl }}\u0000${session.deviceId}"
-        deletedRegistry.record(owner, ids)
+        deletedRegistry.record(session.cacheOwner, ids)
     }
 
     /** Everything that belongs to one server: before pairing with another. */

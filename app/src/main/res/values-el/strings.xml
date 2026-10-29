@@ -6,6 +6,7 @@
     <string name="nav_search">Αναζήτηση</string>
     <string name="nav_library">Βιβλιοθήκη</string>
     <string name="nav_downloads">Λήψεις</string>
+    <string name="nav_trash">Κάδος</string>
     <string name="action_back">Πίσω</string>
     <string name="action_settings">Ρυθμίσεις</string>
     <string name="action_open_menu">Άνοιγμα μενού</string>
@@ -478,4 +479,69 @@
     <string name="settings_read_ahead_mobile_body">Να επιτρέπεται επιπλέον χρήση δεδομένων για τα επόμενα τραγούδια.</string>
     <string name="settings_cache_apply">Εφαρμογή</string>
     <string name="player_buffer_ready">Προσωρινή μνήμη εκτός σύνδεσης: %1$d/%2$d</string>
+
+    <!-- Music trash (admins, when the server has it on) -->
+    <string name="trash_title">Κάδος</string>
+    <string name="trash_move">Μετακίνηση στον κάδο</string>
+    <string name="trash_checking">Έλεγχος αρχείων…</string>
+    <string name="trash_checking_body">Ο διακομιστής ελέγχει ακριβώς ποια αρχεία θα μετακινηθούν. Μπορεί να πάρει λίγο χρόνο.</string>
+    <string name="trash_failed">Δεν ολοκληρώθηκε</string>
+    <string name="trash_admin_only">Μόνο οι διαχειριστές μπορούν να το δουν αυτό</string>
+    <string name="trash_admin_only_body">Ζήτησε από έναν διαχειριστή αυτού του διακομιστή να επαναφέρει ένα κομμάτι.</string>
+    <string name="trash_tab_trash">Στον κάδο</string>
+    <string name="trash_tab_kept_out">Εκτός λήψεων</string>
+    <string name="trash_search">Αναζήτηση στον κάδο</string>
+    <string name="trash_empty">Ο κάδος είναι άδειος</string>
+    <string name="trash_empty_body">Τα κομμάτια που μετακινούνται στον κάδο εμφανίζονται εδώ μέχρι να λήξουν.</string>
+    <string name="trash_no_match">Τίποτα στον κάδο δεν ταιριάζει</string>
+    <string name="trash_show_more">Εμφάνιση περισσότερων</string>
+    <string name="trash_kept_out_body">Κομμάτια των οποίων ο χρόνος στον κάδο έληξε. Οι αυτόματες λήψεις τα παραλείπουν μέχρι να τα επιτρέψεις ξανά.</string>
+    <string name="trash_kept_out_empty">Τίποτα δεν είναι εκτός λήψεων</string>
+    <string name="trash_allow">Επίτρεψε λήψεις</string>
+    <string name="trash_allow_title">Να επιτραπεί ξανά η λήψη του «%1$s»;</string>
+    <string name="trash_allow_body">Οι αυτόματες λήψεις μπορεί να το κατεβάσουν ξανά. Τίποτα δεν κατεβαίνει τώρα.</string>
+    <string name="trash_kept_until">Φυλάσσεται έως %1$s</string>
+    <string name="trash_restore">Επαναφορά</string>
+    <string name="trash_error_admin">Μόνο ένας διαχειριστής μπορεί να χρησιμοποιήσει τον κάδο.</string>
+    <string name="trash_error_changed">Ένα αρχείο άλλαξε μετά τον έλεγχο. Δεν χάθηκε τίποτα· επίλεξε ξανά το κομμάτι.</string>
+    <string name="trash_error_missing">Λείπει ένα αρχείο. Έλεγξε τον χώρο αποθήκευσης του διακομιστή και δοκίμασε ξανά.</string>
+    <string name="trash_error_collision">Υπάρχει ήδη άλλο αρχείο στη θέση του. Δεν αντικαταστάθηκε τίποτα· το κομμάτι μένει στον κάδο.</string>
+    <string name="trash_error_playing">Κάποιος ακούει αυτό το κομμάτι. Βάλ’ το σε παύση πρώτα.</string>
+    <string name="trash_error_upgrade">Η αναβάθμιση της βιβλιοθήκης τρέχει. Περίμενε ή βάλ’ την σε παύση πρώτα.</string>
+    <string name="trash_error_confirmation">Ο έλεγχος έληξε. Επίλεξε ξανά τα κομμάτια.</string>
+    <string name="trash_error_identity">Τα tags αυτού του κομματιού δεν αρκούν για να μείνει εκτός αυτόματων λήψεων. Δεν μετακινήθηκε τίποτα.</string>
+    <string name="trash_error_busy">Κάτι είναι ακόμη καθ’ οδόν. Περίμενε να τελειώσει.</string>
+    <string name="trash_error_expired">Ο χρόνος του στον κάδο έληξε.</string>
+    <string name="trash_error_folder">Ο φάκελος αυτού του κομματιού δεν καλύπτεται από τον κάδο.</string>
+    <string name="trash_error_storage">Ο χώρος αποθήκευσης του διακομιστή δεν είναι έτοιμος. Δεν μετακινήθηκε τίποτα· έλεγξέ τον και δοκίμασε ξανά.</string>
+    <string name="trash_error_off">Ο κάδος είναι απενεργοποιημένος σε αυτόν τον διακομιστή.</string>
+    <string name="trash_error">Ο κάδος δεν απάντησε. Δεν μετακινήθηκε ούτε διαγράφηκε τίποτα.</string>
+    <string name="trash_state_pending">Αναμονή μετακίνησης</string>
+    <string name="trash_state_moving">Μετακινείται</string>
+    <string name="trash_state_trashed">Στον κάδο</string>
+    <string name="trash_state_restoring">Επαναφέρεται</string>
+    <string name="trash_state_restored">Επανήλθε</string>
+    <string name="trash_state_expired">Έληξε</string>
+    <string name="trash_state_error">Σταμάτησε — τα αρχεία κρατήθηκαν</string>
+    <string name="trash_state_unknown">Ενημερώνεται</string>
+    <plurals name="trash_moving">
+        <item quantity="one">Μετακίνηση %1$d κομματιού στον κάδο</item>
+        <item quantity="other">Μετακίνηση %1$d κομματιών στον κάδο</item>
+    </plurals>
+    <plurals name="trash_confirm_title">
+        <item quantity="one">Μετακίνηση %1$d κομματιού στον κάδο;</item>
+        <item quantity="other">Μετακίνηση %1$d κομματιών στον κάδο;</item>
+    </plurals>
+    <plurals name="trash_confirm_body">
+        <item quantity="one">Μετακινούνται μόνο αυτά τα αρχεία, μαζί με τους στίχους τους. Βγαίνουν από τη βιβλιοθήκη για όλους και μπορούν να επανέλθουν για %1$d ημέρα.</item>
+        <item quantity="other">Μετακινούνται μόνο αυτά τα αρχεία, μαζί με τους στίχους τους. Βγαίνουν από τη βιβλιοθήκη για όλους και μπορούν να επανέλθουν για %1$d ημέρες.</item>
+    </plurals>
+    <plurals name="trash_summary">
+        <item quantity="one">%1$d κομμάτι · %2$s</item>
+        <item quantity="other">%1$d κομμάτια · %2$s</item>
+    </plurals>
+    <plurals name="trash_kept_days">
+        <item quantity="one">φυλάσσονται %1$d ημέρα μετά τη μετακίνηση</item>
+        <item quantity="other">φυλάσσονται %1$d ημέρες μετά τη μετακίνηση</item>
+    </plurals>
 </resources>
