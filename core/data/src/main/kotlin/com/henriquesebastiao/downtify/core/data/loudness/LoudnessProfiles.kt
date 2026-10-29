@@ -4,9 +4,10 @@ import android.content.Context
 import android.util.LruCache
 import com.henriquesebastiao.downtify.core.data.di.ApplicationScope
 import com.henriquesebastiao.downtify.core.data.settings.SettingsRepository
+import com.henriquesebastiao.downtify.core.model.LoudnessProfile
 import com.henriquesebastiao.downtify.core.network.ApiFactory
-import com.henriquesebastiao.downtify.core.network.dto.LoudnessDto
 import com.henriquesebastiao.downtify.core.network.session.SessionStore
+import com.henriquesebastiao.downtify.core.network.session.cacheOwner
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.security.MessageDigest
@@ -22,10 +23,14 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-/** Measurements are fetched on the loader/IO thread before decoded audio is queued. */
+/**
+ * The server's loudness measurements for volume normalization. A track's is looked up on
+ * Media3's loader thread when its audio is opened, so the gain is known before its first
+ * sample reaches the normalizer; an offline copy uses the one bound to it when it was
+ * downloaded whole ([bindDownloaded]), and only while the file is still that copy.
+ */
 @Suppress("TooGenericExceptionCaught")
 @Singleton
 class LoudnessProfiles @Inject constructor(
@@ -36,79 +41,95 @@ class LoudnessProfiles @Inject constructor(
     @ApplicationScope scope: CoroutineScope,
 ) {
     val enabled = settings.settings.map { it.normalizeVolume }.stateIn(scope, SharingStarted.Eagerly, false)
-    private val profiles = LruCache<String, LoudnessDto>(CACHE_SIZE)
-    private val origins = LruCache<String, String>(CACHE_SIZE)
+    private val known = LruCache<String, Known>(CACHE_SIZE)
     private val receipts = File(context.filesDir, "loudness")
     private val json = Json { ignoreUnknownKeys = true }
 
-    private fun key(trackId: String): String? {
-        val session = sessions.current ?: return null
-        return listOf(session.serverId, session.username, trackId).joinToString("\u0000")
+    /** What a stream (or which local file) was last prepared with. */
+    private class Known(val profile: LoudnessProfile?, val origin: String) {
+        private val at = System.currentTimeMillis()
+
+        fun fresh() = profile != null && System.currentTimeMillis() - at < STREAM_TTL_MS
     }
 
-    fun cacheVersion(trackId: String, profile: LoudnessDto?): String =
-        hash((key(trackId).orEmpty() + "\u0000" + profile?.fingerprint.orEmpty()).toByteArray())
+    private fun key(trackId: String): String? = sessions.current?.let { it.cacheOwner + "\u0000" + trackId }
 
-    fun gainDb(trackId: String): Double = if (enabled.value) {
-        key(trackId)?.let {
-            profiles[it]?.safeGainDb()
-        } ?: 0.0
-    } else {
-        0.0
+    /** The gain for [trackId]'s audio as last prepared; 0 when off or not measured. */
+    fun gainDb(trackId: String): Double {
+        if (!enabled.value) return 0.0
+        val key = key(trackId) ?: return 0.0
+        return known[key]?.profile?.safeGainDb() ?: 0.0
     }
 
-    /** Called only by Media3's background data loader, never the UI thread. */
-    fun prepareBlocking(trackId: String, localFile: File? = null, refresh: Boolean = true): LoudnessDto? {
-        if (!enabled.value) return null
-        val key = key(trackId) ?: return null
-        val origin = localFile?.let { "${it.absolutePath}:${it.length()}:${it.lastModified()}" } ?: "remote"
-        if (!refresh && origins[key] == origin) profiles[key]?.let { return it }
-        val profile = if (localFile ==
-            null
-        ) {
-            runBlocking(Dispatchers.IO) { fetch(trackId) }
-        } else {
-            readBound(key, localFile)
+    /**
+     * Looks up a streamed track's measurement. Asks the server only when [ask] (the start of
+     * the track, online) and nothing fresh is known; when the server can't answer, an older
+     * measurement of the same track still applies. Blocks for up to [LOOKUP_TIMEOUT_MS]: call
+     * it from Media3's loader thread only.
+     */
+    fun prepareStreamBlocking(trackId: String, ask: Boolean) {
+        if (!enabled.value) return
+        val key = key(trackId) ?: return
+        val cached = known[key]?.takeIf { it.origin == STREAM }
+        if (cached != null && (!ask || cached.fresh())) return
+        val fetched = if (ask) runBlocking(Dispatchers.IO) { fetch(trackId) } else null
+        when {
+            fetched != null -> known.put(key, Known(fetched, STREAM))
+            cached == null -> known.remove(key)
         }
-        profiles.put(key, profile ?: LoudnessDto())
-        origins.put(key, origin)
-        return profile
     }
 
-    private suspend fun fetch(trackId: String): LoudnessDto? {
+    /**
+     * Uses the measurement bound to the offline copy [file], if it still is that copy. The file
+     * is hashed once per size and modification time, not on every play. Loader thread only.
+     */
+    fun prepareLocalBlocking(trackId: String, file: File) {
+        if (!enabled.value) return
+        val key = key(trackId) ?: return
+        val origin = "${file.absolutePath}:${file.length()}:${file.lastModified()}"
+        if (known[key]?.origin == origin) return
+        known.put(key, Known(readBound(key, file), origin))
+    }
+
+    private suspend fun fetch(trackId: String): LoudnessProfile? {
         val session = sessions.current ?: return null
         return try {
             withTimeoutOrNull(LOOKUP_TIMEOUT_MS) { apis.create(session.baseUrl).loudness(trackId) }
                 ?.takeIf { sessions.current == session }
+                ?.toModel()
         } catch (error: CancellationException) {
             throw error
         } catch (_: Exception) {
+            // Older servers (404), timeouts, no network: the original level.
             null
         }
     }
 
-    /** A resumed download has no whole-file ETag proof and must keep its original volume. */
+    /**
+     * Binds the server's measurement to a finished offline download, whatever the setting, so
+     * the copy is ready when normalization is switched on. Only a whole download can prove it
+     * is the measured file ([etag] and [bytes] match the original's); a resumed one has no
+     * [etag] and keeps its original volume.
+     */
     suspend fun bindDownloaded(trackId: String, file: File, etag: String?, bytes: Long) = withContext(Dispatchers.IO) {
-        if (!enabled.value) return@withContext
         val owner = key(trackId) ?: return@withContext
+        // Whatever was bound before described an earlier copy.
+        receiptFile(owner).delete()
         if (etag.isNullOrBlank()) return@withContext
         val profile = fetch(trackId) ?: return@withContext
-        if (profile.sourceEtag != etag || profile.sourceSize != bytes) return@withContext
-        if (profile.algorithmVersion != 1 || profile.fingerprint.isBlank()) {
-            return@withContext
-        }
+        if (!profile.bindable || profile.sourceEtag != etag || profile.sourceSize != bytes) return@withContext
         try {
-            val receipt = BoundProfile(file.length(), file.lastModified(), digest(file), profile)
+            val receipt = Receipt.of(file.length(), file.lastModified(), digest(file), profile)
             receipts.mkdirs()
-            receiptFile(owner).writeText(json.encodeToString(receipt))
+            receiptFile(owner).writeText(json.encodeToString(Receipt.serializer(), receipt))
         } catch (_: Exception) {
             // Optional metadata must never fail a completed audio download.
         }
     }
 
-    private fun readBound(owner: String, file: File): LoudnessDto? = try {
-        val receipt = json.decodeFromString<BoundProfile>(receiptFile(owner).readText())
-        receipt.profile.takeIf {
+    private fun readBound(owner: String, file: File): LoudnessProfile? = try {
+        val receipt = json.decodeFromString(Receipt.serializer(), receiptFile(owner).readText())
+        receipt.profile().takeIf {
             file.length() == receipt.bytes && file.lastModified() == receipt.modified &&
                 digest(file) == receipt.sha256
         }
@@ -128,19 +149,50 @@ class LoudnessProfiles @Inject constructor(
                 count = input.read(buffer)
             }
         }
-        return digest.digest().joinToString("") { "%02x".format(it) }
+        return digest.digest().toHex()
     }
 
-    private fun hash(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") {
-        "%02x".format(it)
-    }
+    private fun hash(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes).toHex()
 
+    private fun ByteArray.toHex() = joinToString("") { "%02x".format(it) }
+
+    /** An offline copy and the measurement that matched it when it was downloaded. */
     @Serializable
-    private data class BoundProfile(val bytes: Long, val modified: Long, val sha256: String, val profile: LoudnessDto)
+    private data class Receipt(
+        val bytes: Long,
+        val modified: Long,
+        val sha256: String,
+        val state: String,
+        val algorithmVersion: Int,
+        val integratedLufs: Double?,
+        val truePeakDbtp: Double?,
+        val gainDb: Double,
+        val fingerprint: String,
+    ) {
+        fun profile() = LoudnessProfile(state, algorithmVersion, integratedLufs, truePeakDbtp, gainDb, fingerprint)
+
+        companion object {
+            fun of(bytes: Long, modified: Long, sha256: String, profile: LoudnessProfile) = Receipt(
+                bytes,
+                modified,
+                sha256,
+                profile.state,
+                profile.algorithmVersion,
+                profile.integratedLufs,
+                profile.truePeakDbtp,
+                profile.gainDb,
+                profile.fingerprint,
+            )
+        }
+    }
 
     private companion object {
         const val CACHE_SIZE = 64
         const val BUFFER_BYTES = 64 * 1024
         const val LOOKUP_TIMEOUT_MS = 1500L
+
+        /** How long a streamed track's measurement is reused before the next start asks again. */
+        const val STREAM_TTL_MS = 10 * 60 * 1000L
+        const val STREAM = "stream"
     }
 }

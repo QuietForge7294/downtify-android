@@ -78,8 +78,12 @@ class SettingsViewModel @Inject constructor(
     fun setDynamicColor(value: Boolean) = launch { settings.setDynamicColor(value) }
     fun setAmoled(value: Boolean) = launch { settings.setAmoled(value) }
     fun setFont(value: AppFont) = launch { settings.setFont(value) }
+    fun setFloatingNavBar(value: Boolean) = launch { settings.setFloatingNavBar(value) }
     fun setDownloadWifiOnly(value: Boolean) = launch { settings.setDownloadWifiOnly(value) }
     fun setOfflineLimit(bytes: Long) = launch { settings.setOfflineLimit(bytes) }
+    fun setReadAhead(tracks: Int) = launch { settings.setReadAhead(tracks) }
+    fun setStreamCacheMb(mb: Int) = launch { settings.setStreamCacheMb(mb) }
+    fun setReadAheadMobile(enabled: Boolean) = launch { settings.setReadAheadMobile(enabled) }
     fun unpair() = launch { server.unpair() }
 
     private fun launch(block: suspend () -> Unit) {

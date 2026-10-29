@@ -63,6 +63,7 @@ class PlayerController @Inject constructor(
     private val recents: RecentsRepository,
     private val sessions: SessionStore,
     private val resolver: StreamResolver,
+    private val readAhead: ReadAheadBuffer,
     @ApplicationScope scope: CoroutineScope,
 ) {
     private val main = CoroutineScope(scope.coroutineContext + Dispatchers.Main.immediate)
@@ -109,12 +110,19 @@ class PlayerController @Inject constructor(
     }
 
     init {
+        main.launch {
+            readAhead.state.collect { status ->
+                mutableState.update { it.copy(readAheadReady = status.ready, readAheadTarget = status.target) }
+            }
+        }
         // Library changes (a sync) can fill in details of the playing track.
         main.launch { library.library.collect { refresh() } }
     }
 
     suspend fun connect(): MediaController = mutex.withLock {
-        controller?.let { return it }
+        controller?.takeIf { it.isConnected }?.let { return it }
+        controller?.removeListener(listener)
+        controller?.release()
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
         val built = withContext(Dispatchers.Main) { MediaController.Builder(context, token).buildAsync().await() }
         built.addListener(listener)
@@ -226,7 +234,10 @@ class PlayerController @Inject constructor(
 
     fun pause() = command { it.pause() }
 
-    fun resume() = command { it.play() }
+    fun resume() = command {
+        if (it.playbackState == Player.STATE_IDLE) it.prepare()
+        it.play()
+    }
 
     fun next() = command { it.seekToNext() }
 
@@ -295,7 +306,7 @@ class PlayerController @Inject constructor(
         val episode = item?.let(MediaItems::episodeOf)
         val stream = if (episode == null) item?.let(MediaItems::streamOf) else null
         val track = if (episode == null && stream == null) {
-            item?.mediaId?.let { library.library.value?.byId?.get(it) }
+            item?.let { library.library.value?.byId?.get(it.mediaId) ?: MediaItems.trackFromMetadata(it) }
         } else {
             null
         }
