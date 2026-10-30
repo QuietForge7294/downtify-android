@@ -32,3 +32,23 @@ Then use the official [Desktop Head Unit](https://developer.android.com/training
 For a sideloaded media APK, Android Auto's developer setting **Allow unknown sources** may be required; see [official testing instructions](https://developer.android.com/training/cars/testing). This setting does not replace the app integration. Keep the same application ID and signing certificate when updating an existing test installation.
 
 Real receiver and voice-assistant behavior must be reported separately from automated tests. Do not claim car validation based solely on a successful APK build.
+
+## App missing from the launcher
+
+Check this while parked. An APK installed directly from a download link is not a Play Store installation. In the phone's Android Auto settings, tap the version information ten times to enable developer settings, open the overflow menu, then enable **Unknown sources**. This is Android Auto's own setting, separate from permission to install an APK in Android. See Google's [testing requirements](https://developer.android.com/training/cars/testing#unknown-sources).
+
+Open **Customize launcher**, check the installed app's actual name (a separate test build can be called **Downtify Preview**), and reconnect Android Auto. The application declares a media library, not a phone screen for driving. A generic Android Auto message such as “Media unavailable while driving” does not establish which app or component failed. Do not mark the phone activity distraction-optimized to bypass that restriction.
+
+If the app remains absent, check the installed package/version and whether Android resolves its exported `android.media.browse.MediaBrowserService`. If it appears but cannot open, record the service startup and controller connection error before changing playback code. Do not clear app data or reinstall with a different signing key as a diagnostic step.
+
+## Last-source playback and resumption
+
+Opening the library restores the queue paused, without opening an audio source. A playback request can resume the saved track, position, shuffle order and repeat mode through Media3. Media3 also handles System UI's special recent-content root and calls `onPlaybackResumption`; the app must not add a competing implementation of that framework behavior.
+
+Android Auto and the receiver select the media source on connection. Downtify does not launch itself at Bluetooth connection or boot, and must not take audio focus just to replace another app. If Deezer resumes, first distinguish selection of Deezer from a failed request to resume Downtify. Test reconnecting after each app was the last source used. Android Auto's automatic-music setting is global; it is not an API for Downtify to designate itself as the preferred player.
+
+## Diagnostic and integration checks
+
+`./gradlew :app:testDebugUnitTest --tests '*CarServiceIntegrationTest'` checks the merged application identity/descriptor, discovery of the exported service, real Media3 browser connection to the actual playback service without an Activity, paused queue restoration, favorites browsing and association revocation. Only storage/network dependencies are faked. This does not emulate Android Auto's source filtering, a separate controller UID, an assistant or an autoradio.
+
+For a real device, record Android, Android Auto and app versions, install source, launcher visibility, whether the phone was locked, and which app was last playing. Capture only the relevant service/Media3 connection errors. Keep raw device logs private: they can contain titles, addresses or identifiers, and must never be pasted into a public issue without review. A DHU check and a real parked-car check remain separate acceptance steps.
