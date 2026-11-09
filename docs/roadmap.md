@@ -72,8 +72,9 @@ Left for later:
 
 ## Phase 6 — Widgets, Android Auto, large screens
 
+Android Auto is built and waiting on car validation: browsable library (playlists, liked songs, artists, albums, all tracks, offline downloads), voice/text search, artwork, and Shuffle/Repeat buttons that follow the player — see [android-auto.md](android-auto.md). The rest of the phase is still planned:
+
 - Glance widgets (small: now playing + play/pause; large: cover-tinted with queue peek), per the System board.
-- Android Auto: a browsable `MediaLibraryService` tree (Recent, Albums, Artists, Playlists, Liked songs) with search.
 - Tablet and foldable layouts: list-detail for Library/Album, a two-pane Now Playing with the queue beside it.
 
 ## Ongoing
