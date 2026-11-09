@@ -199,6 +199,9 @@ class PlaybackService : MediaLibraryService() {
         localFocus = LocalDjAudioFocus(this, player).also { it.start() }
         scope.launch { player.transition.collect { localDj.publish(it) } }
         scope.launch {
+            localDj.transitionSeconds.collect { player.setTransitionMs(it * 1000L) }
+        }
+        scope.launch {
             combine(localDj.device, localDj.armed, musicAi.capabilities) { device, armed, caps ->
                 if (caps.version > 0 && !caps.enabled("dj_interactive")) localDj.setArmed(false)
                 device && armed && caps.enabled("dj_interactive")
@@ -468,11 +471,10 @@ class PlaybackService : MediaLibraryService() {
                 return MediaSession.ConnectionResult.reject()
             }
             val commands = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
+            // Trusted car/system surfaces drive the same player, so they get shuffle and repeat.
+            commands.add(likeCommand).add(shuffleFromHeadCommand).add(shuffleCommand).add(repeatCommand)
             if (own(controller)) {
-                commands.add(likeCommand).add(addToQueueCommand).add(moveInQueueCommand).add(djNextCommand)
-                commands.add(shuffleFromHeadCommand).add(shuffleCommand).add(repeatCommand)
-            } else {
-                commands.add(likeCommand)
+                commands.add(addToQueueCommand).add(moveInQueueCommand).add(djNextCommand)
             }
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailableSessionCommands(commands.build()).build()
@@ -484,7 +486,11 @@ class PlaybackService : MediaLibraryService() {
             customCommand: SessionCommand,
             args: Bundle,
         ): ListenableFuture<SessionResult> {
-            if (!own(controller) && customCommand.customAction != ACTION_TOGGLE_LIKE) {
+            val allowed = when (customCommand.customAction) {
+                ACTION_TOGGLE_LIKE, ACTION_SHUFFLE_FROM_HEAD, ACTION_TOGGLE_SHUFFLE, ACTION_CYCLE_REPEAT -> true
+                else -> own(controller)
+            }
+            if (!allowed) {
                 return Futures.immediateFuture(SessionResult(SessionError.ERROR_PERMISSION_DENIED))
             }
             when (customCommand.customAction) {

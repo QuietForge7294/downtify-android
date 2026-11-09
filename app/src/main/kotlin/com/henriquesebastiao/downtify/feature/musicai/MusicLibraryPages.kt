@@ -64,14 +64,15 @@ fun DailyMusicShelf(
                             mood,
                             "daily",
                             compact = true,
-                            subtitle = if (card != null &&
-                                card.count > 0
-                            ) {
-                                "${card.count} titres · du jour"
-                            } else if (!caps.enabled("daily")) {
-                                "À activer dans IA"
-                            } else {
-                                "En préparation"
+                            subtitle = when {
+                                card != null && card.count > 0 && card.state == "previous" ->
+                                    "${card.count} titres · d'hier, préparation en cours"
+
+                                card != null && card.count > 0 -> "${card.count} titres · du jour"
+
+                                !caps.enabled("daily") -> "À activer dans IA"
+
+                                else -> "En préparation"
                             },
                         )
                     }
@@ -209,6 +210,28 @@ fun MusicStudioRoute(
                     ),
                     style = MaterialTheme.typography.bodySmall,
                 )
+                if (localDevice) {
+                    val seconds by queue.transitionSeconds.collectAsStateWithLifecycle()
+                    Column {
+                        Text(
+                            "Durée du fondu : $seconds s",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        androidx.compose.material3.Slider(
+                            value = seconds.toFloat(),
+                            onValueChange = { queue.setTransitionSeconds(it.toInt()) },
+                            valueRange = 1f..12f,
+                            steps = 10,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Text(
+                            "Un fondu plus long adoucit l'enchaînement, un fondu court reste proche du " +
+                                "titre suivant. Aucun effet si les deux titres ne sont pas dans votre " +
+                                "bibliothèque locale.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
                 TextButton(
                     onClick = queue::toggle,
                     enabled = !queueChecking || queueArmed || queueBusy,

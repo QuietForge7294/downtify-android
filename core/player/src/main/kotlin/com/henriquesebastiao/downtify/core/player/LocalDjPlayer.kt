@@ -75,6 +75,11 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
 
     fun updateAnalyses(values: Map<String, LocalDjAnalysis>) = engine.updateAnalyses(values)
 
+    /** Crossfade length chosen by the user; applied to the next armed transition. */
+    fun setTransitionMs(value: Long) {
+        engine.transitionMs = value
+    }
+
     fun resetForOwner() {
         setEnabled(false)
         engine.setPlaying(false)

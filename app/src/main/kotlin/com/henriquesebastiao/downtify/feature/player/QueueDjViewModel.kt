@@ -59,6 +59,7 @@ class QueueDjViewModel @Inject constructor(
     val capabilities = coordinator.capabilities
     val localDevice = local.device
     val localTransition = local.transition
+    val transitionSeconds = local.transitionSeconds
     val phase = coordinator.phase
     private val feedback = MutableStateFlow("")
     private val mutableChecking = MutableStateFlow(false)
@@ -83,6 +84,10 @@ class QueueDjViewModel @Inject constructor(
         cancelCheck("Moteur DJ changé. Vérifiez la disponibilité avant de l’activer.")
         coordinator.stop()
         local.chooseDevice(value)
+    }
+
+    fun setTransitionSeconds(value: Int) {
+        local.setTransitionSeconds(value)
     }
 
     fun toggle() {

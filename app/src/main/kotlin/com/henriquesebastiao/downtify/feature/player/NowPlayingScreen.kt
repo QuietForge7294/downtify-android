@@ -1,5 +1,10 @@
 package com.henriquesebastiao.downtify.feature.player
 
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -174,6 +179,7 @@ fun NowPlayingScreen(
                                 .then(coverModifier),
                         )
                     }
+                    if (state.dj != null) Badge("DJ · Bêta")
                     TitleBlock(
                         title = track?.displayTitle ?: stream?.title ?: state.dj?.title ?: episode?.title.orEmpty(),
                         artist =
@@ -195,10 +201,7 @@ fun NowPlayingScreen(
                             )
                         }
                         dj.transition?.let { progress ->
-                            Text("Transition en cours", style = MaterialTheme.typography.labelSmall)
-                            androidx.compose.material3.LinearProgressIndicator(progress = {
-                                progress
-                            }, modifier = Modifier.fillMaxWidth())
+                            TransitionLine(progress)
                         }
                     }
                     SeekBar(state, actions.onSeek, formatOf(track, state))
@@ -519,6 +522,46 @@ private fun StreamDownloadButton(job: ServerJob?, title: String, onDownload: () 
             containerColor = MaterialTheme.colorScheme.errorContainer,
             contentColor = MaterialTheme.colorScheme.onErrorContainer,
         )
+    }
+}
+
+/**
+ * Marks the DJ mix: a static pill, plus a dot that pulses while two decks overlap so a look at the
+ * phone says whether the transition is happening right now.
+ */
+@Composable
+private fun Badge(label: String) {
+    Tag(label, tone = TagTone.Primary, small = true)
+}
+
+/** "Transition en cours" with a pulsing dot and the real overlap progress. */
+@Composable
+private fun TransitionLine(progress: Float) {
+    val pulse = rememberInfiniteTransition(label = "dj-transition")
+    val alpha = pulse.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            tween(durationMillis = 700),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+        ),
+        label = "dj-transition-alpha",
+    ).value
+    Column(
+        Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
+            Box(
+                Modifier.size(6.dp).alpha(alpha).background(MaterialTheme.colorScheme.primary, CircleShape),
+            )
+            Text("Transition en cours", style = MaterialTheme.typography.labelSmall)
+        }
+        androidx.compose.material3.LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
     }
 }
 
