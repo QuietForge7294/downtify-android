@@ -6,6 +6,8 @@ import androidx.media3.common.util.UnstableApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -78,6 +80,35 @@ class DjNextControlTest {
         advanceUntilIdle()
 
         assertEquals(1, player.currentMediaItemIndex)
+        player.release()
+    }
+
+    @Test fun `a refused interactive next skips out of the mix`() = runTest {
+        val player = player(this)
+        var asked = 0
+        player.setDjNextHandler { asked++ }
+        player.setMediaItems(listOf(djItem("interactive", 180_000), localDjItem("classic")), 0, 0)
+        player.prepare()
+        player.play()
+
+        assertTrue(player.skipPastDj())
+        advanceUntilIdle()
+
+        assertEquals("le refus serveur libère le mix", 1, player.currentMediaItemIndex)
+        assertEquals("aucune commande serveur rejouée", 0, asked)
+        player.release()
+    }
+
+    @Test fun `a refused next outside a mix does nothing locally`() = runTest {
+        val player = player(this)
+        player.setMediaItems(listOf(localDjItem("a"), localDjItem("b")), 0, 0)
+        player.prepare()
+        player.play()
+
+        assertFalse(player.skipPastDj())
+        advanceUntilIdle()
+
+        assertEquals(0, player.currentMediaItemIndex)
         player.release()
     }
 }

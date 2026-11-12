@@ -16,7 +16,7 @@ The overflow menu exposes Shuffle and Repeat next to Like. Their icons and label
 
 Starting a collection with Shuffle explicitly is a fresh listening session: a "repeat one" is turned into "repeat all" so the queue is heard once instead of the same song forever, and a "repeat all" is kept. Shuffle starts on the first item of Media3's permutation, so every entry is heard — picking a random start index dropped everything before it (measured: 17.9 of 40 songs lost per launch, 0 after the fix). Duplicate occurrences stay separate entries, and a saved permutation is restored exactly.
 
-Next and Previous stay inside a prepared DJ render: they jump to the next marker of the plan instead of leaving the mix. Adding to the queue and moving a song inside it work on the session player itself (the DJ facade), shuffled order included.
+Next and Previous stay inside a prepared DJ render: they jump to the next marker of the plan instead of leaving the mix. On an interactive render, Next asks the server for the next transition; when the server definitively refuses it (interactive DJ disabled, set not interactive), the player skips to the next queue item instead of leaving the button dead. Network, timeout or busy failures keep the mix and report a retryable error. Adding to the queue and moving a song inside it work on the session player itself (the DJ facade), shuffled order included.
 
 ## Artwork and controllers
 

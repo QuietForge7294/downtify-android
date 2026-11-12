@@ -225,9 +225,21 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
 
     /** Asked when a controller presses Next inside an interactive DJ render. */
     private var djNext: (() -> Unit)? = null
+    private var leaveDjNext = false
 
     fun setDjNextHandler(handler: (() -> Unit)?) {
         djNext = handler
+    }
+
+    /**
+     * The server refused the next transition (DJ disabled, session not interactive): leave the
+     * mix for the next queue item, so the button still does something instead of staying dead.
+     */
+    internal fun skipPastDj(): Boolean {
+        if (DjMediaItems.of(currentMediaItem ?: return false) == null) return false
+        leaveDjNext = true
+        seekToNext()
+        return true
     }
 
     /**
@@ -237,8 +249,11 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
      * Android Auto behaviour.
      */
     private fun nextInsideDj(): ListenableFuture<*>? {
-        val dj = DjMediaItems.of(currentMediaItem ?: return null) ?: return null
+        val dj = currentMediaItem?.let(DjMediaItems::of) ?: return null
         if (dj.mode == "interactive") {
+            val refused = leaveDjNext
+            leaveDjNext = false
+            if (refused) return null
             djNext?.invoke() ?: return null
             return Futures.immediateVoidFuture()
         }

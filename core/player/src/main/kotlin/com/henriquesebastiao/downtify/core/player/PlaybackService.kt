@@ -36,6 +36,8 @@ import com.henriquesebastiao.downtify.core.data.catalog.CatalogRepository
 import com.henriquesebastiao.downtify.core.data.library.LibraryRepository
 import com.henriquesebastiao.downtify.core.data.listens.ListenReporter
 import com.henriquesebastiao.downtify.core.data.loudness.LoudnessProfiles
+import com.henriquesebastiao.downtify.core.data.musicai.MusicAiFailure
+import com.henriquesebastiao.downtify.core.data.musicai.MusicAiFailureKind
 import com.henriquesebastiao.downtify.core.data.offline.OfflineRepository
 import com.henriquesebastiao.downtify.core.data.playback.PlaybackRepository
 import com.henriquesebastiao.downtify.core.data.playback.playbackOwner
@@ -544,8 +546,16 @@ class PlaybackService : MediaLibraryService() {
                 try {
                     musicAi.djCommand(reference.id, "next")
                     SessionResult(SessionResult.RESULT_SUCCESS)
-                } catch (_: com.henriquesebastiao.downtify.core.data.musicai.MusicAiFailure) {
-                    SessionResult(SessionError.ERROR_IO)
+                } catch (failure: MusicAiFailure) {
+                    // A definitive refusal (DJ disabled, set not interactive) must not leave the
+                    // user stuck: skip locally to the next queue item. Transient failures keep
+                    // the mix and report an error the controller can retry.
+                    if (failure.kind in DJ_NEXT_REFUSED) {
+                        (session?.player as? LocalDjPlayer)?.skipPastDj()
+                        SessionResult(SessionResult.RESULT_SUCCESS)
+                    } else {
+                        SessionResult(SessionError.ERROR_IO)
+                    }
                 }
             }
         }
@@ -605,6 +615,12 @@ class PlaybackService : MediaLibraryService() {
     }
 
     companion object {
+        /** Server answers that mean the interactive DJ will refuse every next transition. */
+        private val DJ_NEXT_REFUSED = setOf(
+            MusicAiFailureKind.Disabled,
+            MusicAiFailureKind.Forbidden,
+            MusicAiFailureKind.Unsupported,
+        )
         const val ACTION_TOGGLE_LIKE = "com.henriquesebastiao.downtify.TOGGLE_LIKE"
         const val ACTION_ADD_TO_QUEUE = "com.henriquesebastiao.downtify.ADD_TO_QUEUE"
         const val ACTION_MOVE_IN_QUEUE = "com.henriquesebastiao.downtify.MOVE_IN_QUEUE"
