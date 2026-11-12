@@ -39,7 +39,7 @@ internal object DjTimeline {
         val plan = NetworkJson.encodeToString(ListSerializer(MusicDjMarkerDto.serializer()), session.timeline)
         val tracks = NetworkJson.encodeToString(ListSerializer(MusicAiTrackDto.serializer()), session.tracks)
         val previous = item.mediaMetadata
-        if (sameMetadata(previous, session, track, plan, tracks)) return item
+        if (sameMetadata(previous, session, track, row, plan, tracks)) return item
         val extras = Bundle(item.mediaMetadata.extras ?: Bundle.EMPTY).apply {
             putString("djResumePlan", plan)
             putString("djResumeTracks", tracks)
@@ -65,6 +65,7 @@ internal object DjTimeline {
         previous: androidx.media3.common.MediaMetadata,
         session: MusicDjSessionDto,
         track: MusicAiTrackDto,
+        row: MusicDjMarkerDto,
         plan: String,
         tracks: String,
     ): Boolean {
@@ -73,7 +74,9 @@ internal object DjTimeline {
         val sameTrack = previous.extras?.getString("djTrackId") == track.id &&
             previous.title?.toString() == track.title && previous.artist?.toString() == track.artist
         val sameOrigin = previous.extras?.getLong("djOrigin") == (session.mediaOrigin?.times(1000)?.toLong() ?: 0)
-        return samePlan && sameTrack && sameOrigin
+        val sameOccurrence = previous.extras?.getLong("djStart") == (row.start * 1000).toLong() &&
+            previous.extras?.getLong("djEnd") == (row.end * 1000).toLong()
+        return samePlan && sameTrack && sameOrigin && sameOccurrence
     }
 
     fun resumeRows(item: MediaItem): List<MusicDjMarkerDto> = runCatching {

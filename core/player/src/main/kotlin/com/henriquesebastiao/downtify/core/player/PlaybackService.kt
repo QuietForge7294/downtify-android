@@ -36,8 +36,6 @@ import com.henriquesebastiao.downtify.core.data.catalog.CatalogRepository
 import com.henriquesebastiao.downtify.core.data.library.LibraryRepository
 import com.henriquesebastiao.downtify.core.data.listens.ListenReporter
 import com.henriquesebastiao.downtify.core.data.loudness.LoudnessProfiles
-import com.henriquesebastiao.downtify.core.data.musicai.MusicAiFailure
-import com.henriquesebastiao.downtify.core.data.musicai.MusicAiFailureKind
 import com.henriquesebastiao.downtify.core.data.offline.OfflineRepository
 import com.henriquesebastiao.downtify.core.data.playback.PlaybackRepository
 import com.henriquesebastiao.downtify.core.data.playback.playbackOwner
@@ -123,6 +121,8 @@ class PlaybackService : MediaLibraryService() {
     @Inject lateinit var syncCoordinator: SyncCoordinator
 
     @Inject lateinit var localDj: LocalDjSettings
+
+    @Inject lateinit var carHistory: CarRecommendationHistory
     private var localFocus: LocalDjAudioFocus? = null
     private var session: MediaLibrarySession? = null
     private var artworkTracker: SessionArtworkTracker? = null
@@ -141,6 +141,9 @@ class PlaybackService : MediaLibraryService() {
     private val shuffleFromHeadCommand = SessionCommand(ACTION_SHUFFLE_FROM_HEAD, Bundle.EMPTY)
     private val shuffleCommand = SessionCommand(ACTION_TOGGLE_SHUFFLE, Bundle.EMPTY)
     private val repeatCommand = SessionCommand(ACTION_CYCLE_REPEAT, Bundle.EMPTY)
+    private val djNextControl by lazy {
+        DjNextControl(musicAi, scope, { session?.player }) { error -> session?.sendError(error) }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -160,6 +163,7 @@ class PlaybackService : MediaLibraryService() {
         player.setDjNextHandler {
             callback.requestDjNext(DjIds.referenceOf(player.currentMediaItem?.mediaId))
         }
+        player.setDjNavigationErrorHandler(djNextControl::unavailable)
 
         callback.observe(checkNotNull(session))
         scope.launch { sleepTimer.run { player.pause() } }
@@ -173,7 +177,10 @@ class PlaybackService : MediaLibraryService() {
             DefaultMediaNotificationProvider(this).apply { setSmallIcon(R.drawable.ic_notification) },
         )
 
-        listens = ListenTracker(player, reporter, scope).also { it.start() }
+        listens = ListenTracker(player, reporter, scope) { context ->
+            val owner = sessions.current?.playbackOwner
+            scope.launch(Dispatchers.IO) { carHistory.record(context, owner) }
+        }.also { it.start() }
         aiListens = MusicAiListenTracker(player, musicAi, scope).also { it.start() }
         djControls = DjControlTracker(player, musicAi, scope).also { it.start() }
         activity = ActivityTracker(player, activityReporter, scope).also { it.start() }
@@ -428,7 +435,8 @@ class PlaybackService : MediaLibraryService() {
             .setSlots(CommandButton.SLOT_OVERFLOW)
             .build()
 
-    private inner class SessionCallback : CarBrowser(this@PlaybackService, library, offline, sessions, artwork, scope) {
+    private inner class SessionCallback :
+        CarBrowser(this@PlaybackService, library, offline, sessions, artwork, scope, carHistory) {
         private fun own(controller: MediaSession.ControllerInfo): Boolean =
             ControllerAccess.isApp(controller, packageName, Process.myUid())
 
@@ -440,7 +448,10 @@ class PlaybackService : MediaLibraryService() {
             startPositionMs: Long,
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> = scope.future {
             persistence?.awaitReady()
-            if (own(controller) && mediaItems.none { it.requestMetadata.searchQuery != null }) {
+            if (own(controller) && mediaItems.none {
+                    it.requestMetadata.searchQuery != null || it.mediaId.startsWith("auto:")
+                }
+            ) {
                 MediaSession.MediaItemsWithStartPosition(
                     onAddMediaItems(mediaSession, controller, mediaItems).await(),
                     startIndex,
@@ -456,6 +467,14 @@ class PlaybackService : MediaLibraryService() {
             controller: MediaSession.ControllerInfo,
             isForPlayback: Boolean,
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> = scope.future {
+            if (!isForPlayback &&
+                (mediaSession.isAutoCompanionController(controller) || mediaSession.isAutomotiveController(controller))
+            ) {
+                val suggestions = carSuggestedItems()
+                if (suggestions.isNotEmpty()) {
+                    return@future MediaSession.MediaItemsWithStartPosition(suggestions, 0, 0)
+                }
+            }
             persistence?.awaitReady()
             val player = mediaSession.player
             MediaSession.MediaItemsWithStartPosition(
@@ -536,29 +555,7 @@ class PlaybackService : MediaLibraryService() {
 
         internal fun requestDjNext(
             reference: com.henriquesebastiao.downtify.core.model.DjReference?,
-        ): ListenableFuture<SessionResult> {
-            if (reference?.mode !=
-                "interactive"
-            ) {
-                return Futures.immediateFuture(SessionResult(SessionError.ERROR_BAD_VALUE))
-            }
-            return scope.future {
-                try {
-                    musicAi.djCommand(reference.id, "next")
-                    SessionResult(SessionResult.RESULT_SUCCESS)
-                } catch (failure: MusicAiFailure) {
-                    // A definitive refusal (DJ disabled, set not interactive) must not leave the
-                    // user stuck: skip locally to the next queue item. Transient failures keep
-                    // the mix and report an error the controller can retry.
-                    if (failure.kind in DJ_NEXT_REFUSED) {
-                        (session?.player as? LocalDjPlayer)?.skipPastDj()
-                        SessionResult(SessionResult.RESULT_SUCCESS)
-                    } else {
-                        SessionResult(SessionError.ERROR_IO)
-                    }
-                }
-            }
-        }
+        ): ListenableFuture<SessionResult> = djNextControl.request(reference)
 
         private fun requestQueueAdd(session: MediaSession, args: Bundle): ListenableFuture<SessionResult> {
             val track = args.getString(EXTRA_TRACK_ID)?.let { library.library.value?.byId?.get(it) }
@@ -615,12 +612,6 @@ class PlaybackService : MediaLibraryService() {
     }
 
     companion object {
-        /** Server answers that mean the interactive DJ will refuse every next transition. */
-        private val DJ_NEXT_REFUSED = setOf(
-            MusicAiFailureKind.Disabled,
-            MusicAiFailureKind.Forbidden,
-            MusicAiFailureKind.Unsupported,
-        )
         const val ACTION_TOGGLE_LIKE = "com.henriquesebastiao.downtify.TOGGLE_LIKE"
         const val ACTION_ADD_TO_QUEUE = "com.henriquesebastiao.downtify.ADD_TO_QUEUE"
         const val ACTION_MOVE_IN_QUEUE = "com.henriquesebastiao.downtify.MOVE_IN_QUEUE"

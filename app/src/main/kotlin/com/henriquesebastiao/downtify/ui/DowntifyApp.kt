@@ -171,6 +171,18 @@ private fun MainShell() {
                     snackbar.currentSnackbarData?.dismiss()
                     snackbar.showSnackbar(addedToQueue)
                 }
+
+                is PlayerEvent.DjControlFailed -> {
+                    snackbar.currentSnackbarData?.dismiss()
+                    val result = snackbar.showSnackbar(
+                        event.message,
+                        actionLabel = "Retour classique",
+                        withDismissAction = true,
+                    )
+                    if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                        player.returnToClassic(event.id)
+                    }
+                }
             }
         }
     }

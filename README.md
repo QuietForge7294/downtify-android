@@ -174,3 +174,12 @@ and a synthetic 50,000-entry home comparison are documented in the matching
 Actual Pixel startup/latency, Bluetooth/background/network recovery, thermal
 behavior, comparative listening and the sustained one-hour qualification are
 still pending. This remains a draft beta. See [behavior and limits](docs/music-ai.md).
+
+The beta9 candidate (versionCode 18) removes the silent classic-queue fallback on
+DJ Next errors. Next and Previous use the shared session player, keep pause intent
+and report unavailable markers; returning to classic playback is an explicit
+action. Position-aware navigation is sent only when the server advertises
+`dj_navigation`; older servers keep receiving the legacy command. Duplicate
+occurrences retain separate mix markers. See the [controller checks and remaining
+physical acceptance](docs/android-auto.md). This candidate does not establish
+first-sound P95, battery behavior or one-hour real-time musical qualification.
