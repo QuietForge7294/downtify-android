@@ -44,6 +44,7 @@ internal val moodNames = mapOf(
     "rap" to "Rap & Hip-Hop",
     "rock" to "Rock",
     "electro" to "Électro",
+    "pop" to "Pop",
 )
 internal val moodColors = mapOf(
     "calme" to Color(0xFF4F46E5),
@@ -55,6 +56,7 @@ internal val moodColors = mapOf(
     "rap" to Color(0xFF854D0E),
     "rock" to Color(0xFFB91C1C),
     "electro" to Color(0xFF0369A1),
+    "pop" to Color(0xFFBE185D),
 )
 internal fun mixTitle(cadence: String, mood: String) =
     "${if (cadence == "daily") "Mix du jour" else "Mix de la semaine"} · ${moodNames[mood].orEmpty()}"
