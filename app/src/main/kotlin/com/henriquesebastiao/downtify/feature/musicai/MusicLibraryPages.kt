@@ -39,6 +39,8 @@ private val dailyMoods = listOf(
     "calme" to "Calme",
 )
 
+private val genreMoods = listOf("rock", "rap", "pop", "electro")
+
 @Composable
 fun DailyMusicShelf(
     state: MusicAiUiState,
@@ -51,35 +53,55 @@ fun DailyMusicShelf(
             Text("Pour vous", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
             TextButton(onClick = onSeeAll) { Text("Tout voir") }
         }
-        dailyMoods.chunked(2).forEach { pair ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                pair.forEach { (mood, label) ->
-                    val card = state.playlists.firstOrNull { it.cadence == "daily" && it.mood == mood }
-                    Surface(
-                        onClick = { onOpen("daily", mood) },
-                        shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.weight(1f).height(112.dp),
-                    ) {
-                        MusicMoodArt(
-                            mood,
-                            "daily",
-                            compact = true,
-                            subtitle = when {
-                                card != null && card.count > 0 && card.state == "previous" ->
-                                    "${card.count} titres · d'hier, préparation en cours"
+        Text("Vos genres", style = MaterialTheme.typography.titleSmall)
+        Text(
+            if (caps.enabled("personalization")) {
+                "Vos écoutes affinent vos sélections. Aimez vos titres préférés pour préciser vos goûts."
+            } else {
+                "Activez la personnalisation dans les préférences IA pour adapter les mixes à vos goûts."
+            },
+            style = MaterialTheme.typography.bodySmall,
+        )
+        HomeMixRows(genreMoods, "weekly", state, caps, onOpen)
+        Text("Selon votre humeur", style = MaterialTheme.typography.titleSmall)
+        HomeMixRows(dailyMoods.map { it.first }, "daily", state, caps, onOpen)
+        if (state.message.isNotBlank()) Text(state.message, style = MaterialTheme.typography.bodySmall)
+    }
+}
 
-                                card != null && card.count > 0 -> "${card.count} titres · du jour"
-
-                                !caps.enabled("daily") -> "À activer dans IA"
-
-                                else -> "En préparation"
-                            },
-                        )
-                    }
+@Composable
+private fun HomeMixRows(
+    moods: List<String>,
+    cadence: String,
+    state: MusicAiUiState,
+    caps: MusicAiCapabilitiesDto,
+    onOpen: (String, String) -> Unit,
+) {
+    moods.chunked(2).forEach { pair ->
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            pair.forEach { mood ->
+                val card = state.playlists.firstOrNull { it.cadence == cadence && it.mood == mood }
+                val ready = caps.enabled(cadence) && card != null && card.count > 0
+                Surface(
+                    onClick = { onOpen(cadence, mood) },
+                    enabled = ready,
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.weight(1f).height(112.dp),
+                ) {
+                    MusicMoodArt(
+                        mood,
+                        cadence,
+                        compact = true,
+                        subtitle = when {
+                            !caps.enabled(cadence) -> "À activer dans IA"
+                            ready && card.state == "previous" -> "${card.count} titres · renouvellement en cours"
+                            ready -> "${card.count} titres · à écouter"
+                            else -> "En préparation"
+                        },
+                    )
                 }
             }
         }
-        if (state.message.isNotBlank()) Text(state.message, style = MaterialTheme.typography.bodySmall)
     }
 }
 
