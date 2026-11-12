@@ -225,21 +225,19 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
 
     /** Asked when a controller presses Next inside an interactive DJ render. */
     private var djNext: (() -> Unit)? = null
-    private var leaveDjNext = false
+    private var djNavigationError: (String) -> Unit = {}
 
     fun setDjNextHandler(handler: (() -> Unit)?) {
         djNext = handler
     }
 
-    /**
-     * The server refused the next transition (DJ disabled, session not interactive): leave the
-     * mix for the next queue item, so the button still does something instead of staying dead.
-     */
-    internal fun skipPastDj(): Boolean {
-        if (DjMediaItems.of(currentMediaItem ?: return false) == null) return false
-        leaveDjNext = true
-        seekToNext()
-        return true
+    fun setDjNavigationErrorHandler(handler: (String) -> Unit) {
+        djNavigationError = handler
+    }
+
+    private fun unavailable(message: String): ListenableFuture<*> {
+        djNavigationError(message)
+        return Futures.immediateVoidFuture()
     }
 
     /**
@@ -251,34 +249,40 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
     private fun nextInsideDj(): ListenableFuture<*>? {
         val dj = currentMediaItem?.let(DjMediaItems::of) ?: return null
         if (dj.mode == "interactive") {
-            val refused = leaveDjNext
-            leaveDjNext = false
-            if (refused) return null
-            djNext?.invoke() ?: return null
+            val handler = djNext ?: return unavailable("La commande DJ est indisponible. Réessayez dans un instant.")
+            handler()
             return Futures.immediateVoidFuture()
         }
-        if (dj.nextStart == Long.MAX_VALUE || dj.nextStart <= 0) return null
-        scope.launch { seekTo(currentMediaItemIndex, dj.nextStart) }
-        return Futures.immediateVoidFuture()
+        if (dj.nextStart == Long.MAX_VALUE || dj.nextStart <= 0) {
+            return unavailable("Aucun titre suivant n’est disponible dans ce mix.")
+        }
+        return seekInsideDj(maxOf(dj.nextStart, dj.end))
     }
 
     /** Previous inside a DJ render restarts the track, or returns to the previous marker. */
     private fun previousInsideDj(): ListenableFuture<*>? {
         val item = currentMediaItem ?: return null
-        if (DjMediaItems.of(item) == null) return null
-        val positionMs = currentPosition
+        val dj = DjMediaItems.of(item) ?: return null
+        val positionMs = DjTimeline.position(this, dj.origin)
         val rows = DjTimeline.resumeRows(item)
         val seconds = positionMs / 1000.0
         val row = rows.indexOfFirst { it.start <= seconds && seconds < it.end }
+        fun start(index: Int) = maxOf(rows[index].start, rows.getOrNull(index - 1)?.end ?: 0.0)
         val target = when {
-            rows.isEmpty() -> return null
-            row < 0 -> rows.last().start
-            positionMs - (rows[row].start * 1000).toLong() > RESTART_MS -> rows[row].start
-            row > 0 -> rows[row - 1].start
-            else -> rows[row].start
+            rows.isEmpty() -> return unavailable("Les repères du mix ne sont pas encore disponibles.")
+            row < 0 -> return unavailable("Le repère précédent n’est plus disponible dans ce direct.")
+            positionMs - (start(row) * 1000).toLong() > RESTART_MS -> start(row)
+            row > 0 -> start(row - 1)
+            else -> start(row)
         }
-        scope.launch { seekTo(currentMediaItemIndex, (target * 1000).toLong()) }
-        return Futures.immediateVoidFuture()
+        val windowTarget = (target * 1000).toLong() - positionMs + currentPosition
+        if (windowTarget < 0) return unavailable("Le titre précédent est sorti de la fenêtre du direct.")
+        return seekInsideDj(windowTarget)
+    }
+
+    private fun seekInsideDj(positionMs: Long): ListenableFuture<*> {
+        engine.reset()
+        return super.handleSeek(currentMediaItemIndex, positionMs, Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
     }
 
     private companion object {

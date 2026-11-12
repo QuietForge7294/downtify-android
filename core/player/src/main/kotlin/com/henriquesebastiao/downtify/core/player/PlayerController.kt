@@ -13,6 +13,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionError
 import androidx.media3.session.SessionToken
 import com.henriquesebastiao.downtify.core.data.di.ApplicationScope
 import com.henriquesebastiao.downtify.core.data.library.LibraryRepository
@@ -113,6 +114,14 @@ class PlayerController @Inject constructor(
         }
     }
 
+    private val sessionListener = object : MediaController.Listener {
+        override fun onError(controller: MediaController, sessionError: SessionError) {
+            val id = sessionError.extras.getString(DjNextControl.EXTRA_DJ_ID) ?: return
+            if (DjIds.referenceOf(controller.currentMediaItem?.mediaId)?.id != id) return
+            mutableEvents.tryEmit(PlayerEvent.DjControlFailed(id, sessionError.message))
+        }
+    }
+
     init {
         main.launch {
             readAhead.state.collect { status ->
@@ -128,7 +137,9 @@ class PlayerController @Inject constructor(
         controller?.removeListener(listener)
         controller?.release()
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
-        val built = withContext(Dispatchers.Main) { MediaController.Builder(context, token).buildAsync().await() }
+        val built = withContext(Dispatchers.Main) {
+            MediaController.Builder(context, token).setListener(sessionListener).buildAsync().await()
+        }
         built.addListener(listener)
         controller = built
         refresh(queueChanged = true)
@@ -456,15 +467,9 @@ class PlayerController @Inject constructor(
         it.play()
     }
 
-    fun next() = command {
-        if (state.value.dj?.mode == "interactive") {
-            it.sendCustomCommand(SessionCommand(PlaybackService.ACTION_DJ_NEXT, Bundle.EMPTY), Bundle.EMPTY)
-        } else {
-            it.seekToNext()
-        }
-    }
+    fun next() = command { it.seekToNext() }
 
-    fun previous() = command { if (state.value.dj == null) it.seekToPrevious() }
+    fun previous() = command { it.seekToPrevious() }
 
     /** Starts a freshly shuffled queue at the first item of the permutation the player built. */
     private fun MediaController.shuffleFromHead() {

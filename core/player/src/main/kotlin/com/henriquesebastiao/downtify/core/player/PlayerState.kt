@@ -114,6 +114,7 @@ enum class PlaybackError {
 /** One-off things the UI tells the user about (a snackbar). */
 sealed interface PlayerEvent {
     data class AddedToQueue(val title: String) : PlayerEvent
+    data class DjControlFailed(val id: String, val message: String) : PlayerEvent
 }
 
 /** Just what lists need to mark the playing row — changes far less often than [PlayerState]. */

@@ -63,4 +63,5 @@ import kotlinx.serialization.Serializable
     @SerialName("effective_after_seconds") val effectiveAfterSeconds: Double = 0.0,
     @SerialName("effective_at") val effectiveAt: Double = 0.0,
     val reason: String = "",
+    @SerialName("seek_to_seconds") val seekToSeconds: Double? = null,
 )

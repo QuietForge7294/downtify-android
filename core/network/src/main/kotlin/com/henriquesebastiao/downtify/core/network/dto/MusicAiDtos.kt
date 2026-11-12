@@ -24,6 +24,7 @@ import kotlinx.serialization.Serializable
     @SerialName("home_cards") val homeCards: Boolean = false,
     @SerialName("dj_request_cancel") val djRequestCancel: Boolean = false,
     @SerialName("dj_light_status") val djLightStatus: Boolean = false,
+    @SerialName("dj_navigation") val djNavigation: Boolean = false,
     @SerialName("dj_seed_mix") val djSeedMix: Boolean = false,
 ) {
     fun enabled(feature: String) = version == 1 && features[feature] == true
