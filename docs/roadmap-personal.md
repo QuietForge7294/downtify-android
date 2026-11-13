@@ -9,7 +9,7 @@ Ce dépôt conserve les modifications et leurs preuves indépendamment de leur a
 | Accueil : titres likés, playlist, recommandation du jour | Beta9 publiée | Historique local démarrant avec cette version |
 | Accueil : Rock, Rap, Pop, Électro | En cours | Cartes ouvrant uniquement des sélections réellement disponibles |
 | Personnalisation et diversité entre mix | En cours | Vérifier favoris, écoutes, skips et rotation des artistes |
-| Trois états : désactivé, transitions 1–12 s, DJ bêta | À terminer | Libellés distincts, badge, chevauchement et animations réduites |
+| Trois états : désactivé, transitions 1–12 s, DJ bêta | Beta11 publiée | 33 tests de modes/interface passent ; badge, chevauchement réel et mouvement réduit |
 | Profils audio réutilisables | À qualifier | Couverture rythmique séparée de DCLAP, travaux incrémentaux et reprise |
 | Démarrage classique puis relais DJ | À qualifier | Deux profils initiaux, décodage progressif et premier son mesuré |
 | Sets DJ hebdomadaires audio | À terminer | Audio, repères, préparation reprenable, sauvegarde de copies immuables |
@@ -19,6 +19,8 @@ Ce dépôt conserve les modifications et leurs preuves indépendamment de leur a
 
 - Beta9, code 18 : corrections lecteur et Android Auto. Revue : https://github.com/QuietForge7294/downtify-android/pull/1.
 - Prochaine livraison : genres accessibles et mix davantage adaptés aux goûts, avec diversité vérifiée.
+- Beta10, code 19 : cartes Rock/Rap/Pop/Électro ; PR Android #3. Complément serveur en PR QuietForge7294/downtify#3, déploiement restant.
+- Beta11, code 20 : trois choix de mode, badge au-dessus de la pochette et deux pochettes pendant le chevauchement réel. Validation physique restante.
 
 ## Conditions de clôture
 

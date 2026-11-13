@@ -88,6 +88,7 @@ data class QueueActions(
     /** Play the item at `from` right after the item at `after` (player indices); `queued` = "Next in queue". */
     val onMove: (from: Int, after: Int, queued: Boolean) -> Unit = { _, _, _ -> },
     val onToggleDj: () -> Unit = {},
+    val onSelectMixMode: (PlaybackMixMode) -> Unit = {},
 )
 
 data class QueueDjState(
@@ -138,6 +139,15 @@ fun QueueScreen(
             Column(Modifier.fillMaxSize().safeDrawingPadding()) {
                 TopBar(state.context, actions.onClose)
                 if (dj.visible || state.dj != null) {
+                    PlaybackMixSelector(
+                        selected = when {
+                            state.dj != null -> PlaybackMixMode.Dj
+                            dj.local && (dj.active || dj.checking) -> PlaybackMixMode.Transitions
+                            dj.active || dj.checking -> PlaybackMixMode.Dj
+                            else -> PlaybackMixMode.Disabled
+                        },
+                        onSelect = actions.onSelectMixMode,
+                    )
                     TextButton(
                         onClick = actions.onToggleDj,
                         enabled = !dj.checking || dj.active || state.dj != null,
@@ -147,10 +157,11 @@ fun QueueScreen(
                             when {
                                 dj.preparing -> "Annuler la préparation DJ"
                                 dj.waiting -> "Annuler le relais DJ"
+                                dj.local && dj.active -> "Désactiver les transitions"
                                 dj.active || state.dj != null -> "Désactiver le mode DJ"
                                 dj.checking -> "Vérification du DJ…"
                                 !dj.ready -> "Vérifier le DJ"
-                                dj.local -> "Activer le DJ sur cet appareil"
+                                dj.local -> "Activer les transitions"
                                 else -> "Activer le DJ sur cette file"
                             },
                         )

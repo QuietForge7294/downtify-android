@@ -194,34 +194,16 @@ fun MusicStudioRoute(
                         "Les transitions et les titres restent dans votre lecteur habituel.",
                 )
                 TextButton(onClick = onSettings) { Text("Paramètres IA") }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    androidx.compose.material3.FilterChip(
-                        selected = !localDevice,
-                        onClick = {
-                            queue.chooseDevice(false)
-                        },
-                        label = {
-                            Text(
-                                androidx.compose.ui.res.stringResource(
-                                    com.henriquesebastiao.downtify.R.string.music_dj_server,
-                                ),
-                            )
-                        },
-                    )
-                    androidx.compose.material3.FilterChip(
-                        selected = localDevice,
-                        onClick = {
-                            queue.chooseDevice(true)
-                        },
-                        label = {
-                            Text(
-                                androidx.compose.ui.res.stringResource(
-                                    com.henriquesebastiao.downtify.R.string.music_dj_device_beta,
-                                ),
-                            )
-                        },
-                    )
+                val mode = when {
+                    !queueArmed && !queueBusy && !queueChecking &&
+                        queuePhase == com.henriquesebastiao.downtify.core.player.DjPhase.Classic ->
+                        com.henriquesebastiao.downtify.feature.player.PlaybackMixMode.Disabled
+
+                    localDevice -> com.henriquesebastiao.downtify.feature.player.PlaybackMixMode.Transitions
+
+                    else -> com.henriquesebastiao.downtify.feature.player.PlaybackMixMode.Dj
                 }
+                com.henriquesebastiao.downtify.feature.player.PlaybackMixSelector(mode, queue::selectMode)
                 Text(
                     androidx.compose.ui.res.stringResource(
                         if (localDevice) {
@@ -266,11 +248,17 @@ fun MusicStudioRoute(
                             queuePhase == com.henriquesebastiao.downtify.core.player.DjPhase.Ready ->
                                 "Annuler le relais DJ"
 
+                            localDevice && queueArmed -> "Désactiver les transitions"
+
                             queueArmed || queueBusy ||
                                 queuePhase == com.henriquesebastiao.downtify.core.player.DjPhase.Active ->
                                 "Désactiver le mode DJ"
 
+                            queueChecking && localDevice -> "Vérification des transitions…"
+
                             queueChecking -> "Vérification du DJ…"
+
+                            queueAvailability.ready && localDevice -> "Activer les transitions"
 
                             queueAvailability.ready -> "Activer le DJ sur la file"
 

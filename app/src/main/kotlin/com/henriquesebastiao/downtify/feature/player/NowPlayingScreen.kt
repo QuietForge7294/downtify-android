@@ -132,6 +132,9 @@ fun NowPlayingScreen(
     hasLibraryCopy: Boolean = false,
     libraryTrack: Track? = null,
     coverModifier: Modifier = Modifier,
+    mixLabel: String = "",
+    localTransition: com.henriquesebastiao.downtify.core.player.LocalDjTransition =
+        com.henriquesebastiao.downtify.core.player.LocalDjTransition(),
 ) {
     val track = state.track
     val episode = state.episode
@@ -165,6 +168,8 @@ fun NowPlayingScreen(
                         lyrics = state.dj == null && episode == null && (stream == null || hasLibraryCopy),
                         queue = episode == null,
                     )
+                    val badge = mixLabel.ifBlank { if (state.dj != null) "DJ actif" else "" }
+                    if (badge.isNotBlank()) Badge(badge)
                     // The cover takes whatever the rest leaves, square.
                     Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Artwork(
@@ -179,7 +184,7 @@ fun NowPlayingScreen(
                                 .then(coverModifier),
                         )
                     }
-                    if (state.dj != null) Badge("DJ · Bêta")
+                    PlaybackOverlap(state, localTransition)
                     TitleBlock(
                         title = track?.displayTitle ?: stream?.title ?: state.dj?.title ?: episode?.title.orEmpty(),
                         artist =
