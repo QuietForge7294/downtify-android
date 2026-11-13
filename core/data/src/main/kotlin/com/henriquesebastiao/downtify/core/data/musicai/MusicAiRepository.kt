@@ -7,6 +7,7 @@ import com.henriquesebastiao.downtify.core.network.MusicAiApi
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiCapabilitiesDto
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiListenDto
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiSelectionDto
+import com.henriquesebastiao.downtify.core.network.session.Session
 import com.henriquesebastiao.downtify.core.network.session.SessionStore
 import java.io.IOException
 import javax.inject.Inject
@@ -252,6 +253,20 @@ class MusicAiRepository @Inject constructor(
     suspend fun recommendations(seed: String = "") = call { it.recommendations(seed).tracks }
     suspend fun playlist(cadence: String, mood: String) = call { it.playlist(cadence, mood).tracks }
     suspend fun playlists() = call { it.playlists().playlists }
+    suspend fun renewPlaylists(requestId: String) {
+        val owner = sessions.current
+        if (!capabilities.value.playlistRefresh) throw MusicAiFailure(405)
+        requireOwner(owner)
+        val result =
+            call {
+                requireOwner(owner)
+                it.renewPlaylists(com.henriquesebastiao.downtify.core.network.dto.MusicAiRefreshRequestDto(requestId))
+            }
+        if (!result.accepted) throw MusicAiFailure()
+        homeMutex.withLock {
+            invalidateHome(owner)
+        }
+    }
     suspend fun home() = homeMutex.withLock {
         val owner = sessions.current ?: throw MusicAiFailure()
         val ownerKey = cache.scope(owner)
@@ -289,11 +304,15 @@ class MusicAiRepository @Inject constructor(
             }
         }
     }
-    private suspend fun invalidateHome() {
+    private fun requireOwner(expectedOwner: Session?) {
+        if (expectedOwner == null || sessions.current != expectedOwner) throw CancellationException("Account changed")
+    }
+    private suspend fun invalidateHome(expectedOwner: Session? = sessions.current) {
+        requireOwner(expectedOwner)
         homeAt = 0L
         cachedHome = null
         cachedHomeOwner = null
-        sessions.current?.let {
+        expectedOwner?.let {
             try {
                 cache.clearHome(cache.scope(it))
             } catch (_: IOException) { }

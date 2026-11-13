@@ -63,12 +63,14 @@ internal fun PlaybackOverlap(state: PlayerState, local: LocalDjTransition) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Artwork(
                 url = covers.track(outgoing, ServerUrls.COVER_SMALL),
+                crossfade = motion,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp).alpha(if (motion) 1f - .15f * progress else 1f)
                     .semantics { contentDescription = "Morceau sortant" },
             )
             Artwork(
                 url = covers.track(incoming, ServerUrls.COVER_SMALL),
+                crossfade = motion,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp).alpha(if (motion) .85f + .15f * progress else 1f)
                     .semantics { contentDescription = "Morceau entrant : $title" },

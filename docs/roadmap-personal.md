@@ -7,10 +7,10 @@ Ce dépôt conserve les modifications et leurs preuves indépendamment de leur a
 | Android Auto : file entière, doublons, aléatoire, pause | Beta9 publiée | 161 tests lecteur et 5 tests service ; validation voiture restante |
 | DJ : précédent/suivant, refus visible, pause préservée | Client beta9 publié ; serveur candidat | Revue Android #1 ; validation serveur et appareil restante |
 | Accueil : titres likés, playlist, recommandation du jour | Beta9 publiée | Historique local démarrant avec cette version |
-| Accueil : Rock, Rap, Pop, Électro | En cours | Cartes ouvrant uniquement des sélections réellement disponibles |
-| Personnalisation et diversité entre mix | En cours | Vérifier favoris, écoutes, skips et rotation des artistes |
+| Accueil : Rock, Rap, Pop, Électro | Client beta10 publié ; serveur PR #3 | Déploiement serveur et vérification du catalogue restants |
+| Personnalisation et diversité entre mix | Serveur PR #3 et #6 ; client beta12 publié | Favoris, écoutes, skips, rotation et renouvellement explicite ; déploiement restant |
 | Trois états : désactivé, transitions 1–12 s, DJ bêta | Beta11 publiée | 33 tests de modes/interface passent ; badge, chevauchement réel et mouvement réduit |
-| Profils audio réutilisables | À qualifier | Couverture rythmique séparée de DCLAP, travaux incrémentaux et reprise |
+| Profils audio réutilisables | Serveur PR #5, testé localement | 3606 tests backend passent avant le lot de renouvellement ; deux essais avec modèles réels restent exclus ; déploiement restant |
 | Démarrage classique puis relais DJ | À qualifier | Deux profils initiaux, décodage progressif et premier son mesuré |
 | Sets DJ hebdomadaires audio | À terminer | Audio, repères, préparation reprenable, sauvegarde de copies immuables |
 | Qualité des transitions et direct | À qualifier | 20 transitions multi-genres à niveau égal, heure continue et vitesse > 1,5× |
@@ -18,9 +18,9 @@ Ce dépôt conserve les modifications et leurs preuves indépendamment de leur a
 ## Livraisons
 
 - Beta9, code 18 : corrections lecteur et Android Auto. Revue : https://github.com/QuietForge7294/downtify-android/pull/1.
-- Prochaine livraison : genres accessibles et mix davantage adaptés aux goûts, avec diversité vérifiée.
 - Beta10, code 19 : cartes Rock/Rap/Pop/Électro ; PR Android #3. Complément serveur en PR QuietForge7294/downtify#3, déploiement restant.
 - Beta11, code 20 : trois choix de mode, badge au-dessus de la pochette et deux pochettes pendant le chevauchement réel. Validation physique restante.
+- Beta12, code 21 : renouvellement explicite des mixes personnels, cache protégé contre les changements de compte et réponses périmées ; réduction du mouvement appliquée aussi aux pochettes entrantes. Voir [les notes](beta12.md). Complément serveur en PR #6, non déployé.
 
 ## Conditions de clôture
 

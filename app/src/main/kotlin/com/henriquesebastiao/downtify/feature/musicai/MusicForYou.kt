@@ -72,6 +72,7 @@ data class MusicForYouActions(
     val save: (String) -> Unit = {},
     val settings: () -> Unit = {},
     val clearSelection: () -> Unit = {},
+    val renew: () -> Unit = {},
 )
 
 fun LazyListScope.musicDjThemeItems(
@@ -212,6 +213,13 @@ private fun MusicForYouHeader(state: MusicAiUiState, caps: MusicAiCapabilitiesDt
         Row {
             TextButton(onClick = actions.settings) { Text("Préférences IA") }
             TextButton(onClick = actions.refresh, enabled = !state.busy) { Text("Actualiser") }
+        }
+        if (caps.playlistRefresh && (caps.enabled("daily") || caps.enabled("weekly"))) {
+            TextButton(onClick = actions.renew, enabled = !state.busy) { Text("Renouveler mes mixes") }
+            Text(
+                "Vos favoris et écoutes guident les mixes si la personnalisation est activée. " +
+                    "Les copies enregistrées restent à vous.",
+            )
         }
         if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (state.message.isNotBlank()) Text(state.message)
