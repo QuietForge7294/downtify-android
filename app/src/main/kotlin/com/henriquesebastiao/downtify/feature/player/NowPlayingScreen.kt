@@ -124,6 +124,7 @@ data class NowPlayingActions(
 fun NowPlayingScreen(
     state: PlayerState,
     sleepActive: Boolean = false,
+    sleepDeadline: Long? = null,
     isLiked: Boolean,
     serverName: String,
     actions: NowPlayingActions,
@@ -185,6 +186,7 @@ fun NowPlayingScreen(
                         )
                     }
                     PlaybackOverlap(state, localTransition)
+                    SleepTimerStatus(sleepDeadline) { actions.onSleepTimer(null) }
                     TitleBlock(
                         title = track?.displayTitle ?: stream?.title ?: state.dj?.title ?: episode?.title.orEmpty(),
                         artist =

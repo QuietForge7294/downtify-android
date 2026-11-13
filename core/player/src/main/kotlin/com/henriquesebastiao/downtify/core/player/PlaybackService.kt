@@ -102,6 +102,8 @@ class PlaybackService : MediaLibraryService() {
 
     @Inject lateinit var loudness: LoudnessProfiles
 
+    @Inject lateinit var queueTransfer: LibraryQueueTransfer
+
     @Inject lateinit var readAhead: ReadAheadBuffer
 
     @Inject lateinit var playback: PlaybackRepository
@@ -151,7 +153,7 @@ class PlaybackService : MediaLibraryService() {
         val player = createSessionPlayer()
 
         val callback = SessionCallback()
-        session = MediaLibrarySession.Builder(this, player, callback)
+        session = MediaLibrarySession.Builder(this, DjSessionPlayer(player), callback)
             .setBitmapLoader(
                 CacheBitmapLoader(
                     DataSourceBitmapLoader(DataSourceBitmapLoader.DEFAULT_EXECUTOR_SERVICE.get(), artworkDataSource),
@@ -496,6 +498,8 @@ class PlaybackService : MediaLibraryService() {
             commands.add(likeCommand).add(shuffleFromHeadCommand).add(shuffleCommand).add(repeatCommand)
             if (own(controller)) {
                 commands.add(addToQueueCommand).add(moveInQueueCommand).add(djNextCommand)
+                    .add(SessionCommand(ACTION_PLAY_LIBRARY, Bundle.EMPTY))
+                    .add(SessionCommand(ACTION_QUEUE_DJ, Bundle.EMPTY))
             }
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailableSessionCommands(commands.build()).build()
@@ -514,7 +518,37 @@ class PlaybackService : MediaLibraryService() {
             if (!allowed) {
                 return Futures.immediateFuture(SessionResult(SessionError.ERROR_PERMISSION_DENIED))
             }
-            when (customCommand.customAction) {
+            return when (customCommand.customAction) {
+                ACTION_TOGGLE_LIKE, ACTION_SHUFFLE_FROM_HEAD, ACTION_TOGGLE_SHUFFLE,
+                ACTION_CYCLE_REPEAT, ACTION_MOVE_IN_QUEUE,
+                -> {
+                    applyPlayerCommand(session, customCommand.customAction, args)
+                    Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                }
+
+                ACTION_QUEUE_DJ -> queueDj(session, args)
+
+                ACTION_PLAY_LIBRARY -> scope.future {
+                    persistence?.awaitReady()
+                    val token = args.getString(EXTRA_QUEUE_TOKEN).orEmpty()
+                    val accepted = queueTransfer.play(token, session.player, sessions.current?.baseUrl) {
+                        sessions.current?.playbackOwner
+                    }
+                    SessionResult(if (accepted) SessionResult.RESULT_SUCCESS else SessionError.ERROR_BAD_VALUE)
+                }
+
+                ACTION_DJ_NEXT -> requestDjNext(
+                    DjIds.referenceOf(session.player.currentMediaItem?.mediaId),
+                )
+
+                ACTION_ADD_TO_QUEUE -> requestQueueAdd(session, args)
+
+                else -> super.onCustomCommand(session, controller, customCommand, args)
+            }
+        }
+
+        private fun applyPlayerCommand(session: MediaSession, action: String, args: Bundle) {
+            when (action) {
                 ACTION_TOGGLE_LIKE -> {
                     val id = session.player.currentMediaItem?.mediaId
                     if (id != null && MediaIds.isLibrary(id)) {
@@ -525,9 +559,7 @@ class PlaybackService : MediaLibraryService() {
 
                 ACTION_SHUFFLE_FROM_HEAD -> PlayOrder.startShuffled(session.player)
 
-                ACTION_TOGGLE_SHUFFLE ->
-                    session.player.shuffleModeEnabled =
-                        !session.player.shuffleModeEnabled
+                ACTION_TOGGLE_SHUFFLE -> session.player.shuffleModeEnabled = !session.player.shuffleModeEnabled
 
                 ACTION_CYCLE_REPEAT -> session.player.repeatMode = when (session.player.repeatMode) {
                     Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
@@ -535,21 +567,33 @@ class PlaybackService : MediaLibraryService() {
                     else -> Player.REPEAT_MODE_OFF
                 }
 
-                ACTION_DJ_NEXT -> return requestDjNext(
-                    DjIds.referenceOf(session.player.currentMediaItem?.mediaId),
-                )
-
-                ACTION_ADD_TO_QUEUE -> return requestQueueAdd(session, args)
-
                 ACTION_MOVE_IN_QUEUE -> QueueEdit.move(
                     session.player,
                     from = args.getInt(EXTRA_FROM, C.INDEX_UNSET),
                     after = args.getInt(EXTRA_AFTER, C.INDEX_UNSET),
                     queued = args.getBoolean(EXTRA_QUEUED),
                 )
-
-                else -> return super.onCustomCommand(session, controller, customCommand, args)
             }
+        }
+
+        private fun queueDj(session: MediaSession, args: Bundle): ListenableFuture<SessionResult> {
+            val bundled = args.getBundle(EXTRA_DJ_ITEM)
+                ?: return Futures.immediateFuture(SessionResult(SessionError.ERROR_BAD_VALUE))
+            val item = MediaItem.fromBundle(bundled)
+            val reference = DjIds.referenceOf(item.mediaId)
+            val currentSelection = args.getString(EXTRA_DJ_OWNER) == sessions.current?.playbackOwner &&
+                args.getString(EXTRA_DJ_ANCHOR) == session.player.currentMediaItem?.mediaId
+            val interactive = reference?.mode == "interactive" && musicAi.capabilities.value.enabled("dj_interactive")
+            if (!interactive || !currentSelection || reference == null) {
+                return Futures.immediateFuture(SessionResult(SessionError.ERROR_BAD_VALUE))
+            }
+            val rebuilt = DjMediaItems.from(
+                reference.id,
+                item.mediaMetadata.title?.toString().orEmpty(),
+                item.mediaMetadata.durationMs ?: 0,
+                reference.mode,
+            ).buildUpon().setMediaMetadata(item.mediaMetadata).build()
+            QueueEdit.insertNext(session.player, rebuilt)
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
         }
 
@@ -612,6 +656,12 @@ class PlaybackService : MediaLibraryService() {
     }
 
     companion object {
+        const val ACTION_QUEUE_DJ = "downtify.QUEUE_DJ"
+        const val EXTRA_DJ_ITEM = "djItem"
+        const val EXTRA_DJ_OWNER = "djOwner"
+        const val EXTRA_DJ_ANCHOR = "djAnchor"
+        const val ACTION_PLAY_LIBRARY = "downtify.PLAY_LIBRARY"
+        const val EXTRA_QUEUE_TOKEN = "queueToken"
         const val ACTION_TOGGLE_LIKE = "com.henriquesebastiao.downtify.TOGGLE_LIKE"
         const val ACTION_ADD_TO_QUEUE = "com.henriquesebastiao.downtify.ADD_TO_QUEUE"
         const val ACTION_MOVE_IN_QUEUE = "com.henriquesebastiao.downtify.MOVE_IN_QUEUE"
