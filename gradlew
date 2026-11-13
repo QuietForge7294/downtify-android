@@ -1,5 +1,14 @@
 #!/bin/sh
 
+# Downtify host resource guard: keep before any Java process is started.
+if [ -x /usr/local/bin/downtify-android-build ] && [ "$(hostname)" = opencode ]; then
+    case "$(cat /proc/self/cgroup)" in
+        */downtify-android-build.service) ;;
+        *) exec /usr/local/bin/downtify-android-build --wrapper "$0" -- "$@" ;;
+    esac
+fi
+
+
 #
 # Copyright © 2015 the original authors.
 #

@@ -1,0 +1,30 @@
+// Host-only init script. Do not apply these checks to unrelated Gradle projects.
+def location = gradle.startParameter.currentDir
+def downtify = false
+while (location != null) {
+    def settings = new File(location, 'settings.gradle.kts')
+    if (settings.isFile() && (settings.text.contains('rootProject.name = "Downtify"') ||
+            settings.text.contains('rootProject.name = "downtify-android"'))) {
+        downtify = true
+        break
+    }
+    location = location.parentFile
+}
+if (downtify && System.getenv('HOSTNAME') != 'github-actions') {
+    def group = new File('/proc/self/cgroup').text
+    if (System.getenv('DOWNTIFY_BUILD_GUARDED') != 'v1' || !group.trim().endsWith('/downtify-android-build.service')) {
+        throw new GradleException('Downtify on opencode requires ./gradlew through /usr/local/bin/downtify-android-build')
+    }
+    if (Runtime.runtime.maxMemory() > 2L * 1024 * 1024 * 1024) {
+        throw new GradleException('Gradle heap exceeds the host build budget')
+    }
+    gradle.startParameter.parallelProjectExecutionEnabled = false
+    gradle.startParameter.maxWorkerCount = Math.min(2, gradle.startParameter.maxWorkerCount)
+    allprojects {
+        tasks.withType(org.gradle.api.tasks.testing.Test).configureEach {
+            maxHeapSize = '512m'
+            maxParallelForks = 1
+            jvmArgs '-XX:ActiveProcessorCount=2'
+        }
+    }
+}
