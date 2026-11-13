@@ -10,8 +10,8 @@ android {
 
     defaultConfig {
         applicationId = "com.henriquesebastiao.downtify"
-        versionCode = 20
-        versionName = "0.4.0-beta11"
+        versionCode = 21
+        versionName = "0.4.0-beta12"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

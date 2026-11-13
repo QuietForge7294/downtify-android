@@ -71,6 +71,22 @@ class MusicAiContractTest {
         assertEquals("calme", result.playlists.single().mood)
     }
 
+    @Test fun `renewal carries an idempotency key and keeps ownership on the authenticated server`() = runTest {
+        val nonce = "9c6838a8-f53d-4816-a778-8674ed082dd7"
+        server.enqueue(MockResponse.Builder().body("""{"accepted":true,"revision":2,"removed":6}""").build())
+        val result = api.renewPlaylists(
+            com.henriquesebastiao.downtify.core.network.dto.MusicAiRefreshRequestDto(nonce),
+        )
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/v1/music-ai/playlists/refresh", request.url.encodedPath)
+        assertEquals("""{"request_id":"$nonce"}""", request.body?.utf8())
+        org.junit.Assert.assertTrue(result.accepted)
+        assertEquals(2, result.revision)
+        server.enqueue(MockResponse.Builder().body("""{"version":1}""").build())
+        assertFalse(api.capabilities().playlistRefresh)
+    }
+
     @Test fun `DJ contract uses an idempotent request and ignores arbitrary server media URLs`() = runTest {
         val id = "a".repeat(32)
         server.enqueue(

@@ -151,6 +151,7 @@ fun MusicPlaylistsRoute(
                     viewModel::save,
                     onSettings,
                     viewModel::clearSelection,
+                    viewModel::renewPlaylists,
                 ),
             )
         }
