@@ -480,9 +480,9 @@ class PlayerController @Inject constructor(
         it.play()
     }
 
-    fun next() = command { it.seekToNext() }
+    fun next() = command { DjTransport.navigate(it, previous = false) }
 
-    fun previous() = command { it.seekToPrevious() }
+    fun previous() = command { DjTransport.navigate(it, previous = true) }
 
     /** Starts a freshly shuffled queue at the first item of the permutation the player built. */
     private fun MediaController.shuffleFromHead() {

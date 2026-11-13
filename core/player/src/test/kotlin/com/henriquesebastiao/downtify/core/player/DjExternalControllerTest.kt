@@ -178,4 +178,84 @@ class DjExternalControllerTest {
             player.release()
         }
     }
+
+    private fun appSession(player: LocalDjPlayer) = MediaSession.Builder(
+        RuntimeEnvironment.getApplication(),
+        DjSessionPlayer(player),
+    ).setCallback(object : MediaSession.Callback {
+        override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo) =
+            MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                .setAvailableSessionCommands(
+                    MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
+                        .add(androidx.media3.session.SessionCommand(DjTransport.ACTION, Bundle.EMPTY)).build(),
+                ).build()
+
+        override fun onCustomCommand(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            command: androidx.media3.session.SessionCommand,
+            args: Bundle,
+        ) = if (command.customAction == DjTransport.ACTION) {
+            DjTransport.handle(session.player, args)
+        } else {
+            super.onCustomCommand(session, controller, command, args)
+        }
+    }).build()
+
+    @Test fun `app next never exposes a classic selection before the DJ command settles`() = runTest {
+        val player = LocalDjPlayer(LocalDjFakeDeck(), LocalDjFakeDeck(), this)
+        val session = appSession(player)
+        val controller = connect(session)
+        val observed = mutableListOf<String?>()
+        controller.addListener(object : androidx.media3.common.Player.Listener {
+            override fun onMediaItemTransition(item: androidx.media3.common.MediaItem?, reason: Int) {
+                observed.add(item?.mediaId)
+            }
+        })
+        try {
+            for (shuffle in listOf(false, true)) {
+                player.setMediaItems(listOf(localDjItem("before"), mix("prepared"), localDjItem("after")), 1, 0)
+                player.shuffleModeEnabled = shuffle
+                if (shuffle) player.restoreShuffleOrder(intArrayOf(1, 0, 2))
+                shadowOf(Looper.getMainLooper()).idle()
+                observed.clear()
+                val selected = controller.currentMediaItem?.mediaId
+                DjTransport.navigate(controller, previous = false)
+                assertEquals("No transient classic selection", selected, controller.currentMediaItem?.mediaId)
+                shadowOf(Looper.getMainLooper()).idle()
+                assertEquals(selected, player.currentMediaItem?.mediaId)
+                assertEquals(180_000L, player.currentPosition)
+                assertFalse(player.playWhenReady)
+                DjTransport.navigate(controller, previous = true)
+                assertEquals(selected, controller.currentMediaItem?.mediaId)
+                shadowOf(Looper.getMainLooper()).idle()
+                assertEquals(0L, player.currentPosition)
+                assertTrue("Coordinator never observes a reason to retire the mix", observed.all { it == selected })
+                assertEquals(3, player.mediaItemCount)
+            }
+        } finally {
+            controller.release()
+            session.release()
+            player.release()
+        }
+    }
+
+    @Test fun `app transport still navigates a classic queue`() = runTest {
+        val player = LocalDjPlayer(LocalDjFakeDeck(), LocalDjFakeDeck(), this)
+        player.setMediaItems(listOf(localDjItem("one"), localDjItem("two")), 0, 0)
+        val session = appSession(player)
+        val controller = connect(session)
+        try {
+            DjTransport.navigate(controller, previous = false)
+            shadowOf(Looper.getMainLooper()).idle()
+            assertEquals("two", player.currentMediaItem?.mediaId)
+            DjTransport.navigate(controller, previous = true)
+            shadowOf(Looper.getMainLooper()).idle()
+            assertEquals("one", player.currentMediaItem?.mediaId)
+        } finally {
+            controller.release()
+            session.release()
+            player.release()
+        }
+    }
 }

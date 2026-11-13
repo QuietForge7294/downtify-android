@@ -136,3 +136,35 @@ L’assemblage seul, avec les caches déjà alimentés, a ensuite réussi en
 109,503 s : pic 2 395 529 216 octets (2,23 Gio). Cette comparaison guide le
 séquençage ; les caches et tâches diffèrent, elle ne démontre pas un gain de
 vitesse à charge identique. Les plafonds restent inchangés.
+
+### Sources Kotlin modifiées : compiler avant les tâches lourdes
+
+La validation beta15 a aussi montré une forte récupération mémoire lorsque le
+compilateur Kotlin restait résident pendant les tests Robolectric. La compilation
+était achevée, mais le groupe approchait 4 Gio et sa pression complète sur dix
+secondes atteignait 82,61 %. Cette invocation a été arrêtée explicitement ; aucun
+plafond n'a été relevé.
+
+Pour les prochaines modifications Kotlin, préparer les classes dans une invocation
+séparée, puis exécuter les tests ou R8 dans une JVM fraîche. Chaque étape conserve
+le verrou et le budget global ; examiner chaque résultat avant l'étape suivante :
+
+```sh
+./gradlew --offline :core:player:compileDebugUnitTestKotlin --console=plain
+./gradlew --offline :core:player:testDebugUnitTest --console=plain
+./gradlew --offline :app:compileBetaKotlin --console=plain
+./gradlew --offline :app:assembleBeta --console=plain
+./gradlew --offline :app:lintBeta --console=plain
+```
+
+Les classes et caches sont réutilisés ; ne pas ajouter `--rerun-tasks` ou `clean`.
+Si les classes sont déjà compilées et à jour, il n'est pas nécessaire de refaire
+leur préparation. Cette séparation réduit le chevauchement des processus ; elle
+ne transforme pas les plafonds de heap en estimations de mémoire totale.
+
+Après cette séparation, la suite complète de 178 tests a réussi en 49,944 s,
+pic cgroup 2 501 959 680 octets (2,33 Gio), avec 80 tâches à jour sur 81.
+L'invocation compilation+tests interrompue avait duré 363,820 s et atteint
+4 029 194 240 octets, sans événement `max`, `oom` ou `oom_kill`. Les classes
+étaient déjà prêtes pour la mesure réussie : ce n'est pas une comparaison de
+compilation à froid, mais une preuve du budget d'exécution après séparation.

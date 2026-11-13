@@ -1,5 +1,6 @@
 package com.henriquesebastiao.downtify.core.player
 
+import android.net.Uri
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -8,6 +9,7 @@ import com.henriquesebastiao.downtify.core.model.PlaybackContextType
 import com.henriquesebastiao.downtify.core.model.Track
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -86,6 +88,140 @@ class LibraryQueueTransferTest {
             )
             assertEquals(1200, player.currentMediaItemIndex)
             assertEquals("track-1201", firstNext)
+        } finally {
+            player.release()
+        }
+    }
+
+    @Test fun `repeated context loads the whole queue after an end of catalog tap`() = runTest {
+        val deck = LocalDjPlayer(
+            ExoPlayer.Builder(RuntimeEnvironment.getApplication()).build(),
+            ExoPlayer.Builder(RuntimeEnvironment.getApplication()).build(),
+            this,
+        )
+        val player = DjSessionPlayer(deck)
+        val transfer = LibraryQueueTransfer()
+        val tracks = (0 until 1501).map(::track)
+        val selected = tracks.lastIndex - 1
+        try {
+            val first = transfer.submit("owner", tracks, 0, context, true)
+            assertTrue(transfer.play(first, player, null) { "owner" })
+            assertEquals(tracks.size, player.mediaItemCount)
+
+            val second = transfer.submit("owner", tracks, selected, context, false)
+            val accepted = transfer.play(second, player, null) { "owner" }
+            assertEquals(
+                "second selection must finish after its first batch, current index=${player.currentMediaItemIndex}",
+                tracks.size,
+                player.mediaItemCount,
+            )
+            assertTrue(accepted)
+            assertEquals(selected, player.currentMediaItemIndex)
+            assertEquals(tracks[selected].id, player.currentMediaItem?.mediaId)
+            assertEquals(
+                tracks.map { it.id },
+                (0 until player.mediaItemCount).map { player.getMediaItemAt(it).mediaId },
+            )
+        } finally {
+            player.release()
+        }
+    }
+
+    @Test fun `external replacement with the same items and context stops the old batches`() = runTest {
+        val scope = this
+        val deck = LocalDjPlayer(
+            ExoPlayer.Builder(RuntimeEnvironment.getApplication()).build(),
+            ExoPlayer.Builder(RuntimeEnvironment.getApplication()).build(),
+            this,
+        )
+        val player = DjSessionPlayer(deck)
+        val transfer = LibraryQueueTransfer()
+        val tracks = (0 until 1501).map(::track)
+        var scheduled = false
+        player.addListener(object : Player.Listener {
+            override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) {
+                if (player.mediaItemCount == 500 && !scheduled) {
+                    scheduled = true
+                    scope.launch {
+                        val sameItems = (0 until player.mediaItemCount).map(player::getMediaItemAt)
+                        player.setMediaItems(sameItems, 42, 0)
+                        player.playlistMetadata = MediaItems.contextMetadata(context)
+                        player.pause()
+                    }
+                }
+            }
+        })
+        try {
+            val token = transfer.submit("owner", tracks, 0, context, false)
+            assertFalse(transfer.play(token, player, null) { "owner" })
+            assertTrue(scheduled)
+            assertEquals(500, player.mediaItemCount)
+            assertEquals(42, player.currentMediaItemIndex)
+            assertFalse(player.playWhenReady)
+        } finally {
+            player.release()
+        }
+    }
+
+    @Test fun `clearing the first batch prevents later batches from refilling it`() = runTest {
+        val scope = this
+        val player = LocalDjPlayer(
+            ExoPlayer.Builder(RuntimeEnvironment.getApplication()).build(),
+            ExoPlayer.Builder(RuntimeEnvironment.getApplication()).build(),
+            this,
+        )
+        val transfer = LibraryQueueTransfer()
+        var scheduled = false
+        player.addListener(object : Player.Listener {
+            override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) {
+                if (player.mediaItemCount == 500 && !scheduled) {
+                    scheduled = true
+                    scope.launch { player.clearMediaItems() }
+                }
+            }
+        })
+        try {
+            val token = transfer.submit("owner", (0 until 1501).map(::track), 0, context, false)
+            assertFalse(transfer.play(token, player, null) { "owner" })
+            assertTrue(scheduled)
+            assertEquals(0, player.mediaItemCount)
+        } finally {
+            player.release()
+        }
+    }
+
+    @Test fun `metadata artwork and pause edits preserve pending batches`() = runTest {
+        val scope = this
+        val player = LocalDjPlayer(
+            ExoPlayer.Builder(RuntimeEnvironment.getApplication()).build(),
+            ExoPlayer.Builder(RuntimeEnvironment.getApplication()).build(),
+            this,
+        )
+        val transfer = LibraryQueueTransfer()
+        var scheduled = false
+        player.addListener(object : Player.Listener {
+            override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) {
+                if (player.mediaItemCount == 500 && !scheduled) {
+                    scheduled = true
+                    scope.launch {
+                        val item = player.getMediaItemAt(0)
+                        val metadata = item.mediaMetadata.buildUpon().setArtworkUri(Uri.parse("file:///cover.png"))
+                        player.replaceMediaItem(0, item.buildUpon().setMediaMetadata(metadata.build()).build())
+                        player.playlistMetadata = MediaItems.contextMetadata(context).buildUpon()
+                            .setTitle("Updated context title").build()
+                        player.pause()
+                    }
+                }
+            }
+        })
+        try {
+            val token = transfer.submit("owner", (0 until 1501).map(::track), 0, context, false)
+            assertTrue(transfer.play(token, player, null) { "owner" })
+            assertTrue(scheduled)
+            assertEquals(1501, player.mediaItemCount)
+            assertEquals(Uri.parse("file:///cover.png"), player.getMediaItemAt(0).mediaMetadata.artworkUri)
+            assertEquals("Updated context title", player.playlistMetadata.title?.toString())
+            assertFalse(player.playWhenReady)
         } finally {
             player.release()
         }

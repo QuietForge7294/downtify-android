@@ -1,6 +1,5 @@
 package com.henriquesebastiao.downtify.core.player
 
-import android.os.Bundle
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -45,6 +44,12 @@ class LibraryQueueTransfer @Inject constructor() {
         val request = pending?.takeIf { it.token == token } ?: return false
         pending = null
         if (!current(request, owner)) return false
+        val deck = when (player) {
+            is DjSessionPlayer -> player.deck
+            is LocalDjPlayer -> player
+            else -> return false
+        }
+        var generation = deck.queueGeneration
         // Materialize shuffle once over ALL occurrences, before batching. Appending must never
         // insert new occurrences before the current shuffle position (Media3's default behavior).
         val ordered = withContext(Dispatchers.Default) {
@@ -58,8 +63,11 @@ class LibraryQueueTransfer @Inject constructor() {
         for (chunk in indices.chunked(BATCH_SIZE)) {
             val batch = if (request.shuffle) chunk else chunk.sorted()
             val items = withContext(Dispatchers.Default) { batch.map { MediaItems.from(ordered[it], baseUrl) } }
-            if (!currentQueue(request, owner, player, installed)) return false
+            if (!currentQueue(request, owner, deck, generation)) return false
             if (installed == 0) {
+                // Only our setMediaItems may advance this generation. A replacement made by
+                // another controller, including during listener callbacks, owns the new queue.
+                generation++
                 installFirst(player, request, items, batch.indexOf(initialStart))
             } else {
                 appendBatch(
@@ -77,8 +85,8 @@ class LibraryQueueTransfer @Inject constructor() {
             }
             loadedBefore += batch.count { it < initialStart }
             installed += items.size
-            if (!current(request, owner)) return false
-            retainAppendOrder(request, player)
+            if (!currentQueue(request, owner, deck, generation)) return false
+            retainAppendOrder(request, deck)
             if (installed == items.size) {
                 player.prepare()
                 player.play()
@@ -86,24 +94,16 @@ class LibraryQueueTransfer @Inject constructor() {
             // Let pause, navigation and the UI run between bounded updates. Never play() again.
             delay(25)
         }
-        return current(request, owner)
+        return currentQueue(request, owner, deck, generation)
     }
 
     private fun current(request: Request, owner: () -> String?) = active == request.token && owner() == request.owner
 
-    private fun currentQueue(request: Request, owner: () -> String?, player: Player, installed: Int) =
-        current(request, owner) &&
-            (installed == 0 || player.playlistMetadata.extras?.getString(LOAD_TOKEN) == request.token)
+    private fun currentQueue(request: Request, owner: () -> String?, player: LocalDjPlayer, generation: Long) =
+        current(request, owner) && player.queueGeneration == generation
 
-    private fun retainAppendOrder(request: Request, player: Player) {
-        val deck = when (player) {
-            is DjSessionPlayer -> player.deck
-            is LocalDjPlayer -> player
-            else -> null
-        }
-        if (request.shuffle && deck != null) {
-            deck.restoreShuffleOrder(IntArray(player.mediaItemCount) { it })
-        }
+    private fun retainAppendOrder(request: Request, player: LocalDjPlayer) {
+        if (request.shuffle) player.restoreShuffleOrder(IntArray(player.mediaItemCount) { it })
     }
 
     private fun installFirst(player: Player, request: Request, items: List<MediaItem>, start: Int) {
@@ -111,10 +111,7 @@ class LibraryQueueTransfer @Inject constructor() {
         player.setPlaybackSpeed(1f)
         player.shuffleModeEnabled = request.shuffle
         if (request.shuffle) player.repeatMode = PlayOrder.repeatAfterShuffle(player.repeatMode)
-        val metadata = MediaItems.contextMetadata(request.from)
-        player.playlistMetadata = metadata.buildUpon().setExtras(
-            Bundle(metadata.extras ?: Bundle.EMPTY).apply { putString(LOAD_TOKEN, request.token) },
-        ).build()
+        player.playlistMetadata = MediaItems.contextMetadata(request.from)
     }
 
     private fun appendBatch(player: Player, items: List<MediaItem>, before: Int, loadedBefore: Int) {
@@ -124,6 +121,5 @@ class LibraryQueueTransfer @Inject constructor() {
 
     companion object {
         const val BATCH_SIZE = 500
-        private const val LOAD_TOKEN = "queueLoadToken"
     }
 }
