@@ -1,0 +1,11 @@
+[Unit]
+Description=Global resource budget for Downtify Android builds
+
+[Slice]
+MemoryAccounting=yes
+MemoryHigh=3584M
+MemoryMax=4G
+MemorySwapMax=0
+CPUAccounting=yes
+CPUQuota=200%
+TasksMax=256
