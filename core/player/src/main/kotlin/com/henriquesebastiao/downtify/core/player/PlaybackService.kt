@@ -500,6 +500,7 @@ class PlaybackService : MediaLibraryService() {
                 commands.add(addToQueueCommand).add(moveInQueueCommand).add(djNextCommand)
                     .add(SessionCommand(ACTION_PLAY_LIBRARY, Bundle.EMPTY))
                     .add(SessionCommand(ACTION_QUEUE_DJ, Bundle.EMPTY))
+                    .add(SessionCommand(DjTransport.ACTION, Bundle.EMPTY))
             }
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailableSessionCommands(commands.build()).build()
@@ -525,6 +526,8 @@ class PlaybackService : MediaLibraryService() {
                     applyPlayerCommand(session, customCommand.customAction, args)
                     Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
                 }
+
+                DjTransport.ACTION -> DjTransport.handle(session.player, args)
 
                 ACTION_QUEUE_DJ -> queueDj(session, args)
 

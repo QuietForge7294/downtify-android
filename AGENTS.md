@@ -11,6 +11,10 @@ parallélisme désactivé, JDK du lanceur. Aucun daemon de build ne doit survivr
 à son unité. Lire le reçu après un échec, notamment OOM, avant toute adaptation.
 Ne pas augmenter les plafonds pour obtenir du vert sans mesure et justification.
 
+Après une modification Kotlin, séparer la compilation, les tests et R8 en
+invocations protégées distinctes pour libérer le compilateur entre les étapes.
+Lire les commandes et mesures dans `docs/android-build-budget.md`.
+
 Préserver les caches, APK, signatures et modifications des autres travaux.
 Pas de `clean`, purge des dépendances ou émulateur par défaut. Un seul travail lourd.
 Les instructions SSH/PVE et d’audit du propriétaire restent applicables.

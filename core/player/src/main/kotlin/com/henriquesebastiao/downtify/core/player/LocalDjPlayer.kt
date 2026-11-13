@@ -33,6 +33,8 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
     private val dominant = kotlinx.coroutines.flow.MutableStateFlow(first)
     val dominantDecoder = dominant.asStateFlow()
     private val occurrenceIds = MutableList(first.mediaItemCount) { Any() }
+    internal var queueGeneration = 0L
+        private set
     private val engine = LocalDjEngine(first, second) {
         setPlayer(it)
         dominant.value = it
@@ -218,6 +220,7 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
         startIndex: Int,
         startPositionMs: Long,
     ): ListenableFuture<*> {
+        queueGeneration++
         engine.reset()
         occurrenceIds.clear()
         repeat(mediaItems.size) { occurrenceIds.add(Any()) }
@@ -250,6 +253,7 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
     }
 
     override fun handleRemoveMediaItems(fromIndex: Int, toIndex: Int): ListenableFuture<*> {
+        if (fromIndex == 0 && toIndex == mediaItemCount && toIndex > 0) queueGeneration++
         engine.reset()
         occurrenceIds.subList(fromIndex, toIndex).clear()
         return super.handleRemoveMediaItems(fromIndex, toIndex)
