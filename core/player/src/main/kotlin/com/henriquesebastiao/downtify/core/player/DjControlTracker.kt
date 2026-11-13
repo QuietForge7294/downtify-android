@@ -128,7 +128,7 @@ internal class DjControlTracker(
                 }
             }
             val owner = music.session.value
-            if (retired.mode == "interactive") {
+            if (retired.mode == "interactive" || music.capabilities.value.djAssetConsumers) {
                 scope.launch {
                     commands.withLock {
                         if (owner == music.session.value && current != retired) {

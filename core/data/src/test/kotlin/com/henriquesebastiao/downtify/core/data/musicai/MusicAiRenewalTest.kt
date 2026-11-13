@@ -61,6 +61,46 @@ class MusicAiRenewalTest {
         music.refresh(force = true)
     }
 
+    @Test fun `weekly creation refuses capabilities retained from another account`() = runTest {
+        server.enqueue(
+            MockResponse.Builder().body(
+                """{"version":1,"dj_weekly_sets":true,
+                    "features":{"weekly":true,"dj_prepared":true,"dj_weekly":true}}""",
+            ).build(),
+        )
+        music.refresh(force = true)
+        paired.value = requireNotNull(paired.value).copy(token = "different-fixture")
+        var cancelled = false
+        try {
+            music.djPrepareWeekly("rock", "stale-account")
+        } catch (_: CancellationException) {
+            cancelled = true
+        }
+        assertTrue(cancelled)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test fun `weekly creation keeps its explicit idempotent intent`() = runTest {
+        server.enqueue(
+            MockResponse.Builder().body(
+                """{"version":1,"dj_weekly_sets":true,
+                    "features":{"weekly":true,"dj_prepared":true,"dj_weekly":true}}""",
+            ).build(),
+        )
+        music.refresh(force = true)
+        server.takeRequest()
+        server.enqueue(
+            MockResponse.Builder().body(
+                """{"id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","state":"queued",
+                    "theme":"energie","weekly_theme":"rock"}""",
+            ).build(),
+        )
+        assertEquals("rock", music.djPrepareWeekly("rock", "same-intent").weeklyTheme)
+        val request = server.takeRequest()
+        assertEquals("/api/v1/music-ai/dj/weekly/rock", request.url.encodedPath)
+        assertEquals("""{"request_id":"same-intent"}""", request.body?.utf8())
+    }
+
     @Test fun `renewal invalidates a home response already in flight`() = runTest {
         supported()
         val entered = CountDownLatch(1)

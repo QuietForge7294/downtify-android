@@ -10,9 +10,9 @@ Ce dépôt conserve les modifications et leurs preuves indépendamment de leur a
 | Accueil : Rock, Rap, Pop, Électro | Client beta10 publié ; serveur PR #3 | Déploiement serveur et vérification du catalogue restants |
 | Personnalisation et diversité entre mix | Serveur PR #3 et #6 ; client beta12 publié | Favoris, écoutes, skips, rotation et renouvellement explicite ; déploiement restant |
 | Trois états : désactivé, transitions 1–12 s, DJ bêta | Beta11 publiée | 33 tests de modes/interface passent ; badge, chevauchement réel et mouvement réduit |
-| Profils audio réutilisables | Serveur PR #5, testé localement | 3606 tests backend passent avant le lot de renouvellement ; deux essais avec modèles réels restent exclus ; déploiement restant |
+| Profils audio réutilisables | Serveur PR #5/#8/#9, vrais modèles testés | Suite de 3635 tests réussis sans exclusion de modèles, puis 3654 avec les ensembles audio ; déploiement restant |
 | Démarrage classique puis relais DJ | À qualifier | Deux profils initiaux, décodage progressif et premier son mesuré |
-| Sets DJ hebdomadaires audio | À terminer | Audio, repères, préparation reprenable, sauvegarde de copies immuables |
+| Sets DJ hebdomadaires audio | Serveur PR #8/#10 et client beta13 construits | Dix thèmes, quatre propositions, audio/repères, progression et copies nommées ; déploiement et validation physique restants |
 | Qualité des transitions et direct | À qualifier | 20 transitions multi-genres à niveau égal, heure continue et vitesse > 1,5× |
 
 ## Livraisons
@@ -21,6 +21,7 @@ Ce dépôt conserve les modifications et leurs preuves indépendamment de leur a
 - Beta10, code 19 : cartes Rock/Rap/Pop/Électro ; PR Android #3. Complément serveur en PR QuietForge7294/downtify#3, déploiement restant.
 - Beta11, code 20 : trois choix de mode, badge au-dessus de la pochette et deux pochettes pendant le chevauchement réel. Validation physique restante.
 - Beta12, code 21 : renouvellement explicite des mixes personnels, cache protégé contre les changements de compte et réponses périmées ; réduction du mouvement appliquée aussi aux pochettes entrantes. Voir [les notes](beta12.md). Complément serveur en PR #6, non déployé.
+- Beta13, code 22 : ensembles audio DJ hebdomadaires et copies nommées. APK local vérifié ; publication externe en attente de confirmation. Voir [les notes](beta13.md). Complément serveur en PR #10, non déployé.
 
 ## Conditions de clôture
 
