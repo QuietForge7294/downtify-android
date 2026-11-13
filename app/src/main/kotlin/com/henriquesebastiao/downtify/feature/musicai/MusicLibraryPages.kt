@@ -139,6 +139,7 @@ fun MusicPlaylistsRoute(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = 16.dp).plusBottomBars(),
         ) {
+            if (caps.djWeeklySets) item("weekly-dj-sets") { WeeklyDjSection(featured = false) }
             musicForYouItems(
                 state,
                 caps,

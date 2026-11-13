@@ -11,6 +11,36 @@ import org.junit.Before
 import org.junit.Test
 
 class MusicAiContractTest {
+    @Test fun `weekly DJ sets and named copies preserve authenticated ownership and idempotency`() = runTest {
+        server.enqueue(
+            MockResponse.Builder().body(
+                """{"period":"2026-11-09","cards":[{"theme":"rock","session":null}],"featured":["rock"],"copies":[]}""",
+            ).build(),
+        )
+        val weekly = api.djWeekly()
+        assertEquals("rock", weekly.cards.single().theme)
+        assertEquals("GET", server.takeRequest().method)
+        val id = "a".repeat(32)
+        val body = """{"id":"$id","state":"ready","theme":"energie","title":"Mon rock","immutable_copy":true}"""
+        server.enqueue(MockResponse.Builder().body(body).build())
+        val copy = api.djCopy(
+            id,
+            com.henriquesebastiao.downtify.core.network.dto.MusicDjCopyDto("same-intent", "Mon rock"),
+        )
+        val request = server.takeRequest()
+        assertEquals("/api/v1/music-ai/dj/sessions/$id/copies", request.url.encodedPath)
+        assertEquals("""{"request_id":"same-intent","name":"Mon rock"}""", request.body?.utf8())
+        assertEquals("Mon rock", copy.title)
+        org.junit.Assert.assertTrue(copy.immutableCopy)
+        server.enqueue(MockResponse.Builder().body(body).build())
+        api.djPrepareWeekly(
+            "rock",
+            com.henriquesebastiao.downtify.core.network.dto.MusicDjPrepareWeeklyDto("prepare-intent"),
+        )
+        val prepare = server.takeRequest()
+        assertEquals("/api/v1/music-ai/dj/weekly/rock", prepare.url.encodedPath)
+        assertEquals("""{"request_id":"prepare-intent"}""", prepare.body?.utf8())
+    }
     private val server = MockWebServer()
     private val api get() = ApiFactory(OkHttpClient()).createMusicAi(server.url("/").toString())
 

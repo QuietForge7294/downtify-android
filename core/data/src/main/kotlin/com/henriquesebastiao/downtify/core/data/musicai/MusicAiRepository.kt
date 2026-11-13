@@ -71,6 +71,7 @@ class MusicAiRepository @Inject constructor(
     private val refreshMutex = Mutex()
     private var refreshedAt = 0L
     private var loadedOwner: String? = null
+    private var capabilitiesOwner: Session? = null
     private val homeMutex = Mutex()
     private var cachedHome: List<com.henriquesebastiao.downtify.core.network.dto.MusicAiPlaylistDto>? = null
     private var cachedHomeOwner: String? = null
@@ -84,6 +85,7 @@ class MusicAiRepository @Inject constructor(
                 val owner = paired?.let(cache::scope)
                 if (owner != loadedOwner) {
                     loadedOwner = owner
+                    capabilitiesOwner = null
                     mutableCapabilities.value = MusicAiCapabilitiesDto()
                     refreshedAt = 0L
                     homeAt = 0L
@@ -95,7 +97,10 @@ class MusicAiRepository @Inject constructor(
                         val saved = cache.capabilities(owner)
                         val cards = cache.home(owner)
                         if (sessions.current == paired) {
-                            if (refreshedAt == 0L && saved != null) mutableCapabilities.value = saved
+                            if (refreshedAt == 0L && saved != null) {
+                                capabilitiesOwner = paired
+                                mutableCapabilities.value = saved
+                            }
                             if (cachedHomeOwner != owner &&
                                 cards != null
                             ) {
@@ -130,6 +135,7 @@ class MusicAiRepository @Inject constructor(
             }
         }
         if (sessions.current == paired) {
+            capabilitiesOwner = paired
             mutableCapabilities.value = found
             refreshedAt = now
             try {
@@ -140,6 +146,49 @@ class MusicAiRepository @Inject constructor(
     }
 
     suspend fun preferences() = call { it.preferences().preferences }
+    suspend fun djWeekly(): com.henriquesebastiao.downtify.core.network.dto.MusicDjWeeklyDto {
+        val owner = sessions.current
+        requireWeeklyOwner(owner)
+        return call {
+            requireWeeklyOwner(owner)
+            it.djWeekly()
+        }
+    }
+    suspend fun djPrepareWeekly(
+        theme: String,
+        requestId: String,
+    ): com.henriquesebastiao.downtify.core.network.dto.MusicDjSessionDto {
+        val owner = sessions.current
+        requireWeeklyOwner(owner)
+        return call {
+            requireWeeklyOwner(owner)
+            it.djPrepareWeekly(
+                theme,
+                com.henriquesebastiao.downtify.core.network.dto.MusicDjPrepareWeeklyDto(requestId),
+            )
+        }
+    }
+    suspend fun djCopy(
+        id: String,
+        name: String,
+        requestId: String,
+    ): com.henriquesebastiao.downtify.core.network.dto.MusicDjSessionDto {
+        val owner = sessions.current
+        requireWeeklyOwner(owner)
+        if (!capabilities.value.djAssetCopies) throw MusicAiFailure(405)
+        return call {
+            requireWeeklyOwner(owner)
+            it.djCopy(id, com.henriquesebastiao.downtify.core.network.dto.MusicDjCopyDto(requestId, name))
+        }
+    }
+    private fun requireWeeklyOwner(owner: Session?) {
+        requireOwner(owner)
+        if (capabilitiesOwner != owner) throw CancellationException("Account capabilities changed")
+        val caps = capabilities.value
+        if (!caps.djWeeklySets || !listOf("weekly", "dj_prepared", "dj_weekly").all(caps::enabled)) {
+            throw MusicAiFailure(405)
+        }
+    }
     suspend fun djSessions() = call { it.djSessions(capabilities.value.djLightStatus).sessions }
     suspend fun djCreate(theme: String, count: Int, requestId: String, mode: String = "prepared") = call {
         it.djCreate(

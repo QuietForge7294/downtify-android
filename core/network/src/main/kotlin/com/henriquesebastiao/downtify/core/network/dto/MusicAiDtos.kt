@@ -27,6 +27,9 @@ import kotlinx.serialization.Serializable
     @SerialName("dj_navigation") val djNavigation: Boolean = false,
     @SerialName("dj_seed_mix") val djSeedMix: Boolean = false,
     @SerialName("playlist_refresh") val playlistRefresh: Boolean = false,
+    @SerialName("dj_weekly_sets") val djWeeklySets: Boolean = false,
+    @SerialName("dj_asset_copies") val djAssetCopies: Boolean = false,
+    @SerialName("dj_asset_consumers") val djAssetConsumers: Boolean = false,
 ) {
     fun enabled(feature: String) = version == 1 && features[feature] == true
     fun interactiveAvailable() =
