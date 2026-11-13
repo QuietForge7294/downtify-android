@@ -62,10 +62,10 @@ internal class PlaybackPersistence(
                         state.index,
                         state.positionMs,
                     )
+                    player.shuffleModeEnabled = state.shuffle
                     val restoredOrder = state.shuffleOrder.toIntArray()
                     if (player is ExoPlayer) player.setShuffleOrder(DefaultShuffleOrder(restoredOrder, 0L))
                     if (player is LocalDjPlayer) player.restoreShuffleOrder(restoredOrder)
-                    player.shuffleModeEnabled = state.shuffle
                     player.repeatMode = state.repeatMode
                     player.setPlaybackSpeed(state.speed)
                     player.playlistMetadata = state.context?.let(MediaItems::contextMetadata) ?: MediaMetadata.EMPTY

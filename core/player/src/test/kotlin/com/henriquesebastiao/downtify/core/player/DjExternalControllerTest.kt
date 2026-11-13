@@ -62,7 +62,7 @@ class DjExternalControllerTest {
 
     @Test fun `controller next and previous preserve prepared mix and pause across 25 cycles`() = runTest {
         val player = LocalDjPlayer(LocalDjFakeDeck(), LocalDjFakeDeck(), this)
-        val session = MediaSession.Builder(RuntimeEnvironment.getApplication(), player).build()
+        val session = MediaSession.Builder(RuntimeEnvironment.getApplication(), DjSessionPlayer(player)).build()
         val controller = connect(session)
         try {
             repeat(25) {
@@ -88,6 +88,67 @@ class DjExternalControllerTest {
         }
     }
 
+    @Test fun `real decoder controller next never selects the saved classic queue`() = runTest {
+        val app = RuntimeEnvironment.getApplication()
+        val player = LocalDjPlayer(
+            androidx.media3.exoplayer.ExoPlayer.Builder(app).build(),
+            androidx.media3.exoplayer.ExoPlayer.Builder(app).build(),
+            this,
+        )
+        val session = MediaSession.Builder(app, DjSessionPlayer(player)).build()
+        val controller = connect(session)
+        try {
+            for (shuffle in listOf(false, true)) {
+                player.setMediaItems(listOf(localDjItem("before"), mix("prepared"), localDjItem("after")), 1, 0)
+                player.shuffleModeEnabled = shuffle
+                if (shuffle) player.restoreShuffleOrder(intArrayOf(1, 0, 2))
+                shadowOf(Looper.getMainLooper()).idle()
+                controller.seekToNext()
+                shadowOf(Looper.getMainLooper()).idle()
+                assertEquals("next, shuffle=$shuffle", 1, player.currentMediaItemIndex)
+                assertEquals("next marker", 180_000L, player.currentPosition)
+                player.seekTo(1, 0)
+                shadowOf(Looper.getMainLooper()).idle()
+                assertFalse(player.playWhenReady)
+                controller.seekToDefaultPosition(if (shuffle) 0 else 2)
+                shadowOf(Looper.getMainLooper()).idle()
+                assertEquals("translated next-index command, shuffle=$shuffle", 1, player.currentMediaItemIndex)
+                assertEquals("translated next marker", 180_000L, player.currentPosition)
+            }
+        } finally {
+            controller.release()
+            session.release()
+            player.release()
+        }
+    }
+
+    @Test fun `controller navigates prepared markers with no classic item after the mix`() = runTest {
+        val app = RuntimeEnvironment.getApplication()
+        val player = LocalDjPlayer(
+            androidx.media3.exoplayer.ExoPlayer.Builder(app).build(),
+            androidx.media3.exoplayer.ExoPlayer.Builder(app).build(),
+            this,
+        )
+        player.setMediaItem(mix("prepared"))
+        val session = MediaSession.Builder(app, DjSessionPlayer(player)).build()
+        val controller = connect(session)
+        try {
+            assertTrue(controller.isCommandAvailable(androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT))
+            controller.seekToNext()
+            shadowOf(Looper.getMainLooper()).idle()
+            assertEquals(180_000L, player.currentPosition)
+            assertEquals(0, player.currentMediaItemIndex)
+            assertFalse(player.playWhenReady)
+            controller.seekToPrevious()
+            shadowOf(Looper.getMainLooper()).idle()
+            assertEquals(0L, player.currentPosition)
+        } finally {
+            controller.release()
+            session.release()
+            player.release()
+        }
+    }
+
     @Test fun `controller receives a refusal without leaving the interactive mix`() = runTest {
         val player = LocalDjPlayer(LocalDjFakeDeck(), LocalDjFakeDeck(), this)
         player.setMediaItems(listOf(mix("interactive"), localDjItem("classic")), 0, 0)
@@ -98,7 +159,7 @@ class DjExternalControllerTest {
         )
         every { music.capabilities } returns MutableStateFlow(MusicAiCapabilitiesDto(djNavigation = true))
         coEvery { music.djCommand(id, "next", any()) } throws MusicAiFailure(409)
-        val session = MediaSession.Builder(RuntimeEnvironment.getApplication(), player).build()
+        val session = MediaSession.Builder(RuntimeEnvironment.getApplication(), DjSessionPlayer(player)).build()
         val next = DjNextControl(music, this, { player }, session::sendError)
         player.setDjNextHandler { next.request(DjIds.referenceOf(player.currentMediaItem?.mediaId)) }
         val errors = mutableListOf<SessionError>()

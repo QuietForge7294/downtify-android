@@ -621,6 +621,7 @@ private fun NowPlayingOverlay(
             NowPlayingScreen(
                 state = state,
                 sleepActive = sleepDeadline != null,
+                sleepDeadline = sleepDeadline,
                 isLiked = isLiked,
                 serverName = serverName,
                 downloadJob = streamJob,

@@ -109,3 +109,30 @@ lancé pour ce contrôle. Le reçu complet et les préimages restent privés dan
 `/var/lib/downtify-build-guard`. Aucun déploiement n’a été effectué pour cette
 intervention. Un build réussi ne constitue pas une validation fonctionnelle
 du téléphone ou d’Android Auto.
+
+## Séparer les étapes de validation
+
+Lancer tests, assemblage APK et Lint dans des invocations protégées distinctes,
+successivement, après vérification de chaque résultat. Ne pas les regrouper dans
+une JVM de livraison unique. Exemple :
+
+```sh
+./gradlew --offline :core:player:testDebugUnitTest --console=plain
+./gradlew --offline :app:assembleBeta --console=plain
+./gradlew --offline :app:lintBeta --console=plain
+```
+
+Ces lignes représentent trois étapes manuelles ; un refus ou échec interrompt la
+procédure et doit être examiné avant la suivante. Aucune relance en boucle.
+
+Lors de la validation beta14, une invocation regroupant tests d’interface, Lint
+et assemblage a atteint 3 975 Mio environ, avec pression mémoire complète du
+groupe à 73,54 % sur dix secondes et avertissement Metaspace. Elle a été arrêtée
+explicitement après 649,825 s : code 143, aucun événement OOM ni dépassement dur.
+Seule l’unité du build concerné a été arrêtée ; aucun plafond n’a augmenté.
+
+L’assemblage seul, avec les caches déjà alimentés, a ensuite réussi en
+343,572 s : pic 3 756 191 744 octets (3,50 Gio). Lint séparé a réussi en
+109,503 s : pic 2 395 529 216 octets (2,23 Gio). Cette comparaison guide le
+séquençage ; les caches et tâches diffèrent, elle ne démontre pas un gain de
+vitesse à charge identique. Les plafonds restent inchangés.
