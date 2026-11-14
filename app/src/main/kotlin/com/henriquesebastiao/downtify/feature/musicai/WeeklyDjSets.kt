@@ -201,6 +201,8 @@ private fun WeeklyDjDetails(
     val ready = session?.state == "ready"
     val preparing = session?.state in setOf("queued", "preparing", "rendering")
     val title = weeklyTitle(theme, session)
+    var copying by rememberSaveable(session?.id) { mutableStateOf(false) }
+    var copyName by rememberSaveable(session?.id) { mutableStateOf(title) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -220,7 +222,15 @@ private fun WeeklyDjDetails(
                 if (ready) {
                     TextButton(onClick = { onPlay(session) }, enabled = !busy) { Text("Écouter $title") }
                     if (caps.djAssetCopies && !savedCopy && !session.immutableCopy) {
-                        CopySetForm(session, title, busy, onSave)
+                        CopySetForm(
+                            session = session,
+                            name = copyName,
+                            expanded = copying,
+                            busy = busy,
+                            onExpand = { copying = it },
+                            onName = { copyName = it },
+                            onSave = onSave,
+                        )
                     }
                 } else if (!preparing && !savedCopy) {
                     TextButton(onClick = { onPrepare(theme) }, enabled = !busy && caps.dj.preparedReady) {
@@ -245,18 +255,19 @@ private fun weeklyStatus(session: MusicDjSessionDto?) = when (session?.state) {
 @Composable
 private fun CopySetForm(
     session: MusicDjSessionDto,
-    title: String,
+    name: String,
+    expanded: Boolean,
     busy: Boolean,
+    onExpand: (Boolean) -> Unit,
+    onName: (String) -> Unit,
     onSave: (MusicDjSessionDto, String) -> Unit,
 ) {
-    var expanded by rememberSaveable(session.id) { mutableStateOf(false) }
-    var name by rememberSaveable(session.id) { mutableStateOf(title) }
     if (!expanded) {
-        TextButton(onClick = { expanded = true }, enabled = !busy) { Text("Enregistrer une copie") }
+        TextButton(onClick = { onExpand(true) }, enabled = !busy) { Text("Enregistrer une copie") }
     } else {
         OutlinedTextField(
             value = name,
-            onValueChange = { if (it.length <= 160) name = it },
+            onValueChange = { if (it.length <= 160) onName(it) },
             label = { Text("Nom de la copie") },
             enabled = !busy,
             singleLine = true,
@@ -266,7 +277,7 @@ private fun CopySetForm(
             TextButton(onClick = {
                 onSave(session, name)
             }, enabled = !busy && name.isNotBlank()) { Text("Conserver l’audio") }
-            TextButton(onClick = { expanded = false }, enabled = !busy) { Text("Annuler") }
+            TextButton(onClick = { onExpand(false) }, enabled = !busy) { Text("Annuler") }
         }
     }
 }
