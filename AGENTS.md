@@ -19,3 +19,15 @@ Préserver les caches, APK, signatures et modifications des autres travaux.
 Pas de `clean`, purge des dépendances ou émulateur par défaut. Un seul travail lourd.
 Les instructions SSH/PVE et d’audit du propriétaire restent applicables.
 Procédure et retour arrière : `docs/android-build-budget.md`.
+
+# Livraison et qualification USB réutilisables
+
+Lire `docs/testing/automation.md` avant une livraison ou une campagne téléphone.
+Les scripts partagés sont dans `tools/automation/` ; leurs tests ne lancent ni Gradle ni ADB.
+Regrouper la qualification physique après les changements constituant le candidat final.
+Réutiliser les reçus réussis de sources identiques et les cas USB terminés ; ne pas réinstaller
+ou rejouer une campagne pour un simple compte rendu. Un crash, une étape interrompue ou un
+code 75 impose l'examen des preuves, sans boucle de relance. Un timeout d'observation ne
+prouve pas l'arrêt du build : contrôler l'unité existante avant toute autre construction.
+Un seul build lourd protégé et un seul pilote USB ; seules les lectures et vérifications
+légères indépendantes peuvent être parallélisées. Ne pas publier les preuves privées.

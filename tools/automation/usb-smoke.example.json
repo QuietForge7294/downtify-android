@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "description": "Open the verified app's large internal queue and pause it before running. This plan changes no playback state.",
+  "cases": [
+    {
+      "id": "large-queue-paused",
+      "steps": [
+        {"op": "queue_count", "expect": {"min": 27000, "max": 29000}},
+        {"op": "media", "expect": {"state": "PAUSED", "legacy_queue": 0}},
+        {"op": "wait", "seconds": 10},
+        {"op": "media", "expect": {"state": "PAUSED", "legacy_queue": 0}},
+        {"op": "capture"}
+      ],
+      "manual_checks": ["audible_pause", "real_android_auto"]
+    }
+  ]
+}
