@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.isRoot
@@ -14,6 +15,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.printToString
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
@@ -94,16 +96,17 @@ class WeeklyDjShelfTest {
         compose.onNodeWithText("Écouter Set DJ · Rock").performClick()
         assertEquals(session.id, played)
         assertEquals("", saved)
-        compose.onNodeWithText("Enregistrer une copie").performScrollTo().performClick()
-        // Keep cursor blinking from advancing virtual frames indefinitely while editing.
+        // Exercise the accessible action explicitly; physical taps are qualified on the phone.
+        // Bound virtual frames while editing to avoid retaining unbounded Robolectric traces.
         compose.mainClock.autoAdvance = false
+        compose.onNodeWithText("Enregistrer une copie").performSemanticsAction(SemanticsActions.OnClick) { it() }
         compose.mainClock.advanceTimeBy(100)
         check(compose.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().size == 1) {
             compose.onAllNodes(isRoot(), useUnmergedTree = true).printToString(maxDepth = 20)
         }
         compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("Mon rock préféré")
         compose.mainClock.advanceTimeByFrame()
-        compose.onNodeWithText("Conserver l’audio").performScrollTo().performClick()
+        compose.onNodeWithText("Conserver l’audio").performSemanticsAction(SemanticsActions.OnClick) { it() }
         assertEquals("${session.id}:Mon rock préféré", saved)
     }
 
