@@ -7,6 +7,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.SimpleBasePlayer.State
+import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -33,6 +34,8 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
     private val dominant = kotlinx.coroutines.flow.MutableStateFlow(first)
     val dominantDecoder = dominant.asStateFlow()
     private val occurrenceIds = MutableList(first.mediaItemCount) { Any() }
+    private var occurrenceRevision = 0L
+    private var stableTimeline: LocalDjTimeline? = null
     internal var queueGeneration = 0L
         private set
     private val engine = LocalDjEngine(first, second) {
@@ -87,6 +90,7 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
         setEnabled(false)
         engine.setPlaying(false)
         clearMediaItems()
+        occurrenceRevision++
         occurrenceIds.clear()
     }
 
@@ -102,18 +106,18 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
     override fun getState(): State {
         val state = super.getState()
         if (!initialized) return state
-        while (occurrenceIds.size < state.playlist.size) occurrenceIds.add(Any())
-        val stable = state.playlist.mapIndexed { index, row ->
-            val builder = row.buildUpon().setUid(occurrenceIds[index])
-            if (row.mediaItem.localConfiguration?.uri?.let(MediaItems::trackIdOf) !=
-                null
-            ) {
-                builder.setPeriods(emptyList())
-            }
-            builder.build()
+        if (occurrenceIds.size < state.timeline.windowCount) occurrenceRevision++
+        while (occurrenceIds.size < state.timeline.windowCount) occurrenceIds.add(Any())
+        val stable = stableTimeline?.takeIf { it.matches(state.timeline, occurrenceRevision) } ?: run {
+            LocalDjTimeline(state.timeline, occurrenceIds.toList(), occurrenceRevision).also { stableTimeline = it }
         }
         val commands = state.availableCommands.buildUpon()
-        if (DjIds.referenceOf(state.playlist.getOrNull(state.currentMediaItemIndex)?.mediaItem?.mediaId) != null) {
+        val currentItem = if (state.currentMediaItemIndex in 0 until state.timeline.windowCount) {
+            state.timeline.getWindow(state.currentMediaItemIndex, Timeline.Window()).mediaItem
+        } else {
+            null
+        }
+        if (DjIds.referenceOf(currentItem?.mediaId) != null) {
             commands.addAll(
                 Player.COMMAND_SEEK_TO_NEXT,
                 Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
@@ -121,9 +125,8 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
                 Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
             )
         }
-        val normalized = state.buildUpon().setPlaylist(stable).setAvailableCommands(commands.build()).build()
-        return normalized.buildUpon().setPlaylist(
-            LocalDjTimeline(normalized.timeline, state.timeline),
+        return state.buildUpon().setAvailableCommands(commands.build()).setPlaylist(
+            stable,
             engine.active.currentTracks,
             engine.active.mediaMetadata,
         ).setVolume(engine.volume)
@@ -222,6 +225,7 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
     ): ListenableFuture<*> {
         queueGeneration++
         engine.reset()
+        occurrenceRevision++
         occurrenceIds.clear()
         repeat(mediaItems.size) { occurrenceIds.add(Any()) }
         return super.handleSetMediaItems(mediaItems, startIndex, startPositionMs)
@@ -229,12 +233,14 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
 
     override fun handleAddMediaItems(index: Int, mediaItems: List<MediaItem>): ListenableFuture<*> {
         engine.reset()
+        occurrenceRevision++
         occurrenceIds.addAll(index, List(mediaItems.size) { Any() })
         return super.handleAddMediaItems(index, mediaItems)
     }
 
     override fun handleMoveMediaItems(fromIndex: Int, toIndex: Int, newIndex: Int): ListenableFuture<*> {
         engine.reset()
+        occurrenceRevision++
         val moved = occurrenceIds.subList(fromIndex, toIndex).toList()
         occurrenceIds.subList(fromIndex, toIndex).clear()
         occurrenceIds.addAll(newIndex, moved)
@@ -247,6 +253,7 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
         mediaItems: List<MediaItem>,
     ): ListenableFuture<*> {
         engine.reset()
+        occurrenceRevision++
         occurrenceIds.subList(fromIndex, toIndex).clear()
         occurrenceIds.addAll(fromIndex, List(mediaItems.size) { Any() })
         return super.handleReplaceMediaItems(fromIndex, toIndex, mediaItems)
@@ -255,6 +262,7 @@ class LocalDjPlayer(first: Player, second: Player, private val scope: CoroutineS
     override fun handleRemoveMediaItems(fromIndex: Int, toIndex: Int): ListenableFuture<*> {
         if (fromIndex == 0 && toIndex == mediaItemCount && toIndex > 0) queueGeneration++
         engine.reset()
+        occurrenceRevision++
         occurrenceIds.subList(fromIndex, toIndex).clear()
         return super.handleRemoveMediaItems(fromIndex, toIndex)
     }
