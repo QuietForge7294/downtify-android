@@ -8,7 +8,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNode
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -94,8 +96,8 @@ class WeeklyDjShelfTest {
         compose.onNodeWithText("Enregistrer une copie").performScrollTo().performClick()
         // Keep cursor blinking from advancing virtual frames indefinitely while editing.
         compose.mainClock.autoAdvance = false
-        compose.mainClock.advanceTimeByFrame()
-        compose.onNodeWithText("Nom de la copie").performScrollTo().performTextReplacement("Mon rock préféré")
+        compose.mainClock.advanceTimeBy(100)
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("Mon rock préféré")
         compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithText("Conserver l’audio").performScrollTo().performClick()
         assertEquals("${session.id}:Mon rock préféré", saved)
