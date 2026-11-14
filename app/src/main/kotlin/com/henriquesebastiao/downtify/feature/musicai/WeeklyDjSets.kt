@@ -3,9 +3,13 @@ package com.henriquesebastiao.downtify.feature.musicai
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -19,6 +23,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -73,6 +80,8 @@ internal fun WeeklyDjShelf(
 ) {
     if (!caps.weeklySetsEnabled()) return
     val weekly = state.weekly
+    var selectedTheme by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedCopy by rememberSaveable { mutableStateOf<String?>(null) }
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row {
             Text("Pour vous DJ", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
@@ -87,68 +96,141 @@ internal fun WeeklyDjShelf(
             } else {
                 weekly.cards
             }
-            for (card in cards) {
-                WeeklyDjCard(card.theme, card.session, state.busy, caps, onPlay, onPrepare, onSave)
+            WeeklyDjTiles(cards.map { it.theme to it.session }) { theme, _ ->
+                selectedTheme = theme
+                selectedCopy = null
             }
             if (!featured && weekly.copies.isNotEmpty()) {
                 Text("Mes sets enregistrés", style = MaterialTheme.typography.titleMedium)
-                for (copy in weekly.copies) {
-                    WeeklyDjCard(
-                        copy.weeklyTheme.ifBlank {
-                            copy.theme
-                        },
-                        copy,
-                        state.busy,
-                        caps,
-                        onPlay,
-                        onPrepare,
-                        onSave,
-                    )
+                WeeklyDjTiles(weekly.copies.map { it.weeklyTheme.ifBlank { it.theme } to it }) { _, copy ->
+                    selectedCopy = copy?.id
+                    selectedTheme = null
                 }
             }
         }
         if (state.message.isNotBlank()) Text(state.message, style = MaterialTheme.typography.bodySmall)
     }
+    val copy = weekly?.copies?.firstOrNull { it.id == selectedCopy }
+    val card = weekly?.cards?.firstOrNull { it.theme == selectedTheme }
+    if (copy != null || card != null) {
+        WeeklyDjDetails(
+            theme = copy?.let { it.weeklyTheme.ifBlank { it.theme } } ?: card!!.theme,
+            session = copy ?: card?.session,
+            savedCopy = copy != null,
+            busy = state.busy,
+            caps = caps,
+            onDismiss = {
+                selectedTheme = null
+                selectedCopy = null
+            },
+            onPlay = onPlay,
+            onPrepare = onPrepare,
+            onSave = onSave,
+        )
+    }
 }
+
+@Composable
+private fun WeeklyDjTiles(
+    items: List<Pair<String, MusicDjSessionDto?>>,
+    onOpen: (String, MusicDjSessionDto?) -> Unit,
+) {
+    for (row in items.chunked(2)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            for ((theme, session) in row) {
+                WeeklyDjCard(theme, session, Modifier.weight(1f)) { onOpen(theme, session) }
+            }
+            if (row.size == 1) Spacer(Modifier.weight(1f))
+        }
+    }
+}
+
+private fun weeklyTitle(theme: String, session: MusicDjSessionDto?) =
+    session?.title?.ifBlank { null } ?: "Set DJ · ${moodNames[theme] ?: theme}"
 
 @Composable
 private fun WeeklyDjCard(
     theme: String,
     session: MusicDjSessionDto?,
+    modifier: Modifier = Modifier,
+    onOpen: () -> Unit,
+) {
+    val title = weeklyTitle(theme, session)
+    Card(onClick = onOpen, modifier = modifier.semantics { contentDescription = "Détails de $title" }) {
+        MusicMoodArt(
+            theme,
+            "weekly",
+            Modifier.fillMaxWidth().height(144.dp),
+            subtitle = "DJ : ${moodNames[theme] ?: theme}",
+            compact = true,
+        )
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (session != null) WeeklyDjMetadata(session)
+            Text(
+                weeklyStatus(session),
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun WeeklyDjMetadata(session: MusicDjSessionDto) {
+    val minutes = (session.duration.coerceAtLeast(0.0) / 60).toInt()
+    Text(
+        "${session.trackCount ?: session.tracks.size} titres · $minutes min",
+        style = MaterialTheme.typography.bodySmall,
+    )
+}
+
+@Composable
+private fun WeeklyDjDetails(
+    theme: String,
+    session: MusicDjSessionDto?,
+    savedCopy: Boolean,
     busy: Boolean,
     caps: MusicAiCapabilitiesDto,
+    onDismiss: () -> Unit,
     onPlay: (MusicDjSessionDto) -> Unit,
     onPrepare: (String) -> Unit,
     onSave: (MusicDjSessionDto, String) -> Unit,
 ) {
     val ready = session?.state == "ready"
     val preparing = session?.state in setOf("queued", "preparing", "rendering")
-    val title = session?.title?.ifBlank { null } ?: "Set DJ · ${moodNames[theme] ?: theme}"
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            MusicMoodArt(theme, "weekly", Modifier.fillMaxWidth().height(104.dp), subtitle = "SET DJ", compact = true)
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            if (session != null) {
-                val minutes = (session.duration.coerceAtLeast(0.0) / 60).toInt()
-                Text("${session.trackCount ?: session.tracks.size} titres · $minutes min")
-            }
-            Text(weeklyStatus(session))
-            if (preparing) {
-                LinearProgressIndicator(
-                    progress = { (session?.progress ?: 0.0).toFloat().coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            if (ready) {
-                TextButton(onClick = { onPlay(session) }, enabled = !busy) { Text("Écouter $title") }
-                if (caps.djAssetCopies && !session.immutableCopy) CopySetForm(session, title, busy, onSave)
-            } else if (!preparing) {
-                TextButton(onClick = { onPrepare(theme) }, enabled = !busy && caps.dj.preparedReady) {
-                    Text("Préparer ${moodNames[theme] ?: theme}")
+    val title = weeklyTitle(theme, session)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (session != null) WeeklyDjMetadata(session)
+                Text(weeklyStatus(session))
+                if (preparing) {
+                    LinearProgressIndicator(
+                        progress = { (session?.progress ?: 0.0).toFloat().coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                if (ready) {
+                    TextButton(onClick = { onPlay(session) }, enabled = !busy) { Text("Écouter $title") }
+                    if (caps.djAssetCopies && !savedCopy && !session.immutableCopy) {
+                        CopySetForm(session, title, busy, onSave)
+                    }
+                } else if (!preparing && !savedCopy) {
+                    TextButton(onClick = { onPrepare(theme) }, enabled = !busy && caps.dj.preparedReady) {
+                        Text("Préparer ${moodNames[theme] ?: theme}")
+                    }
                 }
             }
-        }
-    }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Fermer") } },
+    )
 }
 
 private fun weeklyStatus(session: MusicDjSessionDto?) = when (session?.state) {

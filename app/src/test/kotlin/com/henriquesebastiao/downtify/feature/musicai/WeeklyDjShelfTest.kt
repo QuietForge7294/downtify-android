@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -84,6 +85,9 @@ class WeeklyDjShelfTest {
             }
         }
         assertEquals("", saved)
+        compose.onNodeWithContentDescription("Détails de Set DJ · Rock").performClick()
+        assertEquals("", played)
+        assertEquals("", saved)
         compose.onNodeWithText("Écouter Set DJ · Rock").performClick()
         assertEquals(session.id, played)
         assertEquals("", saved)
@@ -106,9 +110,52 @@ class WeeklyDjShelfTest {
             }
         }
         assertEquals("", prepared)
+        compose.onNodeWithContentDescription("Détails de Set DJ · Pop").performClick()
+        assertEquals("", prepared)
         compose.onNodeWithText("Préparer Pop").performClick()
         assertEquals("pop", prepared)
         compose.runOnIdle { busy = true }
         compose.onNodeWithText("Préparer Pop").assertIsNotEnabled()
+    }
+
+    @Test fun openDetailsFollowTheLatestWeeklySessionWithoutStartingPlayback() {
+        var current by mutableStateOf(weekly.copy(cards = listOf(MusicDjWeeklyCardDto("pop"))))
+        var played = ""
+        compose.setContent {
+            DowntifyTheme {
+                WeeklyDjShelf(MusicDjUiState(weekly = current), caps, false, onPlay = { played = it.id })
+            }
+        }
+        compose.onNodeWithContentDescription("Détails de Set DJ · Pop").performClick()
+        compose.onNodeWithText("Écouter Set DJ · Pop").assertDoesNotExist()
+        val preparing = session.copy(id = "b".repeat(32), state = "rendering", progress = 0.6)
+        compose.runOnIdle { current = current.copy(cards = listOf(MusicDjWeeklyCardDto("pop", preparing))) }
+        compose.onNodeWithText("Préparer Pop").assertDoesNotExist()
+        compose.onNodeWithText("Écouter Set DJ · Pop").assertDoesNotExist()
+        val ready = preparing.copy(id = "c".repeat(32), state = "ready", progress = 1.0)
+        compose.runOnIdle { current = current.copy(cards = listOf(MusicDjWeeklyCardDto("pop", ready))) }
+        assertEquals("", played)
+        compose.onNodeWithText("Écouter Set DJ · Pop").performClick()
+        assertEquals(ready.id, played)
+    }
+
+    @Test fun unavailableSavedCopyCannotPrepareOrSaveAnotherWeeklySet() {
+        var prepared = ""
+        val copy = session.copy(id = "d".repeat(32), title = "Mon set", state = "expired", immutableCopy = true)
+        compose.setContent {
+            DowntifyTheme {
+                WeeklyDjShelf(
+                    MusicDjUiState(weekly = weekly.copy(copies = listOf(copy))),
+                    caps,
+                    false,
+                    onPrepare = { prepared = it },
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("Détails de Mon set").performClick()
+        compose.onNodeWithText("Préparer Rock").assertDoesNotExist()
+        compose.onNodeWithText("Enregistrer une copie").assertDoesNotExist()
+        compose.onNodeWithText("Écouter Mon set").assertDoesNotExist()
+        assertEquals("", prepared)
     }
 }
