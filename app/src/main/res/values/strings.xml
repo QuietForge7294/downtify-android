@@ -564,4 +564,8 @@
     <string name="music_dj_device_beta">Transitions</string>
     <string name="music_dj_local_description">Local crossfade from 1 to 12 seconds, 5 seconds by default. Rhythmic DJ uses the server. No model is downloaded automatically.</string>
     <string name="music_dj_server_description">The server prepares transitions. Your phone plays the authenticated audio stream.</string>
+    <plurals name="player_queue_item_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
 </resources>

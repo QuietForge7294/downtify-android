@@ -136,6 +136,7 @@ class PlaybackService : MediaLibraryService() {
     private var prefetch: StreamPrefetchTracker? = null
     private var warmer: TranscodeWarmer? = null
     private var persistence: PlaybackPersistence? = null
+    private val legacyQueue = LegacyQueuePolicy()
     private val likeCommand = SessionCommand(ACTION_TOGGLE_LIKE, Bundle.EMPTY)
     private val addToQueueCommand = SessionCommand(ACTION_ADD_TO_QUEUE, Bundle.EMPTY)
     private val moveInQueueCommand = SessionCommand(ACTION_MOVE_IN_QUEUE, Bundle.EMPTY)
@@ -179,6 +180,9 @@ class PlaybackService : MediaLibraryService() {
             DefaultMediaNotificationProvider(this).apply { setSmallIcon(R.drawable.ic_notification) },
         )
 
+        // Connect the notification controller before any saved or requested queue is installed.
+        addSession(checkNotNull(session))
+
         listens = ListenTracker(player, reporter, scope) { context ->
             val owner = sessions.current?.playbackOwner
             scope.launch(Dispatchers.IO) { carHistory.record(context, owner) }
@@ -202,7 +206,13 @@ class PlaybackService : MediaLibraryService() {
         stopDisabledDj(player)
         stopWhenSignedOut(player)
         removeDeletedLibraryTracks(player)
-        persistence = PlaybackPersistence(player, playback, sessions, scope).also { it.start() }
+        persistence = PlaybackPersistence(
+            player,
+            playback,
+            sessions,
+            scope,
+            legacyQueue::beforeRestore,
+        ).also { it.start() }
     }
 
     private fun createSessionPlayer(): LocalDjPlayer {
@@ -449,6 +459,7 @@ class PlaybackService : MediaLibraryService() {
             startIndex: Int,
             startPositionMs: Long,
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> = scope.future {
+            legacyQueue.awaitReady()
             persistence?.awaitReady()
             if (own(controller) && mediaItems.none {
                     it.requestMetadata.searchQuery != null || it.mediaId.startsWith("auto:")
@@ -464,11 +475,17 @@ class PlaybackService : MediaLibraryService() {
             }
         }
 
+        override fun onPostConnect(session: MediaSession, controller: MediaSession.ControllerInfo) {
+            legacyQueue.onPostConnect(session, controller)
+            super.onPostConnect(session, controller)
+        }
+
         override fun onPlaybackResumption(
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
             isForPlayback: Boolean,
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> = scope.future {
+            legacyQueue.awaitReady()
             if (!isForPlayback &&
                 (mediaSession.isAutoCompanionController(controller) || mediaSession.isAutomotiveController(controller))
             ) {
@@ -501,9 +518,11 @@ class PlaybackService : MediaLibraryService() {
                     .add(SessionCommand(ACTION_PLAY_LIBRARY, Bundle.EMPTY))
                     .add(SessionCommand(ACTION_QUEUE_DJ, Bundle.EMPTY))
                     .add(SessionCommand(DjTransport.ACTION, Bundle.EMPTY))
+                    .add(SessionCommand(DjClassicReturn.ACTION, Bundle.EMPTY))
             }
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
-                .setAvailableSessionCommands(commands.build()).build()
+                .setAvailableSessionCommands(commands.build())
+                .setAvailablePlayerCommands(legacyQueue.commands(session, controller)).build()
         }
 
         override fun onCustomCommand(
@@ -527,11 +546,23 @@ class PlaybackService : MediaLibraryService() {
                     Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
                 }
 
+                DjClassicReturn.ACTION -> DjClassicReturn.handle(
+                    session.player,
+                    args,
+                    sessions.current?.baseUrl.orEmpty(),
+                ) { id ->
+                    library.library.value?.byId?.get(id)?.let { MediaItems.from(it, sessions.current?.baseUrl) }
+                }
+
                 DjTransport.ACTION -> DjTransport.handle(session.player, args)
 
-                ACTION_QUEUE_DJ -> queueDj(session, args)
+                ACTION_QUEUE_DJ -> scope.future {
+                    legacyQueue.awaitReady()
+                    queueDj(session, args).await()
+                }
 
                 ACTION_PLAY_LIBRARY -> scope.future {
+                    legacyQueue.awaitReady()
                     persistence?.awaitReady()
                     val token = args.getString(EXTRA_QUEUE_TOKEN).orEmpty()
                     val accepted = queueTransfer.play(token, session.player, sessions.current?.baseUrl) {
@@ -544,7 +575,10 @@ class PlaybackService : MediaLibraryService() {
                     DjIds.referenceOf(session.player.currentMediaItem?.mediaId),
                 )
 
-                ACTION_ADD_TO_QUEUE -> requestQueueAdd(session, args)
+                ACTION_ADD_TO_QUEUE -> scope.future {
+                    legacyQueue.awaitReady()
+                    requestQueueAdd(session, args).await()
+                }
 
                 else -> super.onCustomCommand(session, controller, customCommand, args)
             }
@@ -619,8 +653,9 @@ class PlaybackService : MediaLibraryService() {
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
             mediaItems: MutableList<MediaItem>,
-        ): ListenableFuture<MutableList<MediaItem>> {
-            if (!own(controller)) return scope.future { carAddItems(mediaItems).toMutableList() }
+        ): ListenableFuture<MutableList<MediaItem>> = scope.future {
+            legacyQueue.awaitReady()
+            if (!own(controller)) return@future carAddItems(mediaItems).toMutableList()
             val snapshot = library.library.value
             val baseUrl = sessions.current?.baseUrl
             val resolved = mediaItems.mapNotNull { item ->
@@ -654,7 +689,7 @@ class PlaybackService : MediaLibraryService() {
                         it.mediaId.isNotEmpty()
                     }?.let { it.buildUpon().setUri(MediaItems.uriFor(it.mediaId)).build() }
             }
-            return Futures.immediateFuture(resolved.toMutableList())
+            resolved.toMutableList()
         }
     }
 
