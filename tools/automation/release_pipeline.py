@@ -80,10 +80,32 @@ def test_counts(repo):
     return totals
 
 
-def execute(repo, directory, until):
+def configure_sdk(repo, requested=None):
+    value = requested or os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
+    properties = repo / "local.properties"
+    if not value and properties.is_file():
+        for line in properties.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("sdk.dir="):
+                value = line.strip().split("=", 1)[1].replace("\\:", ":").replace("\\\\", "\\")
+                value = repo / value
+                break
+    if not value:
+        raise ValueError("Android SDK missing: use --sdk PATH, ANDROID_HOME or sdk.dir. No build started.")
+    path = Path(value).resolve()
+    platforms = list((path / "platforms").glob("*/android.jar"))
+    tools = list((path / "build-tools").glob("*/aapt2")) + list((path / "build-tools").glob("*/aapt2.exe"))
+    if not platforms or not tools:
+        raise ValueError("Android SDK platform/build-tools unavailable. Reuse an installed SDK; no automatic download.")
+    os.environ["ANDROID_HOME"] = str(path)
+    os.environ["ANDROID_SDK_ROOT"] = str(path)
+    return str(path)
+
+
+def execute(repo, directory, until, sdk=None):
     if sys.platform != "linux" or not GUARD.is_file():
         raise ValueError("Build execution requires the installed opencode Linux guard.")
     plan = verified_plan(directory, repo)
+    sdk_path = configure_sdk(repo, sdk) if list(STAGES).index(until) >= list(STAGES).index("player-compile") else None
     with lock(directory / "pipeline.lock"):
         for stage, tasks in STAGES.items():
             receipt_path = directory / (stage + ".json")
@@ -97,7 +119,7 @@ def execute(repo, directory, until):
                 argv = [str(GUARD), "--wrapper", str(repo / "gradlew"), "--", "--offline", *tasks, "--console=plain"]
                 # Prints the full future invocation before running it. SSH callers must also announce it in chat.
                 print(json.dumps({"stage": stage, "command": argv}), flush=True)
-                receipt = {"stage": stage, "plan_sha256": plan["plan_sha256"], "status": "running"}
+                receipt = {"stage": stage, "plan_sha256": plan["plan_sha256"], "status": "running", "sdk_path": sdk_path}
                 save(receipt_path, receipt)
                 old_latest = digest(LATEST) if LATEST.exists() else None
                 before = time.monotonic()
@@ -210,6 +232,7 @@ def main():
     parser.add_argument("--aapt", type=Path)
     parser.add_argument("--apksigner", type=Path)
     parser.add_argument("--certificate")
+    parser.add_argument("--sdk", type=Path, help="Existing Android SDK; never downloaded or modified by this tool")
     args = parser.parse_args()
     repo = args.repo.resolve()
     directory = private_directory(args.out, repo)
@@ -223,7 +246,7 @@ def main():
         save(directory / "plan.json", plan)
         print(json.dumps(plan, indent=2))
     elif args.action == "run":
-        execute(repo, directory, args.until)
+        execute(repo, directory, args.until, args.sdk)
     else:
         if not all((args.apk, args.aapt, args.apksigner, args.certificate)):
             parser.error("certify requires --apk --aapt --apksigner --certificate")

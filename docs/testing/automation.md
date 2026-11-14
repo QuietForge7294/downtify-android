@@ -30,8 +30,16 @@ Depuis le checkout Linux opencode, choisir un nouveau dossier privé **hors chec
 
 ```sh
 python3 tools/automation/release_pipeline.py plan --out /root/downtify-runs/CANDIDAT --label CANDIDAT
-python3 tools/automation/release_pipeline.py run --out /root/downtify-runs/CANDIDAT --until player-tests
+python3 tools/automation/release_pipeline.py run --out /root/downtify-runs/CANDIDAT --sdk /opt/android-sdk --until player-tests
 ```
+
+Le SDK opencode existant a été vérifié dans `/opt/android-sdk`. `--sdk` configure uniquement
+l'environnement du processus et des enfants du garde-fou. À défaut, le pilote utilise
+`ANDROID_HOME`, `ANDROID_SDK_ROOT` ou `sdk.dir` dans `local.properties`, sans réécrire ce fichier.
+Pour une campagne comprenant une compilation, il contrôle plateformes et build-tools avant
+tout Gradle. Un SDK absent arrête le lot immédiatement, sans téléchargement automatique.
+Les contrôles format/statique seuls et les rapports historiques n'exigent pas de SDK.
+Ce précontrôle répond à un échec observé en SSH non interactif : SDK installé mais non transmis.
 
 Le plan imprime les tâches. Le pilote appelle exclusivement
 `/usr/local/bin/downtify-android-build --wrapper /chemin/absolu/gradlew -- --offline TACHE --console=plain`.
@@ -42,7 +50,7 @@ Le plan imprime les tâches. Le pilote appelle exclusivement
 Pour poursuivre le même plan après la préparation du candidat final :
 
 ```sh
-python3 tools/automation/release_pipeline.py run --out /root/downtify-runs/CANDIDAT
+python3 tools/automation/release_pipeline.py run --out /root/downtify-runs/CANDIDAT --sdk /opt/android-sdk
 ```
 
 Le contenu de tous les fichiers suivis et non ignorés, y compris les sources non committées,

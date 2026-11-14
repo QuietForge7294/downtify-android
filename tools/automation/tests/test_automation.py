@@ -2,6 +2,7 @@ import contextlib
 import datetime as dt
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -205,11 +206,11 @@ class AutomationTest(unittest.TestCase):
                 patch.object(release, "run", return_value=subprocess.CompletedProcess([], 75)) as call, \
                 contextlib.redirect_stdout(io.StringIO()):
             with self.assertRaises(ValueError):
-                release.execute(self.root, self.root, "lint")
+                release.execute(self.root, self.root, "static")
             self.assertEqual(call.call_count, 1)
             self.assertEqual(support.load(self.root / "format.json")["return_code"], 75)
             with self.assertRaises(ValueError):
-                release.execute(self.root, self.root, "lint")
+                release.execute(self.root, self.root, "static")
             self.assertEqual(call.call_count, 1)
 
     def test_apk_must_match_guarded_assembly_before_signature_tools_run(self):
@@ -280,6 +281,42 @@ class AutomationTest(unittest.TestCase):
         self.assertEqual(result["stages"][1]["recorded_status"], "NOT_RUN")
         self.assertFalse(result["source_revalidated"])
         self.assertFalse(result["live_process_state_checked"])
+
+    def test_missing_sdk_stops_before_any_guard_invocation(self):
+        with patch.dict(os.environ, {"ANDROID_HOME": "", "ANDROID_SDK_ROOT": ""}), \
+                patch.object(release.sys, "platform", "linux"), patch.object(release, "GUARD", Path(__file__)), \
+                patch.object(release, "verified_plan", return_value={"plan_sha256": "fixture"}), \
+                patch.object(release, "run") as call:
+            with self.assertRaisesRegex(ValueError, "SDK missing"):
+                release.execute(self.root, self.root, "player-tests")
+            call.assert_not_called()
+
+    def test_existing_sdk_passed_to_children_without_modifying_properties(self):
+        sdk = self.root / "sdk"
+        (sdk / "platforms/android-36").mkdir(parents=True)
+        (sdk / "build-tools/36.0.0").mkdir(parents=True)
+        (sdk / "platforms/android-36/android.jar").write_bytes(b"fixture")
+        (sdk / "build-tools/36.0.0/aapt2").write_bytes(b"fixture")
+        with patch.dict(os.environ, {"ANDROID_HOME": "", "ANDROID_SDK_ROOT": ""}):
+            self.assertEqual(release.configure_sdk(self.root, sdk), str(sdk.resolve()))
+            self.assertEqual(os.environ["ANDROID_HOME"], str(sdk.resolve()))
+            self.assertEqual(os.environ["ANDROID_SDK_ROOT"], str(sdk.resolve()))
+        self.assertFalse((self.root / "local.properties").exists())
+
+    def test_sdk_without_platform_and_build_tools_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "platform/build-tools"):
+            release.configure_sdk(self.root, self.root)
+
+    def test_local_properties_sdk_is_read_without_rewriting_it(self):
+        (self.root / "sdk/platforms/android-36").mkdir(parents=True)
+        (self.root / "sdk/build-tools/36.0.0").mkdir(parents=True)
+        (self.root / "sdk/platforms/android-36/android.jar").write_bytes(b"fixture")
+        (self.root / "sdk/build-tools/36.0.0/aapt2").write_bytes(b"fixture")
+        original = "sdk.dir=sdk\nother.setting=retained\n"
+        (self.root / "local.properties").write_text(original)
+        with patch.dict(os.environ, {"ANDROID_HOME": "", "ANDROID_SDK_ROOT": ""}):
+            self.assertEqual(release.configure_sdk(self.root), str((self.root / "sdk").resolve()))
+        self.assertEqual((self.root / "local.properties").read_text(), original)
 
 
 if __name__ == "__main__":
