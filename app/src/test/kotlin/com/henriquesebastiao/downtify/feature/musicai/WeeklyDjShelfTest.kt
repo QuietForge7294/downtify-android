@@ -94,6 +94,7 @@ class WeeklyDjShelfTest {
         compose.onNodeWithText("Enregistrer une copie").performScrollTo().performClick()
         // Keep cursor blinking from advancing virtual frames indefinitely while editing.
         compose.mainClock.autoAdvance = false
+        compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithText("Nom de la copie").performScrollTo().performTextReplacement("Mon rock préféré")
         compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithText("Conserver l’audio").performScrollTo().performClick()
