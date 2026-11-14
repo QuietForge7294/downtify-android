@@ -183,3 +183,12 @@ action. Position-aware navigation is sent only when the server advertises
 occurrences retain separate mix markers. See the [controller checks and remaining
 physical acceptance](docs/android-auto.md). This candidate does not establish
 first-sound P95, battery behavior or one-hour real-time musical qualification.
+
+Weekly DJ cards now open a dedicated playlist page in the normal navigation,
+keeping the shared player available. The page shows the cover, duration, state
+and tracks of the selected set. Listening, preparation and saving a named audio
+copy are explicit actions; simply opening a card does none of them. Only that
+set's details are fetched, and obsolete responses are retired when the selection,
+account or feature availability changes. See the [weekly DJ playlist checks](docs/testing/weekly-dj-playlist.md)
+and [copy-dialog regression](docs/testing/weekly-dj-copy-dialog.md). These source
+checks do not qualify an APK, phone performance, Android Auto or rendered audio.

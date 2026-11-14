@@ -116,6 +116,7 @@ fun MusicPlaylistsRoute(
     onOpenPlaylist: (String, String) -> Unit = { c, m -> viewModel.mood(c, m) },
     onArtist: (String) -> Unit = {},
     onAlbum: (String) -> Unit = {},
+    onOpenWeeklyDj: (String, String) -> Unit = { _, _ -> },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val caps by viewModel.capabilities.collectAsStateWithLifecycle()
@@ -139,7 +140,11 @@ fun MusicPlaylistsRoute(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = 16.dp).plusBottomBars(),
         ) {
-            if (caps.djWeeklySets) item("weekly-dj-sets") { WeeklyDjSection(featured = false) }
+            if (caps.djWeeklySets) {
+                item("weekly-dj-sets") {
+                    WeeklyDjSection(featured = false, onOpenSet = onOpenWeeklyDj)
+                }
+            }
             musicForYouItems(
                 state,
                 caps,

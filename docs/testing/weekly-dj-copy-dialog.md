@@ -40,7 +40,8 @@ remained 512 MiB and the group limit remained 4 GiB.
 
 ## Remaining work
 
-The details still use a dialog. A full playlist page with its track list, visual
-review on a phone, APK/R8/Lint release gates, Android Auto, audio quality, and
-long-running playback qualification remain separate work. Passing this regression
-check does not qualify those features or imply a new APK has been delivered.
+Production cards now navigate to the [weekly DJ playlist page](weekly-dj-playlist.md).
+The embedded dialog and its regression checks remain covered. Visual review on
+a phone, APK/R8/Lint release gates, Android Auto, audio quality, and long-running
+playback qualification remain separate work. Passing these source checks does
+not qualify those features or imply a new APK has been delivered.

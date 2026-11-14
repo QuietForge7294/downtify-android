@@ -93,6 +93,7 @@ fun HomeRoute(
     onOpenForYou: () -> Unit = {},
     onOpenMoodPlaylist: (String, String) -> Unit = { _, _ -> },
     onOpenDj: () -> Unit = {},
+    onOpenWeeklyDj: (String, String) -> Unit = { _, _ -> },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val musicAi: MusicAiViewModel = hiltViewModel()
@@ -121,7 +122,11 @@ fun HomeRoute(
         forYouContent = {
             if (aiCaps.djWeeklySets) {
                 item(key = "weekly-dj-sets") {
-                    com.henriquesebastiao.downtify.feature.musicai.WeeklyDjSection(true, onOpenForYou)
+                    com.henriquesebastiao.downtify.feature.musicai.WeeklyDjSection(
+                        true,
+                        onOpenForYou,
+                        onOpenSet = onOpenWeeklyDj,
+                    )
                 }
             }
             if (listOf("daily", "weekly", "personalization").any(aiCaps::enabled)) {

@@ -10,6 +10,7 @@ import com.henriquesebastiao.downtify.core.player.PlayerController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +30,9 @@ data class MusicDjUiState(
     val busy: Boolean = false,
     val message: String = "",
     val weekly: com.henriquesebastiao.downtify.core.network.dto.MusicDjWeeklyDto? = null,
+    val details: MusicDjSessionDto? = null,
+    val detailsLoading: Boolean = false,
+    val detailsMessage: String = "",
 )
 
 @HiltViewModel
@@ -46,6 +50,8 @@ class MusicDjViewModel @Inject constructor(
     private var ownBusy = false
     private var pending: Pair<Triple<String, String, Int>, String>? = null
     private var pendingAsset: Pair<List<String>, String>? = null
+    private var detailsJob: Job? = null
+    private var detailsRequest = 0L
 
     init {
         viewModelScope.launch {
@@ -58,6 +64,8 @@ class MusicDjViewModel @Inject constructor(
         }
         viewModelScope.launch {
             music.session.drop(1).collectLatest {
+                detailsJob?.cancel()
+                detailsRequest++
                 mutable.value = MusicDjUiState()
                 pending = null
                 pendingAsset = null
@@ -65,10 +73,12 @@ class MusicDjViewModel @Inject constructor(
         }
         viewModelScope.launch {
             music.capabilities.collectLatest {
+                if (!it.weeklySetsEnabled()) clearWeeklyDetails()
                 mutable.update { state ->
                     state.copy(
                         sessions = state.sessions.filter { row -> it.enabled("dj_" + row.mode) },
                         weekly = state.weekly.takeIf { _ -> it.weeklySetsEnabled() },
+                        details = state.details.takeIf { _ -> it.weeklySetsEnabled() },
                     )
                 }
             }
@@ -108,6 +118,46 @@ class MusicDjViewModel @Inject constructor(
 
     fun prepareWeekly(theme: String) = assetAction(listOf("prepare", theme)) { request ->
         music.djPrepareWeekly(theme, request)
+    }
+
+    fun loadWeeklyDetails(id: String) {
+        if (!music.capabilities.value.weeklySetsEnabled() || !DjIds.valid(id)) return
+        detailsJob?.cancel()
+        val request = ++detailsRequest
+        val owner = music.session.value
+        mutable.update {
+            it.copy(
+                details = it.details?.takeIf { value ->
+                    value.id == id
+                },
+                detailsLoading = true,
+                detailsMessage = "",
+            )
+        }
+        detailsJob = viewModelScope.launch {
+            try {
+                val found = music.djSession(id)
+                if (request == detailsRequest && owner == music.session.value &&
+                    music.capabilities.value.weeklySetsEnabled()
+                ) {
+                    mutable.update { it.copy(details = found) }
+                }
+            } catch (error: MusicAiFailure) {
+                if (request == detailsRequest && owner == music.session.value) {
+                    mutable.update { it.copy(detailsMessage = musicAiFailureMessage(error)) }
+                }
+            } finally {
+                if (request == detailsRequest && owner == music.session.value) {
+                    mutable.update { it.copy(detailsLoading = false) }
+                }
+            }
+        }
+    }
+
+    fun clearWeeklyDetails() {
+        detailsJob?.cancel()
+        detailsRequest++
+        mutable.update { it.copy(details = null, detailsLoading = false, detailsMessage = "") }
     }
 
     fun saveCopy(session: MusicDjSessionDto, name: String) {

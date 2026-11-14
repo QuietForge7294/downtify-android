@@ -42,7 +42,12 @@ internal fun MusicAiCapabilitiesDto.weeklySetsEnabled() =
     djWeeklySets && listOf("weekly", "dj_prepared", "dj_weekly").all(::enabled)
 
 @Composable
-fun WeeklyDjSection(featured: Boolean, onSeeAll: () -> Unit = {}, viewModel: MusicDjViewModel = hiltViewModel()) {
+fun WeeklyDjSection(
+    featured: Boolean,
+    onSeeAll: () -> Unit = {},
+    viewModel: MusicDjViewModel = hiltViewModel(),
+    onOpenSet: ((String, String) -> Unit)? = null,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val caps by viewModel.capabilities.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current
@@ -66,6 +71,7 @@ fun WeeklyDjSection(featured: Boolean, onSeeAll: () -> Unit = {}, viewModel: Mus
         onPlay = { viewModel.play(it) },
         onPrepare = viewModel::prepareWeekly,
         onSave = viewModel::saveCopy,
+        onOpenSet = onOpenSet,
     )
 }
 
@@ -78,6 +84,7 @@ internal fun WeeklyDjShelf(
     onPlay: (MusicDjSessionDto) -> Unit = {},
     onPrepare: (String) -> Unit = {},
     onSave: (MusicDjSessionDto, String) -> Unit = { _, _ -> },
+    onOpenSet: ((String, String) -> Unit)? = null,
 ) {
     if (!caps.weeklySetsEnabled()) return
     val weekly = state.weekly
@@ -98,14 +105,22 @@ internal fun WeeklyDjShelf(
                 weekly.cards
             }
             WeeklyDjTiles(cards.map { it.theme to it.session }) { theme, _ ->
-                selectedTheme = theme
-                selectedCopy = null
+                if (onOpenSet != null) {
+                    onOpenSet(theme, "")
+                } else {
+                    selectedTheme = theme
+                    selectedCopy = null
+                }
             }
             if (!featured && weekly.copies.isNotEmpty()) {
                 Text("Mes sets enregistrés", style = MaterialTheme.typography.titleMedium)
-                WeeklyDjTiles(weekly.copies.map { it.weeklyTheme.ifBlank { it.theme } to it }) { _, copy ->
-                    selectedCopy = copy?.id
-                    selectedTheme = null
+                WeeklyDjTiles(weekly.copies.map { it.weeklyTheme.ifBlank { it.theme } to it }) { theme, copy ->
+                    if (onOpenSet != null && copy != null) {
+                        onOpenSet(theme, copy.id)
+                    } else {
+                        selectedCopy = copy?.id
+                        selectedTheme = null
+                    }
                 }
             }
         }
@@ -146,7 +161,7 @@ private fun WeeklyDjTiles(
     }
 }
 
-private fun weeklyTitle(theme: String, session: MusicDjSessionDto?) =
+internal fun weeklyTitle(theme: String, session: MusicDjSessionDto?) =
     session?.title?.ifBlank { null } ?: "Set DJ · ${moodNames[theme] ?: theme}"
 
 @Composable
@@ -179,7 +194,7 @@ private fun WeeklyDjCard(
 }
 
 @Composable
-private fun WeeklyDjMetadata(session: MusicDjSessionDto) {
+internal fun WeeklyDjMetadata(session: MusicDjSessionDto) {
     val minutes = (session.duration.coerceAtLeast(0.0) / 60).toInt()
     Text(
         "${session.trackCount ?: session.tracks.size} titres · $minutes min",
@@ -247,7 +262,7 @@ private fun WeeklyDjDetails(
     )
 }
 
-private fun weeklyStatus(session: MusicDjSessionDto?) = when (session?.state) {
+internal fun weeklyStatus(session: MusicDjSessionDto?) = when (session?.state) {
     "ready" -> if (session.immutableCopy) "Copie enregistrée · audio conservé" else "Prêt à écouter"
     "queued" -> "En attente · priorité à votre bibliothèque et à la lecture"
     "preparing", "rendering" -> "En préparation · ${(session.progress.coerceIn(0.0, 1.0) * 100).toInt()} %"
