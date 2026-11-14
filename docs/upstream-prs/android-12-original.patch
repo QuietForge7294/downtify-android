@@ -1,0 +1,673 @@
+diff --git a/app/src/main/kotlin/com/henriquesebastiao/downtify/feature/player/MiniPlayer.kt b/app/src/main/kotlin/com/henriquesebastiao/downtify/feature/player/MiniPlayer.kt
+index 6456067..1fc6f85 100644
+--- a/app/src/main/kotlin/com/henriquesebastiao/downtify/feature/player/MiniPlayer.kt
++++ b/app/src/main/kotlin/com/henriquesebastiao/downtify/feature/player/MiniPlayer.kt
+@@ -70,7 +70,7 @@ fun MiniPlayer(
+     val similarArtist = track?.displayArtist ?: stream?.artist.orEmpty()
+     val similarTitle = track?.displayTitle ?: stream?.title.orEmpty()
+     val canSimilar = episode == null && similarArtist.isNotBlank() && similarTitle.isNotBlank()
+-    val coverUrl = episode?.artworkUrl?.ifBlank { null }
++    val coverUrl = state.artworkUrl ?: episode?.artworkUrl?.ifBlank { null }
+         ?: stream?.coverUrl?.ifBlank { null }
+         ?: track?.let { LocalCoverUrls.current.track(it.id.takeIf { _ -> it.hasCover }, ServerUrls.COVER_SMALL) }
+     val colors = rememberCoverColors(coverUrl)
+diff --git a/app/src/main/kotlin/com/henriquesebastiao/downtify/feature/player/NowPlayingScreen.kt b/app/src/main/kotlin/com/henriquesebastiao/downtify/feature/player/NowPlayingScreen.kt
+index 5492d94..e59b937 100644
+--- a/app/src/main/kotlin/com/henriquesebastiao/downtify/feature/player/NowPlayingScreen.kt
++++ b/app/src/main/kotlin/com/henriquesebastiao/downtify/feature/player/NowPlayingScreen.kt
+@@ -136,11 +136,11 @@ fun NowPlayingScreen(
+     val coverUrls = LocalCoverUrls.current
+     // An episode's artwork is the publisher's own, at whatever size they serve; a stream's cover
+     // is the absolute address the search gave, not a server cover.
+-    val coverUrl = episode?.artworkUrl?.ifBlank { null }
++    val coverUrl = state.artworkUrl ?: episode?.artworkUrl?.ifBlank { null }
+         ?: stream?.coverUrl?.ifBlank { null }
+         ?: track?.let { coverUrls.track(it.id.takeIf { _ -> it.hasCover }, ServerUrls.COVER_LARGE) }
+     val colors = rememberCoverColors(
+-        episode?.artworkUrl?.ifBlank { null }
++        state.artworkUrl ?: episode?.artworkUrl?.ifBlank { null }
+             ?: stream?.coverUrl?.ifBlank { null }
+             ?: track?.let { coverUrls.track(it.id.takeIf { _ -> it.hasCover }, ServerUrls.COVER_SMALL) },
+     )
+diff --git a/app/src/main/kotlin/com/henriquesebastiao/downtify/feature/player/QueueScreen.kt b/app/src/main/kotlin/com/henriquesebastiao/downtify/feature/player/QueueScreen.kt
+index c3549c8..8bb4f3d 100644
+--- a/app/src/main/kotlin/com/henriquesebastiao/downtify/feature/player/QueueScreen.kt
++++ b/app/src/main/kotlin/com/henriquesebastiao/downtify/feature/player/QueueScreen.kt
+@@ -383,7 +383,8 @@ private data class NowRow(val title: String, val artist: String, val artworkUrl:
+ @Composable
+ private fun nowPlayingRow(state: PlayerState): NowRow? {
+     state.track?.let { track ->
+-        val cover = LocalCoverUrls.current.track(track.id.takeIf { track.hasCover }, ServerUrls.COVER_SMALL)
++        val cover =
++            state.artworkUrl ?: LocalCoverUrls.current.track(track.id.takeIf { track.hasCover }, ServerUrls.COVER_SMALL)
+         return NowRow(track.displayTitle, track.displayArtist, cover)
+     }
+     return state.stream?.let { NowRow(it.title, it.artist, it.coverUrl.ifBlank { null }) }
+@@ -395,7 +396,8 @@ private fun nowPlayingRow(state: PlayerState): NowRow? {
+  */
+ @Composable
+ private fun artworkOf(entry: QueueEntry): String? {
+-    if (entry.artworkUrl == null) return null
++    val artwork = entry.artworkUrl ?: return null
++    if (artwork.startsWith("content://")) return artwork
+     if (EpisodeIds.isEpisode(entry.trackId) || StreamIds.isStream(entry.trackId)) return entry.artworkUrl
+     return LocalCoverUrls.current.track(entry.trackId, ServerUrls.COVER_SMALL)
+ }
+diff --git a/core/player/build.gradle.kts b/core/player/build.gradle.kts
+index 8cf43cb..76e1d57 100644
+--- a/core/player/build.gradle.kts
++++ b/core/player/build.gradle.kts
+@@ -15,4 +15,6 @@ dependencies {
+     implementation(libs.media3.database)
+     implementation(libs.kotlinx.coroutines.guava)
+     implementation(libs.kotlinx.coroutines.android)
++    testImplementation(libs.robolectric)
++    testImplementation(libs.okhttp.mockwebserver)
+ }
+diff --git a/core/player/src/main/AndroidManifest.xml b/core/player/src/main/AndroidManifest.xml
+index 0d6408f..f9c69dc 100644
+--- a/core/player/src/main/AndroidManifest.xml
++++ b/core/player/src/main/AndroidManifest.xml
+@@ -7,6 +7,7 @@
+     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+ 
+     <application>
++        <provider android:name=".SessionArtworkProvider" android:authorities="${applicationId}.artwork" android:exported="true" />
+         <service
+             android:name=".PlaybackService"
+             android:exported="true"
+diff --git a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/MediaItems.kt b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/MediaItems.kt
+index d19dcbf..3c977bb 100644
+--- a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/MediaItems.kt
++++ b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/MediaItems.kt
+@@ -30,6 +30,20 @@ object MediaItems {
+     private const val EXTRA_CONTEXT_TYPE = "downtify.context_type"
+     private const val EXTRA_CONTEXT_ID = "downtify.context_id"
+     private const val EXTRA_QUEUED = "downtify.queued"
++    private const val EXTRA_ORIGINAL_ARTWORK = "downtify.original_artwork"
++
++    fun originalArtwork(item: MediaItem): Uri? =
++        item.mediaMetadata.extras?.getString(EXTRA_ORIGINAL_ARTWORK)?.let(Uri::parse) ?: item.mediaMetadata.artworkUri
++
++    fun withArtwork(item: MediaItem, uri: Uri): MediaItem {
++        val original = originalArtwork(item)
++        val extras = Bundle(item.mediaMetadata.extras ?: Bundle.EMPTY).apply {
++            original?.let { putString(EXTRA_ORIGINAL_ARTWORK, it.toString()) }
++        }
++        return item.buildUpon().setMediaMetadata(
++            item.mediaMetadata.buildUpon().setArtworkUri(uri).setExtras(extras).build(),
++        ).build()
++    }
+ 
+     fun streamUri(videoId: String): Uri =
+         Uri.Builder().scheme(SCHEME).authority(STREAM_HOST).appendPath(videoId).build()
+@@ -156,7 +170,7 @@ object MediaItems {
+             videoId = videoId,
+             title = item.mediaMetadata.title?.toString().orEmpty(),
+             artist = item.mediaMetadata.artist?.toString().orEmpty(),
+-            coverUrl = item.mediaMetadata.artworkUri?.toString().orEmpty(),
++            coverUrl = originalArtwork(item)?.toString().orEmpty(),
+             raw = extras?.getString(EXTRA_RAW).orEmpty(),
+         )
+     }
+@@ -170,7 +184,7 @@ object MediaItems {
+             showId = extras?.getLong(EXTRA_SHOW_ID) ?: 0,
+             title = item.mediaMetadata.title?.toString().orEmpty(),
+             showName = item.mediaMetadata.artist?.toString().orEmpty(),
+-            artworkUrl = item.mediaMetadata.artworkUri?.toString().orEmpty(),
++            artworkUrl = originalArtwork(item)?.toString().orEmpty(),
+             file = extras?.getString(EXTRA_FILE).orEmpty(),
+         )
+     }
+diff --git a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayOrder.kt b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayOrder.kt
+index 51e7f7b..ac71719 100644
+--- a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayOrder.kt
++++ b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayOrder.kt
+@@ -6,6 +6,19 @@ import androidx.media3.common.Timeline
+ 
+ /** The order a [Player] will play its items in, which isn't index order when shuffle is on. */
+ internal object PlayOrder {
++    /** Bounded look-ahead, including the current entry, following shuffle and repeat without cycling. */
++    fun ahead(player: Player, count: Int): List<Int> {
++        val timeline = player.currentTimeline
++        if (timeline.isEmpty || count <= 0) return emptyList()
++        val result = ArrayList<Int>()
++        var index = player.currentMediaItemIndex
++        while (index != C.INDEX_UNSET && index !in result && result.size < count) {
++            result += index
++            index = timeline.getNextWindowIndex(index, player.repeatMode, player.shuffleModeEnabled)
++        }
++        return result
++    }
++
+     /** The current item and everything after it, as it will play (repeat aside). */
+     fun fromCurrent(player: Player): List<Int> {
+         val timeline = player.currentTimeline
+diff --git a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlaybackService.kt b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlaybackService.kt
+index 5f803a9..7d780fc 100644
+--- a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlaybackService.kt
++++ b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlaybackService.kt
+@@ -23,6 +23,7 @@ import androidx.media3.session.SessionError
+ import androidx.media3.session.SessionResult
+ import com.google.common.util.concurrent.Futures
+ import com.google.common.util.concurrent.ListenableFuture
++import com.henriquesebastiao.downtify.core.data.NetworkMonitor
+ import com.henriquesebastiao.downtify.core.data.activity.PlaybackActivityReporter
+ import com.henriquesebastiao.downtify.core.data.catalog.CatalogRepository
+ import com.henriquesebastiao.downtify.core.data.library.LibraryRepository
+@@ -80,6 +81,10 @@ class PlaybackService : MediaSessionService() {
+ 
+     @Inject lateinit var resolver: StreamResolver
+ 
++    @Inject lateinit var artworkCache: SessionArtworkCache
++
++    @Inject lateinit var network: NetworkMonitor
++
+     @Inject
+     @StreamingClient
+     lateinit var streamingClient: OkHttpClient
+@@ -91,6 +96,7 @@ class PlaybackService : MediaSessionService() {
+     private var episodes: EpisodeProgressTracker? = null
+     private var prefetch: StreamPrefetchTracker? = null
+     private var warmer: TranscodeWarmer? = null
++    private var artwork: SessionArtworkTracker? = null
+     private val likeCommand = SessionCommand(ACTION_TOGGLE_LIKE, Bundle.EMPTY)
+     private val addToQueueCommand = SessionCommand(ACTION_ADD_TO_QUEUE, Bundle.EMPTY)
+     private val moveInQueueCommand = SessionCommand(ACTION_MOVE_IN_QUEUE, Bundle.EMPTY)
+@@ -132,6 +138,7 @@ class PlaybackService : MediaSessionService() {
+         warmer = TranscodeWarmer(player, resolver, streamingClient, scope).also { it.start() }
+         keepLikeButtonCurrent(player)
+         stopWhenSignedOut(player)
++        artwork = SessionArtworkTracker(player, artworkCache, sessions, network, scope).also { it.start() }
+     }
+ 
+     /** Unpaired (here or from the web): the queue belongs to a server the app can't reach anymore. */
+@@ -154,6 +161,7 @@ class PlaybackService : MediaSessionService() {
+     }
+ 
+     override fun onDestroy() {
++        artwork?.stop()
+         listens?.stop()
+         activity?.stop()
+         episodes?.stop()
+diff --git a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayerController.kt b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayerController.kt
+index 26b2517..925f2df 100644
+--- a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayerController.kt
++++ b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayerController.kt
+@@ -318,6 +318,7 @@ class PlayerController @Inject constructor(
+                 episode = episode,
+                 stream = stream,
+                 speed = player.playbackParameters.speed,
++                artworkUrl = item?.mediaMetadata?.artworkUri?.toString(),
+                 isPlaying = player.isPlaying,
+                 isBuffering = player.playbackState == Player.STATE_BUFFERING,
+                 positionMs = player.currentPosition.coerceAtLeast(0),
+diff --git a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayerModule.kt b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayerModule.kt
+index cac2b47..e4b568f 100644
+--- a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayerModule.kt
++++ b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayerModule.kt
+@@ -78,7 +78,8 @@ object PlayerModule {
+     @Provides
+     @Singleton
+     @ArtworkDataSource
+-    fun artworkDataSource(http: OkHttpDataSource.Factory): DataSource.Factory = http
++    fun artworkDataSource(@ApplicationContext context: Context, http: OkHttpDataSource.Factory): DataSource.Factory =
++        DefaultDataSource.Factory(context, http)
+ 
+     private const val CACHE_BYTES = 512L * 1024 * 1024
+     private const val USER_AGENT = "Downtify-Android"
+diff --git a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayerState.kt b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayerState.kt
+index 4abbac7..d648b81 100644
+--- a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayerState.kt
++++ b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/PlayerState.kt
+@@ -55,6 +55,8 @@ data class PlayerState(
+     val stream: PlayingStream? = null,
+     /** 1 for music; an episode can play faster or slower. */
+     val speed: Float = 1f,
++    /** A local session image when ready, otherwise the original artwork address. */
++    val artworkUrl: String? = null,
+     val isPlaying: Boolean = false,
+     val isBuffering: Boolean = false,
+     val positionMs: Long = 0,
+diff --git a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/SessionArtworkCache.kt b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/SessionArtworkCache.kt
+new file mode 100644
+index 0000000..288e9c6
+--- /dev/null
++++ b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/SessionArtworkCache.kt
+@@ -0,0 +1,188 @@
++package com.henriquesebastiao.downtify.core.player
++
++import android.content.Context
++import android.graphics.Bitmap
++import android.graphics.BitmapFactory
++import android.net.Uri
++import android.os.ParcelFileDescriptor
++import com.henriquesebastiao.downtify.core.data.di.ApplicationScope
++import com.henriquesebastiao.downtify.core.network.di.StreamingClient
++import com.henriquesebastiao.downtify.core.network.session.Session
++import com.henriquesebastiao.downtify.core.network.session.SessionStore
++import dagger.hilt.android.qualifiers.ApplicationContext
++import java.io.ByteArrayOutputStream
++import java.io.File
++import java.io.FileNotFoundException
++import java.io.IOException
++import java.io.InputStream
++import java.security.MessageDigest
++import java.util.concurrent.TimeUnit
++import javax.inject.Inject
++import javax.inject.Singleton
++import kotlinx.coroutines.CoroutineScope
++import kotlinx.coroutines.Dispatchers
++import kotlinx.coroutines.flow.distinctUntilChanged
++import kotlinx.coroutines.flow.map
++import kotlinx.coroutines.launch
++import kotlinx.coroutines.sync.Mutex
++import kotlinx.coroutines.sync.withLock
++import kotlinx.coroutines.withContext
++import okhttp3.OkHttpClient
++import okhttp3.Request
++
++/** Local, bounded artwork for the media session; HTTP credentials never leave this process. */
++@Singleton
++class SessionArtworkCache @Inject constructor(
++    @ApplicationContext private val context: Context,
++    private val sessions: SessionStore,
++    @StreamingClient client: OkHttpClient,
++    @ApplicationScope scope: CoroutineScope,
++) {
++    private val root = File(context.cacheDir, "session-artwork")
++    private val lock = Mutex()
++    private val http = client.newBuilder().callTimeout(10, TimeUnit.SECONDS).build()
++
++    init {
++        scope.launch(Dispatchers.IO) {
++            sessions.ensureLoaded()
++            sessions.session.map { it?.artworkOwner }.distinctUntilChanged().collect { owner ->
++                lock.withLock {
++                    root.listFiles()?.filter {
++                        it.name != owner && HEX.matches(it.name)
++                    }?.forEach(File::deleteRecursively)
++                }
++            }
++        }
++    }
++
++    suspend fun prepare(mediaId: String, source: Uri, allowNetwork: Boolean = true): Uri? =
++        withContext(Dispatchers.IO) {
++            val owner = sessions.current?.artworkOwner ?: return@withContext null
++            if (source.scheme !in setOf("http", "https")) return@withContext null
++            lock.withLock {
++                if (sessions.current?.artworkOwner != owner) return@withLock null
++                val key = digest("$mediaId\u0000$source")
++                val file = File(File(root, owner), "$key.jpg")
++                try {
++                    if (!file.isFile && (!allowNetwork || !save(source, owner, file))) return@withLock null
++                    file.setLastModified(System.currentTimeMillis())
++                    trim(file)
++                    Uri.Builder().scheme("content").authority("${context.packageName}.artwork")
++                        .appendPath(owner).appendPath(key).build()
++                } catch (_: IOException) {
++                    null
++                } catch (_: IllegalArgumentException) {
++                    null
++                }
++            }
++        }
++
++    /** Resolves only previously prepared images for the current association, never a URL or arbitrary path. */
++    fun open(uri: Uri, mode: String): ParcelFileDescriptor {
++        if (mode != "r" || uri.scheme != "content" ||
++            uri.authority != "${context.packageName}.artwork"
++        ) {
++            throw FileNotFoundException()
++        }
++        val parts = uri.pathSegments
++        if (parts.size != 2 || parts.any { !HEX.matches(it) } ||
++            parts[0] != sessions.current?.artworkOwner
++        ) {
++            throw FileNotFoundException()
++        }
++        val file = File(File(root, parts[0]), "${parts[1]}.jpg")
++        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
++    }
++
++    private fun save(source: Uri, owner: String, file: File): Boolean {
++        val bitmap = download(source) ?: return false
++        try {
++            if (sessions.current?.artworkOwner != owner) return false
++            val parent = file.parentFile ?: return false
++            if (!parent.isDirectory && !parent.mkdirs()) return false
++            publish(bitmap, file, parent)
++            return true
++        } finally {
++            bitmap.recycle()
++        }
++    }
++
++    private fun publish(bitmap: Bitmap, file: File, parent: File) {
++        val temporary = File.createTempFile("cover-", ".part", parent)
++        try {
++            temporary.outputStream().use {
++                if (!bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it)) throw IOException("Invalid artwork")
++            }
++            if (!temporary.renameTo(file)) throw IOException("Could not publish artwork")
++        } finally {
++            temporary.delete()
++        }
++    }
++
++    private fun fetch(source: Uri): ByteArray? =
++        http.newCall(Request.Builder().url(source.toString()).build()).execute().use { response ->
++            if (!response.isSuccessful) return@use null
++            val body = response.body
++            if (body.contentLength() > MAX_INPUT_BYTES) return@use null
++            body.byteStream().use(::readLimited)
++        }
++
++    private fun readLimited(input: InputStream): ByteArray? {
++        val output = ByteArrayOutputStream()
++        val buffer = ByteArray(8192)
++        while (true) {
++            val count = input.read(buffer)
++            if (count < 0) break
++            if (output.size() + count > MAX_INPUT_BYTES) return null
++            output.write(buffer, 0, count)
++        }
++        return output.toByteArray()
++    }
++
++    private fun download(source: Uri): Bitmap? {
++        val bytes = fetch(source) ?: return null
++        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
++        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
++        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
++        var sample = 1
++        while (maxOf(bounds.outWidth, bounds.outHeight) / sample > EDGE * 2) sample *= 2
++        val options = BitmapFactory.Options().apply { inSampleSize = sample }
++        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options) ?: return null
++        val scale = EDGE.toFloat() / maxOf(bitmap.width, bitmap.height)
++        if (scale >= 1f) return bitmap
++        return Bitmap.createScaledBitmap(
++            bitmap,
++            (bitmap.width * scale).toInt().coerceAtLeast(1),
++            (bitmap.height * scale).toInt().coerceAtLeast(1),
++            true,
++        ).also { if (it !== bitmap) bitmap.recycle() }
++    }
++
++    private fun trim(current: File) {
++        val files = root.listFiles()?.flatMap {
++            it.listFiles().orEmpty().filter { file -> file.extension == "jpg" }
++        }.orEmpty()
++        var size = files.sumOf(File::length)
++        for (file in files.sortedBy(File::lastModified)) {
++            if (size <= CACHE_BYTES) break
++            if (file != current) {
++                val length = file.length()
++                if (file.delete()) size -= length
++            }
++        }
++    }
++
++    private companion object {
++        val HEX = Regex("[a-f0-9]{64}")
++        const val EDGE = 512
++        const val JPEG_QUALITY = 85
++        const val MAX_INPUT_BYTES = 8 * 1024 * 1024
++        const val CACHE_BYTES = 32L * 1024 * 1024
++    }
++}
++
++internal val Session.artworkOwner: String get() = digest("${serverId.ifBlank { baseUrl }}\u0000$deviceId")
++
++private fun digest(value: String): String =
++    MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8))
++        .joinToString("") { "%02x".format(it) }
+diff --git a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/SessionArtworkProvider.kt b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/SessionArtworkProvider.kt
+new file mode 100644
+index 0000000..7738cdf
+--- /dev/null
++++ b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/SessionArtworkProvider.kt
+@@ -0,0 +1,40 @@
++package com.henriquesebastiao.downtify.core.player
++
++import android.content.ContentProvider
++import android.content.ContentValues
++import android.database.Cursor
++import android.net.Uri
++import android.os.ParcelFileDescriptor
++import dagger.hilt.EntryPoint
++import dagger.hilt.InstallIn
++import dagger.hilt.android.EntryPointAccessors
++import dagger.hilt.components.SingletonComponent
++
++/** Opaque read-only image capabilities, not an exported network proxy or directory listing. */
++class SessionArtworkProvider : ContentProvider() {
++    override fun onCreate(): Boolean = true
++
++    override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor =
++        EntryPointAccessors.fromApplication(checkNotNull(context).applicationContext, ArtworkEntryPoint::class.java)
++            .artwork().open(uri, mode)
++
++    override fun getType(uri: Uri): String = "image/jpeg"
++    override fun query(
++        uri: Uri,
++        projection: Array<out String>?,
++        selection: String?,
++        selectionArgs: Array<out String>?,
++        sortOrder: String?,
++    ): Cursor? = null
++    override fun insert(uri: Uri, values: ContentValues?): Uri? = throw UnsupportedOperationException()
++    override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int =
++        throw UnsupportedOperationException()
++    override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int =
++        throw UnsupportedOperationException()
++}
++
++@EntryPoint
++@InstallIn(SingletonComponent::class)
++internal interface ArtworkEntryPoint {
++    fun artwork(): SessionArtworkCache
++}
+diff --git a/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/SessionArtworkTracker.kt b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/SessionArtworkTracker.kt
+new file mode 100644
+index 0000000..a3227d9
+--- /dev/null
++++ b/core/player/src/main/kotlin/com/henriquesebastiao/downtify/core/player/SessionArtworkTracker.kt
+@@ -0,0 +1,100 @@
++package com.henriquesebastiao.downtify.core.player
++
++import android.net.Uri
++import androidx.media3.common.Player
++import com.henriquesebastiao.downtify.core.data.NetworkMonitor
++import com.henriquesebastiao.downtify.core.model.EpisodeIds
++import com.henriquesebastiao.downtify.core.model.StreamIds
++import com.henriquesebastiao.downtify.core.network.ServerUrls
++import com.henriquesebastiao.downtify.core.network.session.SessionStore
++import kotlin.coroutines.coroutineContext
++import kotlinx.coroutines.CoroutineScope
++import kotlinx.coroutines.Job
++import kotlinx.coroutines.ensureActive
++import kotlinx.coroutines.flow.combine
++import kotlinx.coroutines.flow.distinctUntilChanged
++import kotlinx.coroutines.flow.map
++import kotlinx.coroutines.launch
++
++/** Publishes ready local images without delaying audio or accepting a late image for another item. */
++internal class SessionArtworkTracker(
++    private val player: Player,
++    private val cache: SessionArtworkCache,
++    private val sessions: SessionStore,
++    private val network: NetworkMonitor,
++    private val scope: CoroutineScope,
++) : Player.Listener {
++    private data class Target(val index: Int, val id: String, val source: Uri, val owner: String)
++    private var targets = emptyList<Target>()
++    private var work: Job? = null
++    private var association: Job? = null
++
++    fun start() {
++        player.addListener(this)
++        association = scope.launch {
++            combine(
++                sessions.session.map {
++                    it?.artworkOwner
++                },
++                network.status,
++            ) { owner, status -> owner to status.online }
++                .distinctUntilChanged().collect {
++                    targets = emptyList()
++                    update()
++                }
++        }
++        update()
++    }
++
++    fun stop() {
++        player.removeListener(this)
++        work?.cancel()
++        association?.cancel()
++    }
++
++    override fun onEvents(player: Player, events: Player.Events) {
++        if (events.containsAny(
++                Player.EVENT_TIMELINE_CHANGED,
++                Player.EVENT_MEDIA_ITEM_TRANSITION,
++                Player.EVENT_SHUFFLE_MODE_ENABLED_CHANGED,
++                Player.EVENT_REPEAT_MODE_CHANGED,
++            )
++        ) {
++            update()
++        }
++    }
++
++    private fun update() {
++        val paired = sessions.current
++        val next = if (paired == null) {
++            emptyList()
++        } else {
++            PlayOrder.ahead(player, 4).mapNotNull { index ->
++                val item = player.getMediaItemAt(index)
++                val original = MediaItems.originalArtwork(item) ?: return@mapNotNull null
++                val source = if (!StreamIds.isStream(item.mediaId) && !EpisodeIds.isEpisode(item.mediaId)) {
++                    Uri.parse(ServerUrls.cover(paired.baseUrl, item.mediaId, ServerUrls.COVER_LARGE))
++                } else {
++                    original
++                }
++                Target(index, item.mediaId, source, paired.artworkOwner)
++            }
++        }
++        if (next == targets) return
++        targets = next
++        work?.cancel()
++        work = scope.launch {
++            next.forEach { publish(it) }
++        }
++    }
++
++    private suspend fun publish(target: Target) {
++        val image = cache.prepare(target.id, target.source, network.status.value.online) ?: return
++        coroutineContext.ensureActive()
++        if (sessions.current?.artworkOwner != target.owner || target.index >= player.mediaItemCount) return
++        val current = player.getMediaItemAt(target.index)
++        if (current.mediaId == target.id && current.mediaMetadata.artworkUri != image) {
++            player.replaceMediaItem(target.index, MediaItems.withArtwork(current, image))
++        }
++    }
++}
+diff --git a/core/player/src/test/kotlin/com/henriquesebastiao/downtify/core/player/SessionArtworkCacheTest.kt b/core/player/src/test/kotlin/com/henriquesebastiao/downtify/core/player/SessionArtworkCacheTest.kt
+new file mode 100644
+index 0000000..5439e5a
+--- /dev/null
++++ b/core/player/src/test/kotlin/com/henriquesebastiao/downtify/core/player/SessionArtworkCacheTest.kt
+@@ -0,0 +1,90 @@
++package com.henriquesebastiao.downtify.core.player
++
++import android.graphics.Bitmap
++import android.net.Uri
++import com.henriquesebastiao.downtify.core.network.session.AuthInterceptor
++import com.henriquesebastiao.downtify.core.network.session.Session
++import com.henriquesebastiao.downtify.core.network.session.SessionStore
++import io.mockk.every
++import io.mockk.mockk
++import java.io.ByteArrayOutputStream
++import java.io.FileNotFoundException
++import kotlinx.coroutines.flow.MutableStateFlow
++import kotlinx.coroutines.test.runTest
++import mockwebserver3.MockResponse
++import mockwebserver3.MockWebServer
++import okhttp3.OkHttpClient
++import okio.Buffer
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertNotNull
++import org.junit.Assert.assertNull
++import org.junit.Assert.assertThrows
++import org.junit.Test
++import org.junit.runner.RunWith
++import org.robolectric.RobolectricTestRunner
++import org.robolectric.RuntimeEnvironment
++import org.robolectric.annotation.Config
++import org.robolectric.annotation.GraphicsMode
++
++@RunWith(RobolectricTestRunner::class)
++@Config(sdk = [34])
++@GraphicsMode(GraphicsMode.Mode.NATIVE)
++class SessionArtworkCacheTest {
++    @Test
++    fun `authenticated cover is shared locally and reused without network`() = runTest {
++        MockWebServer().apply { start() }.use { server ->
++            val base = server.url("/").toString().trimEnd('/')
++            val paired = MutableStateFlow<Session?>(Session(base, "server", "Test", "device-cache", "fixture-token"))
++            val sessions = mockk<SessionStore>(relaxed = true)
++            every { sessions.session } returns paired
++            every { sessions.current } answers { paired.value }
++            val cache = SessionArtworkCache(
++                RuntimeEnvironment.getApplication(),
++                sessions,
++                OkHttpClient.Builder().addInterceptor(AuthInterceptor(sessions)).build(),
++                backgroundScope,
++            )
++            val bitmap = Bitmap.createBitmap(16, 16, Bitmap.Config.ARGB_8888)
++            val bytes = ByteArrayOutputStream().also {
++                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
++            }.toByteArray()
++            bitmap.recycle()
++            server.enqueue(
++                MockResponse.Builder().body(Buffer().write(bytes)).addHeader("Content-Type", "image/png").build(),
++            )
++            val source = Uri.parse("$base/api/v1/tracks/one/cover")
++            val uri = cache.prepare("one", source)
++            assertNotNull(uri)
++            assertEquals("content", uri!!.scheme)
++            assertEquals("Bearer fixture-token", server.takeRequest().headers["Authorization"])
++            cache.open(uri, "r").use { assertEquals(true, it.statSize > 0) }
++            assertEquals(uri, cache.prepare("one", source, allowNetwork = false))
++            assertEquals(1, server.requestCount)
++            assertThrows(FileNotFoundException::class.java) { cache.open(uri, "rw") }
++            assertThrows(FileNotFoundException::class.java) {
++                cache.open(Uri.parse("content://${uri.authority}/../secret"), "r")
++            }
++            paired.value = paired.value!!.copy(deviceId = "another-account")
++            assertThrows(FileNotFoundException::class.java) { cache.open(uri, "r") }
++        }
++    }
++
++    @Test
++    fun `offline cache miss and invalid images do not expose a network proxy`() = runTest {
++        MockWebServer().apply { start() }.use { server ->
++            val paired = Session(server.url("/").toString().trimEnd('/'), "server", "Test", "missing-art", "fixture")
++            val sessions = mockk<SessionStore>(relaxed = true)
++            every { sessions.session } returns MutableStateFlow(paired)
++            every { sessions.current } returns paired
++            val cache =
++                SessionArtworkCache(RuntimeEnvironment.getApplication(), sessions, OkHttpClient(), backgroundScope)
++            val source = Uri.parse(server.url("/cover").toString())
++            assertNull(cache.prepare("missing", source, allowNetwork = false))
++            assertEquals(0, server.requestCount)
++            server.enqueue(MockResponse.Builder().body("not an image").build())
++            assertNull(cache.prepare("missing", source))
++            assertNull(cache.prepare("missing", Uri.parse("file:///private/secret")))
++            assertEquals(1, server.requestCount)
++        }
++    }
++}
