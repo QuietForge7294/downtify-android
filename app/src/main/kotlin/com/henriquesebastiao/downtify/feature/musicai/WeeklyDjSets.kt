@@ -208,7 +208,7 @@ private fun WeeklyDjDetails(
         title = { Text(title) },
         text = {
             Column(
-                Modifier.verticalScroll(rememberScrollState()),
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (session != null) WeeklyDjMetadata(session)
