@@ -63,7 +63,7 @@ def verified_plan(directory, repo):
     unsigned = {k: v for k, v in plan.items() if k != "plan_sha256"}
     if identity(unsigned) != plan["plan_sha256"] or plan["stages"] != STAGES:
         raise ValueError("Plan changed or belongs to another tool version. Prepare a new plan.")
-    if source(repo) != plan["source"]:
+    if source(repo)["tree_sha256"] != plan["source"]["tree_sha256"]:
         raise ValueError("Source changed. Prepare a new plan; successful receipts cannot be reused.")
     return plan
 
@@ -157,20 +157,51 @@ def certify(repo, directory, apk, aapt, apksigner, certificate):
         raise ValueError("APK changed during verification.")
     if match[1] != "com.henriquesebastiao.downtify.debug":
         raise ValueError("Unexpected package; refuse production variant.")
+    current_source = source(repo)
+    if current_source["tree_sha256"] != plan["source"]["tree_sha256"]:
+        raise ValueError("Source changed during APK verification.")
     manifest = {"schema": 1, "version": match[3], "version_code": int(match[2]), "package": match[1],
                 "activity": "com.henriquesebastiao.downtify.MainActivity", "filename": apk.name,
                 "sha256": digest(apk), "bytes": apk.stat().st_size, "certificate_sha256": certificate.lower(),
-                "source": plan["source"], "plan_sha256": plan["plan_sha256"],
+                "source": current_source, "gated_source": plan["source"], "plan_sha256": plan["plan_sha256"],
                 "automated_gates": "passed", "physical_tests": "NOT_RUN",
                 "created_utc": dt.datetime.now(dt.timezone.utc).isoformat()}
     save(directory / "artifact.json", manifest)
     print(json.dumps(manifest))
 
 
+def report(directory):
+    plan = load(directory / "plan.json")
+    rows = []
+    for stage in STAGES:
+        path = directory / (stage + ".json")
+        if not path.exists():
+            rows.append({"stage": stage, "recorded_status": "NOT_RUN"})
+            continue
+        receipt = load(path)
+        row = {"stage": stage, "recorded_status": receipt.get("status"),
+               "seconds": receipt.get("seconds"), "receipt_sha256": digest(path)}
+        guard_path = directory / (stage + "-guard-private.json")
+        if receipt.get("status") == "passed":
+            if not guard_path.exists() or digest(guard_path) != receipt.get("guard_sha256"):
+                row["recorded_status"] = "EVIDENCE_CHANGED"
+            else:
+                row["memory_peak_bytes"] = load(guard_path).get("memory_peak")
+        if "junit" in receipt:
+            row["junit"] = receipt["junit"]
+        rows.append(row)
+    result = {"kind": "historical_build_summary", "label": plan["label"], "source": plan["source"],
+              "plan_sha256": plan["plan_sha256"], "stages": rows,
+              "source_revalidated": False, "live_process_state_checked": False,
+              "physical_tests": "NOT_RUN"}
+    save(directory / "report.json", result)
+    return result
+
+
 def main():
     global AUDIT_PATH
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["plan", "run", "certify"])
+    parser.add_argument("action", choices=["plan", "run", "certify", "report"])
     parser.add_argument("--repo", type=Path, default=SCRIPT.parents[2])
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--label", default="candidate")
@@ -183,7 +214,9 @@ def main():
     repo = args.repo.resolve()
     directory = private_directory(args.out, repo)
     AUDIT_PATH = directory / "commands.jsonl"
-    if args.action == "plan":
+    if args.action == "report":
+        print(json.dumps(report(directory)))
+    elif args.action == "plan":
         if (directory / "plan.json").exists():
             raise ValueError("Plan exists; choose a new output directory.")
         plan = make_plan(repo, args.label)

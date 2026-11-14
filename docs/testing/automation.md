@@ -46,8 +46,11 @@ python3 tools/automation/release_pipeline.py run --out /root/downtify-runs/CANDI
 ```
 
 Le contenu de tous les fichiers suivis et non ignorés, y compris les sources non committées,
-ainsi que le commit HEAD sont identifiés. Un changement bloque la reprise et nécessite un
-nouveau plan. Un échec, code 75 ou interruption laisse un reçu bloquant, sans nouvelle
+ainsi que le commit HEAD sont identifiés. Un changement de contenu bloque la reprise et nécessite
+un nouveau plan. Un changement de commit seul, à contenu identique, conserve les reçus :
+committer les sources déjà testées ne doit pas déclencher de nouveaux builds. Le manifeste
+distingue la source lors des gates (`gated_source`) et celle lors de la certification (`source`).
+Un échec, code 75 ou interruption laisse un reçu bloquant, sans nouvelle
 tentative automatique. Examiner le journal et les reçus du garde-fou avant un nouveau plan.
 Ne pas contourner un verrou/refus mémoire ni réinitialiser automatiquement une unité échouée.
 Après un timeout ou une interruption du pilote, inspecter l'unité existante : son arrêt
@@ -74,6 +77,16 @@ Sorties : un JSON par étape, reçus privés du garde-fou, logs privés, audit J
 Europe/Paris, durées et manifeste. `plan` est utilisable sans Gradle ; `run` exige Linux
 avec le garde-fou installé. L'horaire Paris suit les règles UE de 1996 à la date présente ;
 adapter le code si la réglementation change, UTC restant la référence.
+
+Pour préparer un compte rendu sans rescanner Git, invoquer Gradle ou interroger un serveur :
+
+```sh
+python3 tools/automation/release_pipeline.py report --out /root/downtify-runs/CANDIDAT
+```
+
+Le rapport résume les preuves conservées et leurs empreintes. Il n'affirme ni que les sources
+actuelles ont été revalidées ni qu'un processus enregistré `running` est encore actif.
+Une preuve de garde-fou absente ou modifiée apparaît `EVIDENCE_CHANGED`.
 
 ## Pilote téléphone
 
@@ -131,6 +144,16 @@ Les `manual_checks` (écoute, vraie unité Android Auto, appréciation de transi
 `NOT_RUN`. Rapporter séparément leurs observations réelles et les mesures de latence.
 Ne jamais transformer une capture, un manifeste disponible ou un test synthétique en preuve sonore.
 
+Un compte rendu historique se produit sans téléphone, manifeste ou APK :
+
+```powershell
+python tools/automation/phone_suite.py report --out "$env:LOCALAPPDATA/DowntifyTests/CANDIDAT/campagne"
+```
+
+Il conserve les horaires, l'empreinte de la session et les observations manuelles `NOT_RUN`.
+`device_checked_now=false` distingue ce résumé d'un nouveau contrôle physique. Aucune
+commande ADB ni installation ne s'exécute pour seulement relire des résultats.
+
 ## Compteur sans attendre l'inactivité UI
 
 Pendant un chargement animé, `uiautomator dump` peut ne pas produire d'arbre. Capturer des
@@ -167,15 +190,25 @@ disponible le 14 novembre refuse les changements de workflow (scope `workflow` a
 Un mainteneur disposant de cette permission pourra le copier vers
 `.github/workflows/automation-tools.yml`. Ne pas annoncer de résultat CI sans exécution réelle.
 
-Le 14 novembre 2026 : 22 tests réussis sous Windows en 0,76 s, incluant code 75,
-APK lié à l'assemblage et validation JUnit. Consulter aussi le résultat CI courant.
+Le 14 novembre 2026 : 28 tests réussis sous Windows en environ 6,1 s, incluant code 75,
+APK lié à l'assemblage, validation JUnit et protocole ADB par processus synthétique.
+Ce dernier vérifie captures binaires, sélecteurs, arrêt sur nouveau crash, absence d'action
+répétée à la reprise et rapport hors ligne sans ADB. Ce n'est pas une qualification physique.
+Les 22 tests initiaux ont aussi réussi sous Linux en 0,033 s.
 OCR local : deux captures existantes lues à 27 970 éléments, deux `NEEDS_VISUAL`, lot < 1 s.
 Précontrôle USB : aucun appareil autorisé trouvé lors de cette vérification ; aucun scénario
 physique de ce nouvel outil n'est déclaré réussi. Le pilote de build doit encore être utilisé
-sur un candidat final opencode pour obtenir ses premiers reçus opérationnels.
+sur un candidat final opencode pour valider la chaîne complète APK/signature/installation.
+
+Pilote exécuté réellement sur opencode au commit initial 4d53d75 : étape `format` réussie
+en 15,754 s, reçu du garde-fou frais et réussi, pic mémoire 1 080 905 728 octets (1,01 Gio).
+Reprise du même plan : `reused` en 0,076 s et fichier `latest.json` du garde-fou strictement
+inchangé, donc aucun nouveau build lancé. Les autres gates n'ont pas été exécutées pour
+cette vérification des outils ; aucun nouveau R8/APK n'était nécessaire.
 
 Gain établi par construction et tests : les étapes réussies et cas terminés ne sont pas rejoués,
 aucune boucle de relance, une capture PNG ne nécessite plus de fichier distant/pull/rm,
 le lot OCR est traité dans un seul processus, les sorties publiques sont des résumés courts.
+La reprise ci-dessus mesure le contrôle évité, pas une accélération du compilateur.
 Les durées comparatives complètes d'une livraison et d'une campagne restent à mesurer.
 Ne pas présenter ces mécanismes comme un gain P95 Android déjà mesuré.

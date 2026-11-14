@@ -111,6 +111,19 @@ def validate_plan(plan):
             if step["op"] in {"queue_count", "media"}:
                 if not step.get("expect"):
                     raise ValueError("Assertions require explicit expectations.")
+                expected = step["expect"]
+                allowed = {"min", "max"} if step["op"] == "queue_count" else {"state", "legacy_queue"}
+                if not isinstance(expected, dict) or set(expected) - allowed:
+                    raise ValueError("Unknown assertion field.")
+                numeric = {"min", "max", "legacy_queue"} & set(expected)
+                if any(type(expected[k]) is not int or expected[k] < 0 for k in numeric):
+                    raise ValueError("Queue expectations require nonnegative integer counts.")
+                if expected.get("min", 0) > expected.get("max", sys.maxsize):
+                    raise ValueError("Queue expectation min exceeds max.")
+                if "state" in expected and (
+                    not isinstance(expected["state"], str) or not re.fullmatch(r"[A-Z_]+", expected["state"])
+                ):
+                    raise ValueError("Playback state must be an explicit name.")
                 assertions += 1
         if not assertions:
             raise ValueError("Each automated case needs an observable assertion.")
@@ -119,7 +132,8 @@ def validate_plan(plan):
 
 class Phone:
     def __init__(self, adb, directory, serial=None):
-        self.adb, self.directory, self.serial = str(adb), directory, None
+        self.adb = [str(part) for part in adb] if isinstance(adb, (list, tuple)) else [str(adb)]
+        self.directory, self.serial = directory, None
         self.sequence = 0
         listing = self.call("devices", "-l").decode()
         rows = re.findall(r"^(\S+)\s+(device|offline|unauthorized)\b([^\r\n]*)", listing, re.M)
@@ -131,7 +145,7 @@ class Phone:
     def call(self, *args, timeout=30):
         prefix = ["-s", self.serial] if self.serial else []
         shown = ["-s", "<DEVICE>"] if self.serial else []
-        result = run([self.adb, *prefix, *map(str, args)], self.directory,
+        result = run([*self.adb, *prefix, *map(str, args)], self.directory,
                      self.directory / "commands.jsonl", SCRIPT,
                      display=["adb", *shown, *map(str, args)], timeout=timeout)
         if result.returncode:
@@ -222,7 +236,8 @@ def suite(phone, plan, artifact):
         if state["identity"] != key or state["status"] != "ready":
             raise ValueError("Session changed or stopped; inspect evidence and prepare a new run.")
     else:
-        state = {"identity": key, "baseline": phone.history(), "status": "ready", "cases": {}}
+        state = {"identity": key, "baseline": phone.history(), "status": "ready", "cases": {},
+                 "artifact": {k: artifact.get(k) for k in ("sha256", "version", "version_code")}}
         save(state_path, state)
     try:
         for case in plan["cases"]:
@@ -236,10 +251,12 @@ def suite(phone, plan, artifact):
             save(state_path, state)
             observations = []
             before = time.monotonic()
+            started = dt.datetime.now(dt.timezone.utc).isoformat()
             for index, step in enumerate(case["steps"]):
                 observations.append(phone.step(step, case["id"] + "-" + str(index), state["baseline"]))
                 phone.health(state["baseline"])
             result = {"status": "automated_checks_passed", "observations": observations,
+                      "started_utc": started, "finished_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
                       "seconds": round(time.monotonic() - before, 3),
                       "manual_checks": {k: "NOT_RUN" for k in case.get("manual_checks", [])}}
             state["cases"][case["id"]] = result
@@ -252,17 +269,35 @@ def suite(phone, plan, artifact):
         raise
 
 
+def report(directory):
+    path = directory / "session.json"
+    state = load(path)
+    result = {"kind": "historical_usb_summary", "recorded_session_status": state["status"],
+              "artifact": state.get("artifact"), "source_session_sha256": digest(path),
+              "device_checked_now": False,
+              "cases": [{"id": name, **{k: value.get(k) for k in (
+                  "status", "seconds", "started_utc", "finished_utc", "manual_checks")}}
+                  for name, value in state["cases"].items()]}
+    save(directory / "report.json", result)
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["preflight", "install", "run"])
-    parser.add_argument("--adb", type=Path, required=True)
+    parser.add_argument("action", choices=["preflight", "install", "run", "report"])
+    parser.add_argument("--adb", type=Path)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--serial")
-    parser.add_argument("--manifest", type=Path, required=True)
-    parser.add_argument("--apk", type=Path, required=True)
+    parser.add_argument("--manifest", type=Path)
+    parser.add_argument("--apk", type=Path)
     parser.add_argument("--plan", type=Path)
     args = parser.parse_args()
     directory = private_directory(args.out, SCRIPT.parents[2])
+    if args.action == "report":
+        print(json.dumps(report(directory)))
+        return
+    if not all((args.adb, args.manifest, args.apk)):
+        parser.error("preflight/install/run require --adb --manifest --apk")
     manifest = load(args.manifest)
     verify_artifact(manifest, args.apk)
     plan = validate_plan(load(args.plan)) if args.action == "run" and args.plan else None

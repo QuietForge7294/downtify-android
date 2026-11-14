@@ -146,8 +146,16 @@ class AutomationTest(unittest.TestCase):
         git("add", "source")
         git("-c", "user.name=Automation test", "-c", "user.email=test@example.invalid", "commit", "-m", "fixture")
         before = release.source(repo)
+        support.save(self.root / "plan.json", release.make_plan(repo, "fixture"))
+        git("-c", "user.name=Automation test", "-c", "user.email=test@example.invalid", "commit", "--allow-empty", "-m", "metadata")
+        after_commit = release.source(repo)
+        self.assertNotEqual(before["commit"], after_commit["commit"])
+        self.assertEqual(before["tree_sha256"], after_commit["tree_sha256"])
+        release.verified_plan(self.root, repo)
         (repo / "source").write_text("changed")
         self.assertNotEqual(before, release.source(repo))
+        with self.assertRaises(ValueError):
+            release.verified_plan(self.root, repo)
         dirty = release.source(repo)
         (repo / "new-source").write_text("new")
         self.assertNotEqual(dirty, release.source(repo))
@@ -242,6 +250,36 @@ class AutomationTest(unittest.TestCase):
                 release.test_counts(self.root)
         (folder / "TEST-example.xml").write_text('<testsuite tests="3" failures="0" errors="0" skipped="1"/>')
         self.assertEqual(release.test_counts(self.root)["tests"], 3)
+
+    def test_commit_metadata_can_change_but_source_content_cannot(self):
+        original = {"commit": "before", "tree_sha256": "same-content"}
+        with patch.object(release, "source", return_value=original):
+            support.save(self.root / "plan.json", release.make_plan(self.root, "test"))
+        with patch.object(release, "source", return_value={**original, "commit": "after"}):
+            self.assertEqual(release.verified_plan(self.root, self.root)["source"], original)
+        with patch.object(release, "source", return_value={**original, "tree_sha256": "changed"}):
+            with self.assertRaisesRegex(ValueError, "Source changed"):
+                release.verified_plan(self.root, self.root)
+
+    def test_unknown_or_unbounded_assertion_fields_rejected_before_adb(self):
+        for expected in ({"count": 18}, {"min": True}, {"min": 20, "max": 18}, {"max": -1}):
+            with self.assertRaises(ValueError):
+                phone.validate_plan({"schema": 1, "cases": [{"id": "x", "steps": [
+                    {"op": "queue_count", "expect": expected}]}]})
+        with self.assertRaises(ValueError):
+            phone.validate_plan({"schema": 1, "cases": [{"id": "x", "steps": [
+                {"op": "media", "expect": {"legacy_queue": None}}]}]})
+
+    def test_build_report_is_offline_and_does_not_claim_current_source_or_process_state(self):
+        support.save(self.root / "plan.json", {"label": "fixture", "source": {"commit": "old"}, "plan_sha256": "plan"})
+        support.save(self.root / "format.json", {"status": "passed", "guard_sha256": "missing"})
+        with patch.object(release, "source", side_effect=AssertionError("Unexpected Git inspection")), \
+                patch.object(release, "run", side_effect=AssertionError("Unexpected process")):
+            result = release.report(self.root)
+        self.assertEqual(result["stages"][0]["recorded_status"], "EVIDENCE_CHANGED")
+        self.assertEqual(result["stages"][1]["recorded_status"], "NOT_RUN")
+        self.assertFalse(result["source_revalidated"])
+        self.assertFalse(result["live_process_state_checked"])
 
 
 if __name__ == "__main__":
