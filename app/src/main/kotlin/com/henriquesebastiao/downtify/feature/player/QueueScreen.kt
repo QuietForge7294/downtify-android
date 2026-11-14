@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -137,7 +138,7 @@ fun QueueScreen(
             modifier = modifier.fillMaxSize(),
         ) {
             Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-                TopBar(state.context, actions.onClose)
+                TopBar(state.context, state.queueSize, actions.onClose)
                 if (dj.visible || state.dj != null) {
                     PlaybackMixSelector(
                         selected = when {
@@ -514,7 +515,7 @@ private fun nextFromLabel(context: PlaybackContext?): String {
 }
 
 @Composable
-private fun TopBar(context: PlaybackContext?, onClose: () -> Unit) {
+private fun TopBar(context: PlaybackContext?, queueSize: Int, onClose: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().height(64.dp).padding(horizontal = Spacing.lg),
         verticalAlignment = Alignment.CenterVertically,
@@ -533,7 +534,12 @@ private fun TopBar(context: PlaybackContext?, onClose: () -> Unit) {
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.semantics { heading() },
             )
-            val title = context?.title.orEmpty()
+            val count = if (queueSize > 0) {
+                pluralStringResource(R.plurals.player_queue_item_count, queueSize, queueSize)
+            } else {
+                ""
+            }
+            val title = listOf(context?.title.orEmpty(), count).filter { it.isNotBlank() }.joinToString(" · ")
             if (title.isNotBlank()) {
                 Text(
                     title,

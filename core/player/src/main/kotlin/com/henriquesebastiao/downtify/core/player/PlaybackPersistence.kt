@@ -30,6 +30,7 @@ internal class PlaybackPersistence(
     private val repository: PlaybackRepository,
     private val sessions: SessionStore,
     private val scope: CoroutineScope,
+    private val beforeRestore: suspend () -> Unit = {},
 ) : Player.Listener {
     private val ready = CompletableDeferred<Unit>()
     private var items: List<SavedPlaybackItem> = emptyList()
@@ -49,6 +50,7 @@ internal class PlaybackPersistence(
         player.addListener(edits)
         scope.launch {
             try {
+                beforeRestore()
                 withContext(Dispatchers.IO) { sessions.ensureLoaded() }
                 val paired = sessions.current ?: return@launch
                 owner = paired.playbackOwner

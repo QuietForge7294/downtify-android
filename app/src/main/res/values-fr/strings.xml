@@ -570,4 +570,8 @@
     <string name="music_dj_device_beta">Transitions</string>
     <string name="music_dj_local_description">Fondu local réglable de 1 à 12 secondes, 5 secondes par défaut. Le DJ rythmique utilise le serveur. Aucun modèle n’est téléchargé automatiquement.</string>
     <string name="music_dj_server_description">Le serveur prépare les transitions. Le téléphone lit le flux audio authentifié.</string>
+    <plurals name="player_queue_item_count">
+        <item quantity="one">%1$d élément</item>
+        <item quantity="other">%1$d éléments</item>
+    </plurals>
 </resources>
