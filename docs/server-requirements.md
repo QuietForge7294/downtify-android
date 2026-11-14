@@ -42,3 +42,7 @@ Server search results carry YouTube Music or Spotify ids; library tracks carry D
 ### Lyrics timing that follows the user
 
 An `.lrc` from LRCLIB or NetEase is sometimes timed to another cut of the song than the file the server downloaded (a live take, a video with a longer intro), so its lines come early or late by the same amount all through the song, in the web player as in the app. The app lets the user move a track's synced lyrics earlier or later (Room `lyrics_offsets`, per track, on that phone). Saving that offset on the server — say `PUT /api/v1/tracks/{id}/lyrics/offset` writing an `[offset:]` tag into the sidecar — would fix it once for the web page and every device. The web's LRC parser (`frontend/src/lib/lrc.js`) ignores `[offset:]` today; the app's (`LrcParser`) applies it.
+
+## Library-only policy
+
+The companion server change adds optional `library_only: boolean` to `/api/server/info` (default false) and the `music_policy_changed` WebSocket event. Local similar-track song rows use `source: "library"` and `file`, with no external preview or URL. Match the file against the synced library rather than resolving a provider. External music requests return 409 while enabled. This addition requires no API-version or Room migration.

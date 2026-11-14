@@ -9,6 +9,9 @@ import com.henriquesebastiao.downtify.core.model.Track
 /** The whole synced library, grouped once per change and shared by every screen. */
 class LibrarySnapshot(val tracks: List<Track>) {
     val byId: Map<String, Track> = tracks.associateBy { it.id }
+    private val byFile: Map<String, Track> by lazy {
+        buildMap { tracks.forEach { track -> if (track.file.isNotBlank()) putIfAbsent(track.file, track) } }
+    }
     val albums: List<Album> = LibraryGrouping.albums(tracks)
     val artists: List<Artist> = LibraryGrouping.artists(tracks)
     val albumsById: Map<String, Album> = albums.associateBy { it.id }
@@ -21,7 +24,11 @@ class LibrarySnapshot(val tracks: List<Track>) {
      * and artist. Files carry no id to compare against, so this is
      * best-effort: null when the sync hasn't caught up yet.
      */
-    fun findSong(song: RemoteSong): Track? = byId[song.id] ?: findTrack(song.title, song.artist)
+    fun findSong(song: RemoteSong): Track? = if (song.libraryFile.isNotBlank()) {
+        byFile[song.libraryFile]
+    } else {
+        byId[song.id] ?: findTrack(song.title, song.artist)
+    }
 
     /** Same match by plain title and artist (a playing stream, a queue row). */
     fun findTrack(title: String, artist: String): Track? {

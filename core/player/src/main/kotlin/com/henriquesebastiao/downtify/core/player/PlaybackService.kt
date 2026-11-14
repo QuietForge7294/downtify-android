@@ -58,6 +58,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.guava.future
@@ -107,6 +108,8 @@ class PlaybackService : MediaLibraryService() {
     @Inject lateinit var readAhead: ReadAheadBuffer
 
     @Inject lateinit var playback: PlaybackRepository
+
+    @Inject lateinit var server: com.henriquesebastiao.downtify.core.data.session.ServerRepository
 
     @Inject
     @StreamingClient
@@ -205,6 +208,7 @@ class PlaybackService : MediaLibraryService() {
         keepButtonsCurrent(player)
         stopDisabledDj(player)
         stopWhenSignedOut(player)
+        enforceLibraryOnly(player)
         removeDeletedLibraryTracks(player)
         persistence = PlaybackPersistence(
             player,
@@ -310,6 +314,20 @@ class PlaybackService : MediaLibraryService() {
                 enforce()
             }
         })
+    }
+
+    /** The shared sync loop refreshes policy; never add a second service timer. */
+    private fun enforceLibraryOnly(player: Player) {
+        server.serverInfo.map { it?.libraryOnly == true }.distinctUntilChanged().onEach { enabled ->
+            if (enabled) {
+                for (index in player.mediaItemCount - 1 downTo 0) {
+                    if (MediaItems.streamOf(player.getMediaItemAt(index)) != null) {
+                        if (index == player.currentMediaItemIndex) player.pause()
+                        player.removeMediaItem(index)
+                    }
+                }
+            }
+        }.launchIn(scope)
     }
 
     /** Unpaired (here or from the web): the queue belongs to a server the app can't reach anymore. */
@@ -682,6 +700,7 @@ class PlaybackService : MediaLibraryService() {
                 // A stream rebuilt as a library address would point the
                 // resolver at `/api/v1/tracks/stream:…` (404): keep its own.
                 StreamIds.videoIdOf(item.mediaId)?.let { videoId ->
+                    if (server.serverInfo.value?.libraryOnly == true) return@mapNotNull null
                     return@mapNotNull item.buildUpon().setUri(MediaItems.streamUri(videoId)).build()
                 }
                 snapshot?.byId?.get(item.mediaId)?.let { MediaItems.from(it, baseUrl, MediaItems.isQueued(item)) }
