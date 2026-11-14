@@ -183,3 +183,7 @@ action. Position-aware navigation is sent only when the server advertises
 occurrences retain separate mix markers. See the [controller checks and remaining
 physical acceptance](docs/android-auto.md). This candidate does not establish
 first-sound P95, battery behavior or one-hour real-time musical qualification.
+
+### Server library-only mode
+
+When the server enables Library-only mode in General settings, the app searches the synced library, uses library-only similar-track results and drops external streams. The server controls the setting; Android keeps its last known value and still plays downloaded library files. Older servers without the field retain their existing behavior.
