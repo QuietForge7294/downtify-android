@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -205,6 +206,9 @@ private fun WeeklyDjDetails(
     var copyName by rememberSaveable(session?.id) { mutableStateOf(title) }
     AlertDialog(
         onDismissRequest = onDismiss,
+        // Let Material's content bounds size the dialog rather than a second window constraint.
+        // This also avoids Robolectric #8460 at phone-width qualifiers when the editor opens.
+        properties = DialogProperties(usePlatformDefaultWidth = false),
         title = { Text(title) },
         text = {
             Column(
@@ -253,7 +257,7 @@ private fun weeklyStatus(session: MusicDjSessionDto?) = when (session?.state) {
 }
 
 @Composable
-private fun CopySetForm(
+internal fun CopySetForm(
     session: MusicDjSessionDto,
     name: String,
     expanded: Boolean,
