@@ -22,4 +22,8 @@ Le retour classique s'effectue dans le service sur la file complète. Quand des 
 
 ## Validation et qualification
 
-Les résultats finaux, l'identité APK et le lien de livraison sont ajoutés après contrôle. La confirmation sur téléphone reste nécessaire, en particulier pour l'absence de nouveau crash Bluetooth pendant un chargement et une restauration de grande file, ainsi que les repères DJ en pause. Aucun réglage Bluetooth, données d'application, préférence serveur ou budget de build n'est modifié par cette livraison.
+Livraison du 14 novembre 2026 : [APK 0.4.0-beta16/code25](https://partage.bardreau.ovh/d/4em660AR9mPKEM6/downtify-ai-0.4.0-beta16-20261114.apk), 26 522 591 octets. SHA-256 : `ef4d215391168c92851ffdfd69466c963dd67a63318156c17774e1cff3304a99`. Le téléchargement a été comparé octet pour octet au fichier signé. Le certificat est identique à celui des bêtas précédentes ; l'APK est optimisée par R8 et non débogable.
+
+Les 187 tests du lecteur passent. Spotless et Detekt passent. Étapes séparées sous le budget global de 4 Gio : tests 44,624 s / pic 2,03 Gio ; compilation APK 67,557 s / 2,17 Gio ; assemblage R8 348,657 s / 3,44 Gio ; Lint 106,740 s / 2,16 Gio. Ces pics concernent le groupe complet de processus du build. Aucune augmentation des plafonds ni nouveau build concurrent. Ces mesures ne prouvent pas un gain de performances du téléphone.
+
+Le recontrôle Windows est décrit dans [la mission bêta16](testing/beta16-windows-retest.md). La PR reste en brouillon tant que la qualification physique est incomplète. La confirmation sur téléphone reste nécessaire, en particulier pour l'absence de nouveau crash Bluetooth pendant un chargement et une restauration de grande file, ainsi que les repères DJ en pause. Aucun réglage Bluetooth, données d'application, préférence serveur ou budget de build n'est modifié par cette livraison.

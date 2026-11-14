@@ -1,0 +1,19 @@
+{
+  "version": "0.4.0-beta16",
+  "version_code": 25,
+  "package": "com.henriquesebastiao.downtify.debug",
+  "activity": "com.henriquesebastiao.downtify.MainActivity",
+  "download_url": "https://partage.bardreau.ovh/dh/4em660AR9mPKEM6/downtify-ai-0.4.0-beta16-20261114.apk",
+  "share_url": "https://partage.bardreau.ovh/d/4em660AR9mPKEM6/downtify-ai-0.4.0-beta16-20261114.apk",
+  "filename": "downtify-ai-0.4.0-beta16-20261114.apk",
+  "sha256": "ef4d215391168c92851ffdfd69466c963dd67a63318156c17774e1cff3304a99",
+  "bytes": 26522591,
+  "certificate_sha256": "6d83636875593dd3b5f2d9539105760349dcf109e1e22a0bf6aa03f8ac251214",
+  "source_commit": "551082d82c899d2e26d207f44e404cb831e03182",
+  "pull_request": "https://github.com/QuietForge7294/downtify-android/pull/10",
+  "published_date": "2026-11-14",
+  "share_expiry_days": 30,
+  "platform_tools_documentation": "https://developer.android.com/tools/releases/platform-tools",
+  "adb_documentation": "https://developer.android.com/tools/adb",
+  "handoff_status": "READY_NOT_STARTED"
+}
