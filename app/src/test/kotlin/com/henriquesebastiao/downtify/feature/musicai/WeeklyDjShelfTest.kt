@@ -9,9 +9,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
@@ -96,6 +98,9 @@ class WeeklyDjShelfTest {
         // Keep cursor blinking from advancing virtual frames indefinitely while editing.
         compose.mainClock.autoAdvance = false
         compose.mainClock.advanceTimeBy(100)
+        check(compose.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().size == 1) {
+            compose.onAllNodes(isRoot(), useUnmergedTree = true).printToString(maxDepth = 20)
+        }
         compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("Mon rock préféré")
         compose.mainClock.advanceTimeByFrame()
         compose.onNodeWithText("Conserver l’audio").performScrollTo().performClick()
