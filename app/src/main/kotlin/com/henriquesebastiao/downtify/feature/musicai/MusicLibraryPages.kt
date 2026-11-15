@@ -84,7 +84,7 @@ private fun HomeMixRows(
                 val ready = caps.enabled(cadence) && card != null && card.count > 0
                 Surface(
                     onClick = { onOpen(cadence, mood) },
-                    enabled = ready,
+                    enabled = caps.enabled(cadence),
                     shape = MaterialTheme.shapes.large,
                     modifier = Modifier.weight(1f).height(112.dp),
                 ) {
