@@ -120,15 +120,6 @@ fun HomeRoute(
         onOpenSimilar,
         onOpenMenu = onOpenMenu,
         forYouContent = {
-            if (aiCaps.djWeeklySets) {
-                item(key = "weekly-dj-sets") {
-                    com.henriquesebastiao.downtify.feature.musicai.WeeklyDjSection(
-                        true,
-                        onOpenForYou,
-                        onOpenSet = onOpenWeeklyDj,
-                    )
-                }
-            }
             if (listOf("daily", "weekly", "personalization").any(aiCaps::enabled)) {
                 item(key = "daily-mixes") {
                     com.henriquesebastiao.downtify.feature.musicai.DailyMusicShelf(
@@ -136,6 +127,15 @@ fun HomeRoute(
                         aiCaps,
                         onOpenMoodPlaylist,
                         onOpenForYou,
+                    )
+                }
+            }
+            if (aiCaps.djWeeklySets) {
+                item(key = "weekly-dj-sets") {
+                    com.henriquesebastiao.downtify.feature.musicai.WeeklyDjSection(
+                        true,
+                        onOpenForYou,
+                        onOpenSet = onOpenWeeklyDj,
                     )
                 }
             }

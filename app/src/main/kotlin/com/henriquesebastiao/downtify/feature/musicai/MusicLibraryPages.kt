@@ -53,6 +53,8 @@ fun DailyMusicShelf(
             Text("Pour vous", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
             TextButton(onClick = onSeeAll) { Text("Tout voir") }
         }
+        Text("Selon votre humeur", style = MaterialTheme.typography.titleSmall)
+        HomeMixRows(dailyMoods.map { it.first }, "daily", state, caps, onOpen)
         Text("Vos genres", style = MaterialTheme.typography.titleSmall)
         Text(
             if (caps.enabled("personalization")) {
@@ -63,8 +65,6 @@ fun DailyMusicShelf(
             style = MaterialTheme.typography.bodySmall,
         )
         HomeMixRows(genreMoods, "weekly", state, caps, onOpen)
-        Text("Selon votre humeur", style = MaterialTheme.typography.titleSmall)
-        HomeMixRows(dailyMoods.map { it.first }, "daily", state, caps, onOpen)
         if (state.message.isNotBlank()) Text(state.message, style = MaterialTheme.typography.bodySmall)
     }
 }
