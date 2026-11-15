@@ -52,11 +52,34 @@ def source(repo):
     return {"commit": git(repo, "rev-parse", "HEAD").decode().strip(), "tree_sha256": checksum.hexdigest()}
 
 
-def make_plan(repo, label, allow_dependency_downloads=False):
+def validate_beta_version(code=None, name=None):
+    if code is None and name is None:
+        return None
+    if code is None or name is None:
+        raise ValueError("Provide both beta version code and beta version name.")
+    if isinstance(code, bool) or not isinstance(code, int) or not 1 <= code <= 2_100_000_000:
+        raise ValueError("Beta version code must be an integer from 1 to 2100000000.")
+    if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,79}", name):
+        raise ValueError("Beta version name must be 1-80 ASCII version characters.")
+    return {"code": code, "name": name}
+
+
+def plan_beta_version(plan):
+    pinned = plan.get("pinned_beta_version")
+    if pinned is None:
+        return None
+    if not isinstance(pinned, dict) or set(pinned) != {"code", "name"}:
+        raise ValueError("Invalid pinned beta version in plan.")
+    return validate_beta_version(pinned["code"], pinned["name"])
+
+
+def make_plan(repo, label, allow_dependency_downloads=False, beta_version_code=None, beta_version_name=None):
     if not re.fullmatch(r"[A-Za-z0-9._-]+", label):
         raise ValueError("Use a simple release label.")
+    pinned_beta = validate_beta_version(beta_version_code, beta_version_name)
     plan = {"schema": 1, "label": label, "source": source(repo), "stages": STAGES,
             "allow_dependency_downloads": allow_dependency_downloads,
+            "pinned_beta_version": pinned_beta,
             "policy": "one guarded Gradle invocation per stage; no retries; USB after final candidate"}
     return dict(plan, plan_sha256=identity(plan))
 
@@ -68,6 +91,7 @@ def verified_plan(directory, repo):
         raise ValueError("Plan changed or belongs to another tool version. Prepare a new plan.")
     if not isinstance(plan.get("allow_dependency_downloads", False), bool):
         raise ValueError("Invalid dependency download policy in plan.")
+    plan_beta_version(plan)
     if source(repo)["tree_sha256"] != plan["source"]["tree_sha256"]:
         raise ValueError("Source changed. Prepare a new plan; successful receipts cannot be reused.")
     return plan
@@ -136,12 +160,16 @@ def capture_guard(directory, stage, previous):
         return {"guard_evidence": "unreadable"}, None
 
 
-def execute(repo, directory, until, sdk=None, allow_dependency_downloads=False):
+def execute(repo, directory, until, sdk=None, allow_dependency_downloads=False,
+            beta_version_code=None, beta_version_name=None):
     if sys.platform != "linux" or not GUARD.is_file():
         raise ValueError("Build execution requires the installed opencode Linux guard.")
     plan = verified_plan(directory, repo)
     if plan.get("allow_dependency_downloads", False) is not allow_dependency_downloads:
         raise ValueError("Dependency download policy differs from plan; use the same explicit choice.")
+    pinned_beta = plan_beta_version(plan)
+    if pinned_beta != validate_beta_version(beta_version_code, beta_version_name):
+        raise ValueError("Beta version differs from plan; use the same explicit version pair.")
     sdk_path = configure_sdk(repo, sdk) if list(STAGES).index(until) >= list(STAGES).index("player-compile") else None
     with lock(directory / "pipeline.lock"):
         for stage, tasks in STAGES.items():
@@ -154,7 +182,11 @@ def execute(repo, directory, until, sdk=None, allow_dependency_downloads=False):
             else:
                 verified_plan(directory, repo)
                 network = [] if allow_dependency_downloads else ["--offline"]
-                argv = [str(GUARD), "--wrapper", str(repo / "gradlew"), "--", *network, *tasks, "--console=plain"]
+                version = [] if pinned_beta is None else [
+                    "-PmusicAiBetaVersionCode=" + str(pinned_beta["code"]),
+                    "-PmusicAiBetaVersionName=" + pinned_beta["name"],
+                ]
+                argv = [str(GUARD), "--wrapper", str(repo / "gradlew"), "--", *network, *version, *tasks, "--console=plain"]
                 # Prints the full future invocation before running it. SSH callers must also announce it in chat.
                 print(json.dumps({"stage": stage, "command": argv}), flush=True)
                 receipt = {"stage": stage, "plan_sha256": plan["plan_sha256"], "status": "running", "sdk_path": sdk_path}
@@ -218,6 +250,9 @@ def certify(repo, directory, apk, aapt, apksigner, certificate):
     certs = signer_certificates(signature.stdout.decode())
     if not match or [c.lower() for c in certs] != [certificate.lower()]:
         raise ValueError("Unexpected APK metadata or signer certificate.")
+    pinned_beta = plan_beta_version(plan)
+    if pinned_beta is not None and (int(match[2]) != pinned_beta["code"] or match[3] != pinned_beta["name"]):
+        raise ValueError("APK beta version does not match the pinned plan.")
     if digest(apk) != assembled["sha256"]:
         raise ValueError("APK changed during verification.")
     if match[1] != "com.henriquesebastiao.downtify.debug":
@@ -284,9 +319,17 @@ def main():
     parser.add_argument("--sdk", type=Path, help="Existing Android SDK; never downloaded or modified by this tool")
     parser.add_argument("--allow-dependency-downloads", action="store_true",
                         help="Explicit plan/run opt-in to Gradle dependency downloads; guard and SDK limits stay unchanged")
+    parser.add_argument("--beta-version-code", type=int, help="Explicit beta-only versionCode, paired with --beta-version-name")
+    parser.add_argument("--beta-version-name", help="Explicit beta-only versionName, paired with --beta-version-code")
     args = parser.parse_args()
     if args.allow_dependency_downloads and args.action not in {"plan", "run"}:
         parser.error("--allow-dependency-downloads applies only to plan and run")
+    if (args.beta_version_code is not None or args.beta_version_name is not None) and args.action not in {"plan", "run"}:
+        parser.error("Beta version options apply only to plan and run; certification reads the pinned plan")
+    try:
+        validate_beta_version(args.beta_version_code, args.beta_version_name)
+    except ValueError as error:
+        parser.error(str(error))
     repo = args.repo.resolve()
     directory = private_directory(args.out, repo)
     AUDIT_PATH = directory / "commands.jsonl"
@@ -295,11 +338,12 @@ def main():
     elif args.action == "plan":
         if (directory / "plan.json").exists():
             raise ValueError("Plan exists; choose a new output directory.")
-        plan = make_plan(repo, args.label, args.allow_dependency_downloads)
+        plan = make_plan(repo, args.label, args.allow_dependency_downloads, args.beta_version_code, args.beta_version_name)
         save(directory / "plan.json", plan)
         print(json.dumps(plan, indent=2))
     elif args.action == "run":
-        execute(repo, directory, args.until, args.sdk, args.allow_dependency_downloads)
+        execute(repo, directory, args.until, args.sdk, args.allow_dependency_downloads,
+                args.beta_version_code, args.beta_version_name)
     else:
         if not all((args.apk, args.aapt, args.apksigner, args.certificate)):
             parser.error("certify requires --apk --aapt --apksigner --certificate")

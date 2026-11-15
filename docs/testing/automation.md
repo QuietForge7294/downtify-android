@@ -58,6 +58,30 @@ la garde, les limites de ressources ou les tâches, et n'autorise aucune nouvell
 tentative automatique. Un plan hors ligne ne peut pas être repris en mode réseau.
 L'examen de l'échec précédent reste obligatoire avant de préparer ce nouveau plan.
 
+Pour construire une seule candidate depuis le code public, sans modifier sa version
+stable, épingler les propriétés bêta prises en charge par l'application :
+
+```sh
+python3 tools/automation/release_pipeline.py plan --repo /chemin/code-public --out /root/downtify-runs/BETA19 --label BETA19 --beta-version-code 28 --beta-version-name 0.4.0-beta19
+python3 tools/automation/release_pipeline.py run --repo /chemin/code-public --out /root/downtify-runs/BETA19 --sdk /opt/android-sdk --beta-version-code 28 --beta-version-name 0.4.0-beta19
+```
+
+Fournir les deux options ou aucune. Le code est un entier de 1 à 2 100 000 000,
+le nom contient au plus 80 caractères ASCII de version (lettres, chiffres,
+points, tirets, soulignements ou `+`, avec un premier caractère alphanumérique).
+Le plan identifie la paire dans `pinned_beta_version` ; elle doit être confirmée
+à l'identique lors de chaque `run`, avant même la réutilisation d'une étape réussie.
+Les seuls arguments ajoutés sont `-PmusicAiBetaVersionCode=...` et
+`-PmusicAiBetaVersionName=...`. Les tâches, les limites et le choix réseau ne changent
+pas. Ajouter séparément `--allow-dependency-downloads` aux deux commandes si le
+nouveau plan doit autoriser la résolution de dépendances manquantes.
+
+La certification lit la paire du plan et compare la version observée par `aapt`.
+Elle refuse un APK dont les propriétés auraient été ignorées, même si sa signature,
+son hash et les neuf reçus sont corrects. Aucune option de version n'est acceptée
+sur `certify` : le plan reste l'autorité. Un ancien plan dépourvu de ce champ garde
+son comportement initial, sans propriété supplémentaire ni version inventée.
+
 Étapes distinctes, séquentielles : `spotlessCheck`, `detekt`,
 `:core:player:compileDebugUnitTestKotlin`, `:core:player:testDebugUnitTest`,
 `:app:compileDebugUnitTestKotlin`, `:app:testDebugUnitTest`,
@@ -127,6 +151,13 @@ Les six nouveaux cas couvrent les preuves d'échec, le refus de réutiliser un
 ancien reçu via un pointeur modifié, le code 75 et la concordance du mode réseau.
 Cette vérification ne lance ni Gradle, ni ADB ; la validation Linux et le
 téléchargement réel de nouvelles dépendances restent distincts.
+
+L'épinglage des versions bêta est couvert par neuf autres cas : **52 tests
+Windows réussis en 9,848 s** le 15 novembre 2026. Ils contrôlent la paire typée,
+le refus avant garde d'un choix différent du plan, les deux seuls arguments
+Gradle ajoutés, les plans historiques et la certification d'une version observée
+correcte ou ignorée. Ce sont des tests synthétiques sans Gradle, SDK actif ni ADB ;
+la compilation réelle de l'application et la qualification physique restent séparées.
 
 Sorties : un JSON par étape, reçus privés du garde-fou, logs privés, audit JSONL UTC et
 Europe/Paris, durées et manifeste. `plan` est utilisable sans Gradle ; `run` exige Linux
