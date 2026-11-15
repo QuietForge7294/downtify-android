@@ -45,7 +45,14 @@ Le plan imprime les tâches. Le pilote appelle exclusivement
 `/usr/local/bin/downtify-android-build --wrapper /chemin/absolu/gradlew -- --offline TACHE --console=plain`.
 Étapes distinctes, séquentielles : `spotlessCheck`, `detekt`,
 `:core:player:compileDebugUnitTestKotlin`, `:core:player:testDebugUnitTest`,
+`:app:compileDebugUnitTestKotlin`, `:app:testDebugUnitTest`,
 `:app:compileBetaKotlin`, `:app:assembleBeta`, `:app:lintBeta`.
+
+La suite app complète est exigée avant R8 : un succès du lecteur ne peut pas
+masquer des résultats app absents ou échoués. La compilation de ses classes et
+leur exécution restent séparées. Les compteurs JUnit sont enregistrés par module.
+Ce changement nécessite un nouveau plan ; les plans antérieurs restent des
+preuves historiques de leur version et ne sont pas réécrits.
 
 Pour poursuivre le même plan après la préparation du candidat final :
 
@@ -80,6 +87,18 @@ SHA-256, taille, certificat, source, plan et état des contrôles automatisés. 
 physiques restent `NOT_RUN`. Le script ne charge ni ne copie une clé et ne publie rien
 automatiquement. Utiliser la procédure de partage existante après validation, sans secours
 par une autre signature. Une URL de téléchargement n'est pas une preuve d'intégrité.
+
+Les libellés de certificat `Signer #1` (SDK 35) et `V2 Signer:` (SDK 37) sont
+reconnus sans changer la comparaison d'identité : un certificat inconnu, tronqué
+ou plusieurs signataires restent refusés. Aucun rebuild APK n'est nécessaire
+pour un simple changement d'outil de vérification compatible.
+
+Le 15 novembre 2026 : 37 tests d'outillage réussis sous Windows en 25,652 s,
+sans Gradle ni appareil réel. Les nouveaux cas vérifient les deux formats de
+certificat, le refus de sorties tronquées/signataires multiples et l'arrêt
+avant APK sur un échec JUnit app, même quand les résultats lecteur sont verts.
+Les fixtures lisent leurs journaux en UTF-8 et créent les preuves hors checkout,
+y compris quand le répertoire temporaire par défaut tombe dans le dépôt.
 
 Sorties : un JSON par étape, reçus privés du garde-fou, logs privés, audit JSONL UTC et
 Europe/Paris, durées et manifeste. `plan` est utilisable sans Gradle ; `run` exige Linux
