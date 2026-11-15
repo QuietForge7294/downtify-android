@@ -88,5 +88,6 @@ private const val MAX_TRACE_FRAMES = 128
 private val FRAME = Regex("""at ([A-Za-z0-9_.$<>-]+)\(([^)]*)\)""")
 private val SOURCE =
     Regex(
-        """(?:[A-Za-z0-9_.$-]+\.(?:kt|java)(?::\d+)?|r8-map-id-[0-9a-f]+:\d+|Native method|Native Method|Unknown Source)""",
+        """(?:[A-Za-z0-9_.$-]+\.(?:kt|java)(?::\d+)?|""" +
+            """r8-map-id-[0-9a-f]+:\d+|Native method|Native Method|Unknown Source)""",
     )

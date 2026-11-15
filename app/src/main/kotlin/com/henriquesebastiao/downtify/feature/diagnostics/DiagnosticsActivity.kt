@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,15 +44,17 @@ class DiagnosticsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             DowntifyTheme {
-                val model: DiagnosticsViewModel = hiltViewModel()
-                val state by model.state.collectAsStateWithLifecycle()
-                val save =
-                    rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
-                        uri?.let(model::export)
-                    }
-                DiagnosticsScreen(state, model::run, {
-                    save.launch("downtify-diagnostic-${BuildConfig.VERSION_NAME}.txt")
-                }, ::finish)
+                Surface(Modifier.fillMaxSize()) {
+                    val model: DiagnosticsViewModel = hiltViewModel()
+                    val state by model.state.collectAsStateWithLifecycle()
+                    val save =
+                        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+                            uri?.let(model::export)
+                        }
+                    DiagnosticsScreen(state, model::run, {
+                        save.launch("downtify-diagnostic-${BuildConfig.VERSION_NAME}.txt")
+                    }, ::finish)
+                }
             }
         }
     }
