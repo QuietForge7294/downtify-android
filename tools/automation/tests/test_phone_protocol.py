@@ -16,7 +16,7 @@ from support import load, save
 
 class PhoneProtocolTest(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
+        self.temp = tempfile.TemporaryDirectory(prefix="downtify-phone-test-", dir=Path(__file__).resolve().parents[4])
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.state = self.root / "fake-state.json"
@@ -44,7 +44,7 @@ class PhoneProtocolTest(unittest.TestCase):
         self.assertEqual(result["manual_checks"]["audible_sound"], "NOT_RUN")
         self.assertEqual(result["observations"][0]["internal_queue_count"], 18)
         self.assertTrue((self.root / "smoke-3-private.png").read_bytes().startswith(b"\x89PNG\r\n\x1a\n"))
-        self.assertNotIn("synthetic-device", (self.root / "commands.jsonl").read_text())
+        self.assertNotIn("synthetic-device", (self.root / "commands.jsonl").read_text(encoding="utf-8"))
         self.assertIn("started_utc", result)
         completed = subprocess.run([sys.executable, phone_suite.__file__, "report", "--out", str(self.root)],
                                    capture_output=True, check=True)
