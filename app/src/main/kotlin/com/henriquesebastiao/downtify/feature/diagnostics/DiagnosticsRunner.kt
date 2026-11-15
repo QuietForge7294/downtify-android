@@ -102,25 +102,9 @@ internal class DiagnosticsRunner @Inject constructor(
     private fun storageCheck(): DiagnosticCheck {
         val file = File.createTempFile("diagnostic-", ".tmp", context.cacheDir)
         try {
-            val bytes = ByteArray(BLOCK_BYTES) { (it % BYTE_PATTERN).toByte() }
-            val expected = CRC32()
-            file.outputStream().buffered().use { output ->
-                repeat(STORAGE_BYTES / BLOCK_BYTES) {
-                    output.write(bytes)
-                    expected.update(bytes)
-                }
-            }
-            val actual = CRC32()
-            var size = 0L
-            file.inputStream().buffered().use { input ->
-                while (true) {
-                    val count = input.read(bytes)
-                    if (count < 0) break
-                    actual.update(bytes, 0, count)
-                    size += count
-                }
-            }
-            check(size == STORAGE_BYTES.toLong() && actual.value == expected.value)
+            val expected = writeSample(file)
+            val (size, checksum) = readSample(file)
+            check(size == STORAGE_BYTES.toLong() && checksum == expected)
             return DiagnosticCheck(
                 DiagnosticKind.STORAGE,
                 DiagnosticStatus.OK,
@@ -129,6 +113,33 @@ internal class DiagnosticsRunner @Inject constructor(
         } finally {
             file.delete()
         }
+    }
+
+    private fun writeSample(file: File): Long {
+        val bytes = ByteArray(BLOCK_BYTES) { (it % BYTE_PATTERN).toByte() }
+        val checksum = CRC32()
+        file.outputStream().buffered().use { output ->
+            repeat(STORAGE_BYTES / BLOCK_BYTES) {
+                output.write(bytes)
+                checksum.update(bytes)
+            }
+        }
+        return checksum.value
+    }
+
+    private fun readSample(file: File): Pair<Long, Long> {
+        val bytes = ByteArray(BLOCK_BYTES)
+        val checksum = CRC32()
+        var size = 0L
+        file.inputStream().buffered().use { input ->
+            while (true) {
+                val count = input.read(bytes)
+                if (count <= 0) break
+                checksum.update(bytes, 0, count)
+                size += count
+            }
+        }
+        return size to checksum.value
     }
 
     private suspend fun serverCheck(): DiagnosticCheck {
