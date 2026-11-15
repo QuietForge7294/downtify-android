@@ -53,6 +53,8 @@ fun DailyMusicShelf(
             Text("Pour vous", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
             TextButton(onClick = onSeeAll) { Text("Tout voir") }
         }
+        Text("Selon votre humeur", style = MaterialTheme.typography.titleSmall)
+        HomeMixRows(dailyMoods.map { it.first }, "daily", state, caps, onOpen)
         Text("Vos genres", style = MaterialTheme.typography.titleSmall)
         Text(
             if (caps.enabled("personalization")) {
@@ -63,8 +65,6 @@ fun DailyMusicShelf(
             style = MaterialTheme.typography.bodySmall,
         )
         HomeMixRows(genreMoods, "weekly", state, caps, onOpen)
-        Text("Selon votre humeur", style = MaterialTheme.typography.titleSmall)
-        HomeMixRows(dailyMoods.map { it.first }, "daily", state, caps, onOpen)
         if (state.message.isNotBlank()) Text(state.message, style = MaterialTheme.typography.bodySmall)
     }
 }
@@ -84,7 +84,7 @@ private fun HomeMixRows(
                 val ready = caps.enabled(cadence) && card != null && card.count > 0
                 Surface(
                     onClick = { onOpen(cadence, mood) },
-                    enabled = ready,
+                    enabled = caps.enabled(cadence),
                     shape = MaterialTheme.shapes.large,
                     modifier = Modifier.weight(1f).height(112.dp),
                 ) {
@@ -116,6 +116,7 @@ fun MusicPlaylistsRoute(
     onOpenPlaylist: (String, String) -> Unit = { c, m -> viewModel.mood(c, m) },
     onArtist: (String) -> Unit = {},
     onAlbum: (String) -> Unit = {},
+    onOpenWeeklyDj: (String, String) -> Unit = { _, _ -> },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val caps by viewModel.capabilities.collectAsStateWithLifecycle()
@@ -139,7 +140,11 @@ fun MusicPlaylistsRoute(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = 16.dp).plusBottomBars(),
         ) {
-            if (caps.djWeeklySets) item("weekly-dj-sets") { WeeklyDjSection(featured = false) }
+            if (caps.djWeeklySets) {
+                item("weekly-dj-sets") {
+                    WeeklyDjSection(featured = false, onOpenSet = onOpenWeeklyDj)
+                }
+            }
             musicForYouItems(
                 state,
                 caps,

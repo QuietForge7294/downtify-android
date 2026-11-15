@@ -23,6 +23,8 @@ STAGES = {
     "static": ["detekt"],
     "player-compile": [":core:player:compileDebugUnitTestKotlin"],
     "player-tests": [":core:player:testDebugUnitTest"],
+    "app-test-compile": [":app:compileDebugUnitTestKotlin"],
+    "app-tests": [":app:testDebugUnitTest"],
     "app-compile": [":app:compileBetaKotlin"],
     "apk": [":app:assembleBeta"],
     "lint": [":app:lintBeta"],
@@ -68,8 +70,8 @@ def verified_plan(directory, repo):
     return plan
 
 
-def test_counts(repo):
-    paths = list((repo / "core/player/build/test-results/testDebugUnitTest").glob("TEST-*.xml"))
+def test_counts(repo, module="core/player"):
+    paths = list((repo / module / "build/test-results/testDebugUnitTest").glob("TEST-*.xml"))
     totals = {key: 0 for key in ("tests", "failures", "errors", "skipped")}
     for path in paths:
         root = ET.parse(path).getroot()
@@ -136,8 +138,8 @@ def execute(repo, directory, until, sdk=None):
                     if guard.get("status") != "success" or guard.get("return_code") != 0:
                         raise ValueError("Guard receipt does not prove success.")
                     receipt["guard_sha256"] = digest(directory / (stage + "-guard-private.json"))
-                    if stage == "player-tests":
-                        receipt["junit"] = test_counts(repo)
+                    if stage in {"player-tests", "app-tests"}:
+                        receipt["junit"] = test_counts(repo, "app" if stage == "app-tests" else "core/player")
                     if stage == "apk":
                         outputs = list((repo / "app/build/outputs/apk/beta").glob("*.apk"))
                         if len(outputs) != 1:
@@ -153,6 +155,12 @@ def execute(repo, directory, until, sdk=None):
                 print(json.dumps({"stage": stage, "status": "passed", "seconds": receipt["seconds"]}), flush=True)
             if stage == until:
                 break
+
+
+def signer_certificates(output):
+    # SDK 35 says "Signer #1"; SDK 37 uses "V2 Signer:" for the same APK.
+    pattern = r"(?m)^(?:Signer #\d+|V[1-4] Signer(?: #\d+)?):? certificate SHA-256 digest: ([a-fA-F0-9]{64})\s*$"
+    return [value.lower() for value in re.findall(pattern, output)]
 
 
 def certify(repo, directory, apk, aapt, apksigner, certificate):
@@ -172,7 +180,7 @@ def certify(repo, directory, apk, aapt, apksigner, certificate):
     if metadata.returncode or signature.returncode:
         raise ValueError("APK metadata/signature verification failed.")
     match = re.search(r"package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'", metadata.stdout.decode())
-    certs = re.findall(r"Signer #\d+ certificate SHA-256 digest: ([a-fA-F0-9]+)", signature.stdout.decode())
+    certs = signer_certificates(signature.stdout.decode())
     if not match or [c.lower() for c in certs] != [certificate.lower()]:
         raise ValueError("Unexpected APK metadata or signer certificate.")
     if digest(apk) != assembled["sha256"]:

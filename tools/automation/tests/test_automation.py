@@ -25,7 +25,7 @@ XML = '<hierarchy><node text="27\u202f970 éléments" enabled="true" bounds="[0,
 
 class AutomationTest(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
+        self.temp = tempfile.TemporaryDirectory(prefix="downtify-tools-test-", dir=Path(__file__).resolve().parents[4])
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
 
@@ -55,7 +55,7 @@ class AutomationTest(unittest.TestCase):
         result = support.run([sys.executable, "-c", "import sys;sys.stdout.buffer.write(" + repr(data) + ")"],
                              self.root, log, Path(support.__file__), display=["binary-fixture"])
         self.assertEqual(result.stdout, data)
-        row = json.loads(log.read_text())
+        row = json.loads(log.read_text(encoding="utf-8"))
         self.assertEqual(row["return_code"], 0)
         self.assertEqual(row["cwd"], str(self.root))
         self.assertEqual(row["command"], ["binary-fixture"])
