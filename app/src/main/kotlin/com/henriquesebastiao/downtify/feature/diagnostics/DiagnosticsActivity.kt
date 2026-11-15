@@ -45,10 +45,13 @@ class DiagnosticsActivity : ComponentActivity() {
             DowntifyTheme {
                 val model: DiagnosticsViewModel = hiltViewModel()
                 val state by model.state.collectAsStateWithLifecycle()
-                val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
-                    uri?.let(model::export)
-                }
-                DiagnosticsScreen(state, model::run, { save.launch("downtify-diagnostic-${BuildConfig.VERSION_NAME}.txt") }, ::finish)
+                val save =
+                    rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+                        uri?.let(model::export)
+                    }
+                DiagnosticsScreen(state, model::run, {
+                    save.launch("downtify-diagnostic-${BuildConfig.VERSION_NAME}.txt")
+                }, ::finish)
             }
         }
     }
@@ -101,7 +104,12 @@ internal class DiagnosticsViewModel @Inject constructor(private val runner: Diag
 }
 
 @Composable
-internal fun DiagnosticsScreen(state: DiagnosticsUiState, onRun: () -> Unit, onExport: () -> Unit, onClose: () -> Unit) {
+internal fun DiagnosticsScreen(
+    state: DiagnosticsUiState,
+    onRun: () -> Unit,
+    onExport: () -> Unit,
+    onClose: () -> Unit,
+) {
     Column(
         Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),

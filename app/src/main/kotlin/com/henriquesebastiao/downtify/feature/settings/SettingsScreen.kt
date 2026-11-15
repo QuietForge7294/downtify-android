@@ -83,8 +83,8 @@ import com.henriquesebastiao.downtify.core.model.StreamFormat
 import com.henriquesebastiao.downtify.core.model.StreamQuality
 import com.henriquesebastiao.downtify.core.model.Transcoding
 import com.henriquesebastiao.downtify.core.model.formatBytes
-import com.henriquesebastiao.downtify.feature.player.PlaybackMixMode
 import com.henriquesebastiao.downtify.feature.diagnostics.DiagnosticsActivity
+import com.henriquesebastiao.downtify.feature.player.PlaybackMixMode
 import com.henriquesebastiao.downtify.feature.player.PlaybackMixSelector
 import com.henriquesebastiao.downtify.feature.player.QueueDjViewModel
 import com.henriquesebastiao.downtify.ui.common.GroupTitle
