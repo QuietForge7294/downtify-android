@@ -43,6 +43,21 @@ Ce précontrôle répond à un échec observé en SSH non interactif : SDK insta
 
 Le plan imprime les tâches. Le pilote appelle exclusivement
 `/usr/local/bin/downtify-android-build --wrapper /chemin/absolu/gradlew -- --offline TACHE --console=plain`.
+Le mode hors ligne reste le défaut, y compris pour les plans historiques qui ne
+contiennent pas de champ de politique réseau. Si une mise à jour amont exige de
+nouvelles dépendances Gradle, créer un **nouveau plan** avec l'autorisation explicite :
+
+```sh
+python3 tools/automation/release_pipeline.py plan --out /root/downtify-runs/NOUVEAU --label NOUVEAU --allow-dependency-downloads
+python3 tools/automation/release_pipeline.py run --out /root/downtify-runs/NOUVEAU --sdk /opt/android-sdk --allow-dependency-downloads
+```
+
+L'option doit être identique au plan et à l'exécution. Elle retire seulement
+`--offline` des arguments Gradle ; elle ne télécharge pas de SDK, ne modifie pas
+la garde, les limites de ressources ou les tâches, et n'autorise aucune nouvelle
+tentative automatique. Un plan hors ligne ne peut pas être repris en mode réseau.
+L'examen de l'échec précédent reste obligatoire avant de préparer ce nouveau plan.
+
 Étapes distinctes, séquentielles : `spotlessCheck`, `detekt`,
 `:core:player:compileDebugUnitTestKotlin`, `:core:player:testDebugUnitTest`,
 `:app:compileDebugUnitTestKotlin`, `:app:testDebugUnitTest`,
@@ -67,6 +82,12 @@ committer les sources déjà testées ne doit pas déclencher de nouveaux builds
 distingue la source lors des gates (`gated_source`) et celle lors de la certification (`source`).
 Un échec, code 75 ou interruption laisse un reçu bloquant, sans nouvelle
 tentative automatique. Examiner le journal et les reçus du garde-fou avant un nouveau plan.
+Lorsqu'une invocation échoue ou est refusée, son reçu de garde frais est conservé
+et empreinté **avant** l'arrêt du pilote. Le rapport expose son statut, son code
+retour et son pic mémoire, sans transformer l'échec en succès. Un reçu absent,
+illisible ou périmé reste identifié comme tel ; modifier le pointeur vers un
+ancien reçu ne rend pas la preuve fraîche. Les reçus d'échec permettent le
+diagnostic sans chercher leurs chemins dans un journal brut.
 Ne pas contourner un verrou/refus mémoire ni réinitialiser automatiquement une unité échouée.
 Après un timeout ou une interruption du pilote, inspecter l'unité existante : son arrêt
 n'est pas prouvé par celui du contrôleur. Les limites de `docs/android-build-budget.md`
@@ -99,6 +120,13 @@ certificat, le refus de sorties tronquées/signataires multiples et l'arrêt
 avant APK sur un échec JUnit app, même quand les résultats lecteur sont verts.
 Les fixtures lisent leurs journaux en UTF-8 et créent les preuves hors checkout,
 y compris quand le répertoire temporaire par défaut tombe dans le dépôt.
+
+Le même jour, l'évolution de conservation des reçus échoués et de politique
+réseau explicite porte la suite à **43 tests Windows réussis en 33,138 s**.
+Les six nouveaux cas couvrent les preuves d'échec, le refus de réutiliser un
+ancien reçu via un pointeur modifié, le code 75 et la concordance du mode réseau.
+Cette vérification ne lance ni Gradle, ni ADB ; la validation Linux et le
+téléchargement réel de nouvelles dépendances restent distincts.
 
 Sorties : un JSON par étape, reçus privés du garde-fou, logs privés, audit JSONL UTC et
 Europe/Paris, durées et manifeste. `plan` est utilisable sans Gradle ; `run` exige Linux

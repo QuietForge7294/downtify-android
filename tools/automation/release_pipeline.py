@@ -52,10 +52,11 @@ def source(repo):
     return {"commit": git(repo, "rev-parse", "HEAD").decode().strip(), "tree_sha256": checksum.hexdigest()}
 
 
-def make_plan(repo, label):
+def make_plan(repo, label, allow_dependency_downloads=False):
     if not re.fullmatch(r"[A-Za-z0-9._-]+", label):
         raise ValueError("Use a simple release label.")
     plan = {"schema": 1, "label": label, "source": source(repo), "stages": STAGES,
+            "allow_dependency_downloads": allow_dependency_downloads,
             "policy": "one guarded Gradle invocation per stage; no retries; USB after final candidate"}
     return dict(plan, plan_sha256=identity(plan))
 
@@ -65,6 +66,8 @@ def verified_plan(directory, repo):
     unsigned = {k: v for k, v in plan.items() if k != "plan_sha256"}
     if identity(unsigned) != plan["plan_sha256"] or plan["stages"] != STAGES:
         raise ValueError("Plan changed or belongs to another tool version. Prepare a new plan.")
+    if not isinstance(plan.get("allow_dependency_downloads", False), bool):
+        raise ValueError("Invalid dependency download policy in plan.")
     if source(repo)["tree_sha256"] != plan["source"]["tree_sha256"]:
         raise ValueError("Source changed. Prepare a new plan; successful receipts cannot be reused.")
     return plan
@@ -103,10 +106,42 @@ def configure_sdk(repo, requested=None):
     return str(path)
 
 
-def execute(repo, directory, until, sdk=None):
+def guard_snapshot():
+    if not LATEST.exists():
+        return None, None
+    checksum = digest(LATEST)
+    try:
+        return checksum, Path(load(LATEST)["receipt"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return checksum, None
+
+
+def capture_guard(directory, stage, previous):
+    """Retain fresh failed/refused evidence too; never recycle the last run's proof."""
+    if not LATEST.exists():
+        return {"guard_evidence": "missing"}, None
+    if digest(LATEST) == previous[0]:
+        return {"guard_evidence": "stale"}, None
+    try:
+        path = Path(load(LATEST)["receipt"])
+        if path == previous[1]:
+            return {"guard_evidence": "stale"}, None
+        guard = load(path)
+        if not isinstance(guard, dict):
+            raise ValueError("Invalid guard receipt.")
+        output = directory / (stage + "-guard-private.json")
+        save(output, guard)
+        return {"guard_evidence": "fresh", "guard_sha256": digest(output)}, guard
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"guard_evidence": "unreadable"}, None
+
+
+def execute(repo, directory, until, sdk=None, allow_dependency_downloads=False):
     if sys.platform != "linux" or not GUARD.is_file():
         raise ValueError("Build execution requires the installed opencode Linux guard.")
     plan = verified_plan(directory, repo)
+    if plan.get("allow_dependency_downloads", False) is not allow_dependency_downloads:
+        raise ValueError("Dependency download policy differs from plan; use the same explicit choice.")
     sdk_path = configure_sdk(repo, sdk) if list(STAGES).index(until) >= list(STAGES).index("player-compile") else None
     with lock(directory / "pipeline.lock"):
         for stage, tasks in STAGES.items():
@@ -118,26 +153,26 @@ def execute(repo, directory, until, sdk=None):
                 print(json.dumps({"stage": stage, "status": "reused"}), flush=True)
             else:
                 verified_plan(directory, repo)
-                argv = [str(GUARD), "--wrapper", str(repo / "gradlew"), "--", "--offline", *tasks, "--console=plain"]
+                network = [] if allow_dependency_downloads else ["--offline"]
+                argv = [str(GUARD), "--wrapper", str(repo / "gradlew"), "--", *network, *tasks, "--console=plain"]
                 # Prints the full future invocation before running it. SSH callers must also announce it in chat.
                 print(json.dumps({"stage": stage, "command": argv}), flush=True)
                 receipt = {"stage": stage, "plan_sha256": plan["plan_sha256"], "status": "running", "sdk_path": sdk_path}
                 save(receipt_path, receipt)
-                old_latest = digest(LATEST) if LATEST.exists() else None
+                previous_guard = guard_snapshot()
                 before = time.monotonic()
                 try:
                     result = run(argv, repo, directory / "commands.jsonl", SCRIPT,
                                  log=directory / (stage + "-private.log"), timeout=1300)
                     receipt.update(return_code=result.returncode, seconds=round(time.monotonic() - before, 3))
+                    evidence, guard = capture_guard(directory, stage, previous_guard)
+                    receipt.update(evidence)
                     if result.returncode != 0:
                         raise ValueError("Guard/build failed: exit " + str(result.returncode))
-                    if not LATEST.exists() or digest(LATEST) == old_latest:
+                    if guard is None:
                         raise ValueError("No fresh guard receipt.")
-                    guard = load(Path(load(LATEST)["receipt"]))
-                    save(directory / (stage + "-guard-private.json"), guard)
                     if guard.get("status") != "success" or guard.get("return_code") != 0:
                         raise ValueError("Guard receipt does not prove success.")
-                    receipt["guard_sha256"] = digest(directory / (stage + "-guard-private.json"))
                     if stage in {"player-tests", "app-tests"}:
                         receipt["junit"] = test_counts(repo, "app" if stage == "app-tests" else "core/player")
                     if stage == "apk":
@@ -211,12 +246,18 @@ def report(directory):
         receipt = load(path)
         row = {"stage": stage, "recorded_status": receipt.get("status"),
                "seconds": receipt.get("seconds"), "receipt_sha256": digest(path)}
+        for key in ("return_code", "error_type", "guard_evidence"):
+            if key in receipt:
+                row[key] = receipt[key]
         guard_path = directory / (stage + "-guard-private.json")
-        if receipt.get("status") == "passed":
+        if receipt.get("status") == "passed" or "guard_sha256" in receipt:
             if not guard_path.exists() or digest(guard_path) != receipt.get("guard_sha256"):
                 row["recorded_status"] = "EVIDENCE_CHANGED"
             else:
-                row["memory_peak_bytes"] = load(guard_path).get("memory_peak")
+                guard = load(guard_path)
+                row["memory_peak_bytes"] = guard.get("memory_peak")
+                row["guard_status"] = guard.get("status")
+                row["guard_return_code"] = guard.get("return_code")
         if "junit" in receipt:
             row["junit"] = receipt["junit"]
         rows.append(row)
@@ -241,7 +282,11 @@ def main():
     parser.add_argument("--apksigner", type=Path)
     parser.add_argument("--certificate")
     parser.add_argument("--sdk", type=Path, help="Existing Android SDK; never downloaded or modified by this tool")
+    parser.add_argument("--allow-dependency-downloads", action="store_true",
+                        help="Explicit plan/run opt-in to Gradle dependency downloads; guard and SDK limits stay unchanged")
     args = parser.parse_args()
+    if args.allow_dependency_downloads and args.action not in {"plan", "run"}:
+        parser.error("--allow-dependency-downloads applies only to plan and run")
     repo = args.repo.resolve()
     directory = private_directory(args.out, repo)
     AUDIT_PATH = directory / "commands.jsonl"
@@ -250,11 +295,11 @@ def main():
     elif args.action == "plan":
         if (directory / "plan.json").exists():
             raise ValueError("Plan exists; choose a new output directory.")
-        plan = make_plan(repo, args.label)
+        plan = make_plan(repo, args.label, args.allow_dependency_downloads)
         save(directory / "plan.json", plan)
         print(json.dumps(plan, indent=2))
     elif args.action == "run":
-        execute(repo, directory, args.until, args.sdk)
+        execute(repo, directory, args.until, args.sdk, args.allow_dependency_downloads)
     else:
         if not all((args.apk, args.aapt, args.apksigner, args.certificate)):
             parser.error("certify requires --apk --aapt --apksigner --certificate")
