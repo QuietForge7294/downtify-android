@@ -2,7 +2,18 @@ package com.henriquesebastiao.downtify.feature.diagnostics
 
 internal enum class DiagnosticKind { UI, STORAGE, SERVER }
 internal enum class DiagnosticStatus { OK, SLOW, ERROR, TIMEOUT, NOT_PAIRED, UNREACHABLE, DIFFERENT_SERVER }
-internal enum class DiagnosticMetric { MAX_UI_DELAY_MS, MEAN_UI_DELAY_MS, BYTES, JAVA_USED_BYTES, JAVA_MAX_BYTES, NATIVE_BYTES, PSS_KB, CPU_MS, CHECK_CPU_MS, CHECK_WALL_MS }
+internal enum class DiagnosticMetric {
+    MAX_UI_DELAY_MS,
+    MEAN_UI_DELAY_MS,
+    BYTES,
+    JAVA_USED_BYTES,
+    JAVA_MAX_BYTES,
+    NATIVE_BYTES,
+    PSS_KB,
+    CPU_MS,
+    CHECK_CPU_MS,
+    CHECK_WALL_MS,
+}
 
 internal data class DiagnosticCheck(
     val kind: DiagnosticKind,
@@ -45,14 +56,20 @@ internal fun safeExitTrace(text: String, packageName: String): String {
     for (line in text.lineSequence().take(MAX_TRACE_LINES)) {
         val trimmed = line.trim()
         when {
-            trimmed.startsWith("Cmd line: ") -> own = trimmed.removePrefix("Cmd line: ").substringBefore(':') == packageName
+            trimmed.startsWith("Cmd line: ") ->
+                own =
+                    trimmed.removePrefix("Cmd line: ").substringBefore(':') == packageName
+
             trimmed.startsWith("----- end ") -> own = false
+
             !own -> Unit
+
             trimmed.startsWith("\"") -> output += when {
                 trimmed.startsWith("\"main\"") -> "thread=main"
                 trimmed.startsWith("\"DefaultDispatcher") -> "thread=worker"
                 else -> "thread=other"
             }
+
             else -> safeFrame(trimmed)?.let(output::add)
         }
         if (output.size >= MAX_TRACE_FRAMES) break
@@ -69,4 +86,7 @@ internal fun safeFrame(line: String): String? {
 private const val MAX_TRACE_LINES = 4096
 private const val MAX_TRACE_FRAMES = 128
 private val FRAME = Regex("""at ([A-Za-z0-9_.$<>-]+)\(([^)]*)\)""")
-private val SOURCE = Regex("""(?:[A-Za-z0-9_.$-]+\.(?:kt|java)(?::\d+)?|r8-map-id-[0-9a-f]+:\d+|Native method|Native Method|Unknown Source)""")
+private val SOURCE =
+    Regex(
+        """(?:[A-Za-z0-9_.$-]+\.(?:kt|java)(?::\d+)?|r8-map-id-[0-9a-f]+:\d+|Native method|Native Method|Unknown Source)""",
+    )

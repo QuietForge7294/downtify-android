@@ -121,7 +121,11 @@ internal class DiagnosticsRunner @Inject constructor(
                 }
             }
             check(size == STORAGE_BYTES.toLong() && actual.value == expected.value)
-            return DiagnosticCheck(DiagnosticKind.STORAGE, DiagnosticStatus.OK, metrics = mapOf(DiagnosticMetric.BYTES to size))
+            return DiagnosticCheck(
+                DiagnosticKind.STORAGE,
+                DiagnosticStatus.OK,
+                metrics = mapOf(DiagnosticMetric.BYTES to size),
+            )
         } finally {
             file.delete()
         }
@@ -130,12 +134,16 @@ internal class DiagnosticsRunner @Inject constructor(
     private suspend fun serverCheck(): DiagnosticCheck {
         val session = sessions.current ?: return DiagnosticCheck(DiagnosticKind.SERVER, DiagnosticStatus.NOT_PAIRED)
         val status = when (val result = probe.check(session.baseUrl)) {
-            is ServerProbe.Result.Found -> if (session.serverId.isNotEmpty() && result.info.serverId != session.serverId) {
+            is ServerProbe.Result.Found -> if (session.serverId.isNotEmpty() &&
+                result.info.serverId != session.serverId
+            ) {
                 DiagnosticStatus.DIFFERENT_SERVER
             } else {
                 DiagnosticStatus.OK
             }
+
             ServerProbe.Result.NotDowntify, is ServerProbe.Result.TooNew -> DiagnosticStatus.DIFFERENT_SERVER
+
             else -> DiagnosticStatus.UNREACHABLE
         }
         return DiagnosticCheck(DiagnosticKind.SERVER, status)
@@ -144,7 +152,10 @@ internal class DiagnosticsRunner @Inject constructor(
     @Suppress("TooGenericExceptionCaught")
     private fun currentTraces(): List<String> = try {
         Thread.getAllStackTraces().entries
-            .filter { it.key.name == "main" || it.key.name.startsWith("ExoPlayer") || it.key.name.startsWith("DefaultDispatcher") }
+            .filter {
+                it.key.name == "main" || it.key.name.startsWith("ExoPlayer") ||
+                    it.key.name.startsWith("DefaultDispatcher")
+            }
             .sortedBy { if (it.key.name == "main") 0 else 1 }
             .take(MAX_CURRENT_THREADS)
             .map { (thread, frames) ->
