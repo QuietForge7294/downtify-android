@@ -4,12 +4,15 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import com.henriquesebastiao.downtify.core.model.DjIds
 import com.henriquesebastiao.downtify.core.model.EpisodeIds
+import com.henriquesebastiao.downtify.core.model.MediaIds
 import com.henriquesebastiao.downtify.core.model.PlaybackContext
 import com.henriquesebastiao.downtify.core.model.PlaybackContextType
 import com.henriquesebastiao.downtify.core.model.PodcastEpisode
 import com.henriquesebastiao.downtify.core.model.PodcastShow
 import com.henriquesebastiao.downtify.core.model.RemoteSong
+import com.henriquesebastiao.downtify.core.model.SavedPlaybackItem
 import com.henriquesebastiao.downtify.core.model.StreamIds
 import com.henriquesebastiao.downtify.core.model.StreamVideo
 import com.henriquesebastiao.downtify.core.model.Track
@@ -30,6 +33,22 @@ object MediaItems {
     private const val EXTRA_CONTEXT_TYPE = "downtify.context_type"
     private const val EXTRA_CONTEXT_ID = "downtify.context_id"
     private const val EXTRA_QUEUED = "downtify.queued"
+    private const val EXTRA_HAS_COVER = "downtify.has_cover"
+
+    private const val EXTRA_ORIGINAL_ARTWORK = "downtify.original_artwork"
+
+    fun originalArtwork(item: MediaItem): Uri? =
+        item.mediaMetadata.extras?.getString(EXTRA_ORIGINAL_ARTWORK)?.let(Uri::parse) ?: item.mediaMetadata.artworkUri
+
+    fun withArtwork(item: MediaItem, uri: Uri): MediaItem {
+        val original = originalArtwork(item)
+        val extras = Bundle(item.mediaMetadata.extras ?: Bundle.EMPTY).apply {
+            original?.let { putString(EXTRA_ORIGINAL_ARTWORK, it.toString()) }
+        }
+        return item.buildUpon().setMediaMetadata(
+            item.mediaMetadata.buildUpon().setArtworkUri(uri).setExtras(extras).build(),
+        ).build()
+    }
 
     fun streamUri(videoId: String): Uri =
         Uri.Builder().scheme(SCHEME).authority(STREAM_HOST).appendPath(videoId).build()
@@ -67,7 +86,12 @@ object MediaItems {
                 .setIsPlayable(true)
                 .setIsBrowsable(false)
                 .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
-                .apply { if (queued) setExtras(Bundle().apply { putBoolean(EXTRA_QUEUED, true) }) }
+                .setExtras(
+                    Bundle().apply {
+                        putBoolean(EXTRA_QUEUED, queued)
+                        putBoolean(EXTRA_HAS_COVER, track.hasCover)
+                    },
+                )
                 .build(),
         )
         .build()
@@ -80,6 +104,97 @@ object MediaItems {
 
     /** Whether the user added [item] with "Add to queue". Survives the trip to the service (metadata does). */
     fun isQueued(item: MediaItem): Boolean = item.mediaMetadata.extras?.getBoolean(EXTRA_QUEUED) == true
+
+    /** Stable description for restart; library artwork is rebuilt with the current server address. */
+    fun saved(item: MediaItem): SavedPlaybackItem {
+        val metadata = item.mediaMetadata
+        val stream = streamOf(item)
+        val episode = episodeOf(item)
+        return SavedPlaybackItem(
+            mediaId = item.mediaId,
+            title = metadata.title?.toString().orEmpty(),
+            artist = metadata.artist?.toString().orEmpty(),
+            album = metadata.albumTitle?.toString().orEmpty(),
+            durationMs = metadata.durationMs ?: 0,
+            hasCover = metadata.extras?.getBoolean(EXTRA_HAS_COVER) ?: (metadata.artworkUri != null),
+            queued = isQueued(item),
+            videoId = stream?.videoId,
+            rawSong = stream?.raw,
+            episodeId = episode?.episodeId,
+            showId = episode?.showId,
+            episodeFile = episode?.file,
+            artworkUrl = stream?.coverUrl ?: episode?.artworkUrl,
+        )
+    }
+
+    fun restored(saved: SavedPlaybackItem, baseUrl: String): MediaItem {
+        val videoId = saved.videoId
+        val uri = when {
+            DjIds.referenceOf(saved.mediaId) != null -> requireNotNull(DjIds.referenceOf(saved.mediaId)).let {
+                DjMediaItems.uri(it.id, it.mode)
+            }
+
+            saved.episodeId != null -> Uri.parse(EpisodeIds.fileUrl(baseUrl, saved.episodeFile.orEmpty()))
+
+            videoId != null -> streamUri(videoId)
+
+            else -> uriFor(saved.mediaId)
+        }
+        val artwork = when {
+            saved.episodeId != null || saved.videoId != null -> saved.artworkUrl
+            saved.hasCover -> ServerUrls.cover(baseUrl, saved.mediaId, ServerUrls.COVER_LARGE)
+            else -> null
+        }
+        val extras = Bundle().apply {
+            putBoolean(EXTRA_QUEUED, saved.queued)
+            putBoolean(EXTRA_HAS_COVER, saved.hasCover)
+            saved.videoId?.let { putString(EXTRA_VIDEO_ID, it) }
+            saved.rawSong?.let { putString(EXTRA_RAW, it) }
+            saved.episodeId?.let { putLong(EXTRA_EPISODE_ID, it) }
+            saved.showId?.let { putLong(EXTRA_SHOW_ID, it) }
+            saved.episodeFile?.let { putString(EXTRA_FILE, it) }
+        }
+        return MediaItem.Builder()
+            .setMediaId(saved.mediaId)
+            .setUri(uri)
+            .apply { DjIds.referenceOf(saved.mediaId)?.let { setMimeType(DjMediaItems.mimeType(it.mode)) } }
+            .setRequestMetadata(MediaItem.RequestMetadata.Builder().setMediaUri(uri).build())
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(saved.title).setArtist(saved.artist).setAlbumTitle(saved.album)
+                    .setDurationMs(saved.durationMs)
+                    .setArtworkUri(artwork?.takeIf(String::isNotBlank)?.let(Uri::parse))
+                    .setIsPlayable(true).setIsBrowsable(false)
+                    .setMediaType(
+                        if (saved.episodeId !=
+                            null
+                        ) {
+                            MediaMetadata.MEDIA_TYPE_PODCAST_EPISODE
+                        } else {
+                            MediaMetadata.MEDIA_TYPE_MUSIC
+                        },
+                    )
+                    .setExtras(extras).build(),
+            ).build()
+    }
+
+    /** Keeps the restored mini player visible before Room's library snapshot arrives. */
+    fun trackFromMetadata(item: MediaItem): Track? {
+        if (!MediaIds.isLibrary(item.mediaId)) return null
+        val metadata = item.mediaMetadata
+        return Track(
+            id = item.mediaId, file = item.mediaId, title = metadata.title?.toString().orEmpty(),
+            artist = metadata.artist?.toString().orEmpty(), artists = emptyList(),
+            album = metadata.albumTitle?.toString().orEmpty(), albumArtist = metadata.albumArtist?.toString().orEmpty(),
+            albumId = "", artistId = "", trackNumber = metadata.trackNumber ?: 0, year = "",
+            duration = (metadata.durationMs ?: 0) / 1000.0, codec = "", bitrate = 0, sampleRate = 0,
+            channels = 0, size = 0, added = 0,
+            hasCover = metadata.extras?.getBoolean(
+                EXTRA_HAS_COVER,
+            ) ?: (metadata.artworkUri != null),
+            playlists = emptyList(),
+        )
+    }
 
     /**
      * A downloaded podcast episode, played from the server's file (`/downloads/...`). The address also
@@ -156,7 +271,7 @@ object MediaItems {
             videoId = videoId,
             title = item.mediaMetadata.title?.toString().orEmpty(),
             artist = item.mediaMetadata.artist?.toString().orEmpty(),
-            coverUrl = item.mediaMetadata.artworkUri?.toString().orEmpty(),
+            coverUrl = originalArtwork(item)?.toString().orEmpty(),
             raw = extras?.getString(EXTRA_RAW).orEmpty(),
         )
     }
@@ -170,7 +285,7 @@ object MediaItems {
             showId = extras?.getLong(EXTRA_SHOW_ID) ?: 0,
             title = item.mediaMetadata.title?.toString().orEmpty(),
             showName = item.mediaMetadata.artist?.toString().orEmpty(),
-            artworkUrl = item.mediaMetadata.artworkUri?.toString().orEmpty(),
+            artworkUrl = originalArtwork(item)?.toString().orEmpty(),
             file = extras?.getString(EXTRA_FILE).orEmpty(),
         )
     }

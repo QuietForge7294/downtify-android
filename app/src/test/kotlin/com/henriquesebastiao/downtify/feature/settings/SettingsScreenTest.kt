@@ -1,13 +1,24 @@
 package com.henriquesebastiao.downtify.feature.settings
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.henriquesebastiao.downtify.core.data.offline.OfflineLocationChange
+import com.henriquesebastiao.downtify.core.data.settings.ThemeMode
 import com.henriquesebastiao.downtify.core.data.settings.UserSettings
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.model.AppFont
+import com.henriquesebastiao.downtify.core.model.NormalizationLevel
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -24,12 +35,46 @@ class SettingsScreenTest {
         compose.setContent { DowntifyTheme { SettingsScreen(state, actions) } }
     }
 
+    @Test fun transitionsAreConfigurableInPlaybackSettings() {
+        var mode: com.henriquesebastiao.downtify.feature.player.PlaybackMixMode? = null
+        compose.setContent {
+            DowntifyTheme {
+                SettingsScreen(
+                    SettingsUiState(),
+                    SettingsActions(),
+                    transitionSeconds = 8,
+                    onPlaybackMode = { mode = it },
+                )
+            }
+        }
+        compose.onNodeWithText("Transitions et DJ").performScrollTo().assertExists()
+        compose.onNodeWithText("Durée du fondu local : 8 s").performScrollTo().assertExists()
+        compose.onNodeWithText("Transitions").performScrollTo().performClick()
+        assertEquals(com.henriquesebastiao.downtify.feature.player.PlaybackMixMode.Transitions, mode)
+    }
+
     @Test
     fun groupsTheSettings() {
         show()
         listOf("Playback", "Downloads", "Appearance", "About", "Server").forEach {
-            compose.onNodeWithText(it).performScrollTo().assertExists()
+            compose.onNode(hasText(it) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+                .performScrollTo().assertExists()
         }
+    }
+
+    @Test
+    fun playbackLevelUsesTheAppsThreeChoiceGroupWhenNormalizationIsEnabled() {
+        var level: NormalizationLevel? = null
+        show(
+            state = SettingsUiState(settings = UserSettings(normalizeVolume = true)),
+            actions = SettingsActions(onNormalizationLevel = { level = it }),
+        )
+        compose.onNodeWithText("Playback level").performScrollTo().assertExists()
+        compose.onNodeWithText("Normal").assertIsSelected()
+        compose.onNodeWithText("Louder").performClick()
+        assertEquals(NormalizationLevel.Louder, level)
+        compose.onNodeWithText("Maximum").performClick()
+        assertEquals(NormalizationLevel.Maximum, level)
     }
 
     @Test
@@ -38,6 +83,24 @@ class SettingsScreenTest {
         show(actions = SettingsActions(onAmoled = { value = it }))
         compose.onNodeWithText("Pure black").performScrollTo().performClick()
         assertEquals(true, value)
+    }
+
+    @Test
+    fun theThemeIsAGroupOfThreeChoicesOnTheRow() {
+        var theme: ThemeMode? = null
+        show(actions = SettingsActions(onTheme = { theme = it }))
+        compose.onNodeWithText("System").performScrollTo().assertIsSelected()
+        compose.onNodeWithText("Dark").assertIsNotSelected()
+        compose.onNodeWithText("Light").performClick()
+        assertEquals(ThemeMode.Light, theme)
+    }
+
+    @Test
+    fun theFloatingNavigationBarIsASwitchThatStartsOn() {
+        var value: Boolean? = null
+        show(actions = SettingsActions(onFloatingNavBar = { value = it }))
+        compose.onNodeWithText("Floating navigation bar").performScrollTo().assertIsOn().performClick()
+        assertEquals(false, value)
     }
 
     @Test
@@ -50,9 +113,9 @@ class SettingsScreenTest {
         // The row shows the current choice.
         compose.onNodeWithText("System font").performScrollTo().assertExists()
         compose.onNodeWithText("Font").performScrollTo().performClick()
-        compose.onNodeWithText("Downtify").assertExists()
-        compose.onNodeWithText("Google Sans Flex").performClick()
-        assertEquals(AppFont.GoogleSansFlex, font)
+        compose.onNodeWithText("Google Sans Flex").assertExists()
+        compose.onNodeWithText("Downtify classic").performClick()
+        assertEquals(AppFont.Downtify, font)
     }
 
     @Test
@@ -64,13 +127,13 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun unpairingAsksFirst() {
+    fun signingOutAsksFirst() {
         var unpaired = false
         show(actions = SettingsActions(onUnpair = { unpaired = true }))
-        compose.onNodeWithText("Unpair this phone").performScrollTo().performClick()
+        compose.onNodeWithText("Sign out").performScrollTo().performClick()
         assertEquals(false, unpaired)
-        compose.onNodeWithText("Unpair this phone?").assertExists()
-        compose.onNodeWithText("Unpair").performClick()
+        compose.onNodeWithText("Sign out of this server?").assertExists()
+        compose.onNode(hasText("Sign out") and hasAnyAncestor(isDialog())).performClick()
         assertEquals(true, unpaired)
     }
 
@@ -80,5 +143,86 @@ class SettingsScreenTest {
         show(actions = SettingsActions(onOpenLanguage = { opened = true }))
         compose.onNodeWithText("Language").performScrollTo().performClick()
         assertEquals(true, opened)
+    }
+
+    @Test
+    fun readAheadOffersOffAndThreeCounts() {
+        var count: Int? = null
+        show(actions = SettingsActions(onReadAhead = { count = it }))
+        compose.onNodeWithText("Preload upcoming songs").performScrollTo().performClick()
+        compose.onNodeWithText("Songs ahead: 1").assertExists()
+        compose.onNodeWithText("Songs ahead: 2").assertExists()
+        compose.onNodeWithText("Songs ahead: 3").performClick()
+        assertEquals(3, count)
+    }
+
+    @Test
+    fun cancellingCacheLimitDoesNotPersistAnything() {
+        var limit: Int? = null
+        show(actions = SettingsActions(onStreamCacheMb = { limit = it }))
+        compose.onNodeWithText("Temporary audio cache").performScrollTo().performClick()
+        compose.onNodeWithText("Cancel").performClick()
+        assertEquals(null, limit)
+    }
+
+    @Test
+    fun clientCertificateRowPicksWhenUnsetAndOpensDialogWhenSet() {
+        var selected = false
+        var cleared = false
+        show(
+            state = SettingsUiState(clientCertificate = "cloudflare-mtls"),
+            actions = SettingsActions(
+                onSelectClientCertificate = { selected = true },
+                onClearClientCertificate = { cleared = true },
+            ),
+        )
+        compose.onNodeWithText("cloudflare-mtls").performScrollTo().assertExists()
+        compose.onNodeWithText("Client certificate").performScrollTo().performClick()
+        compose.onNodeWithText("Change").assertExists()
+        compose.onNodeWithText("Remove").performClick()
+        assertEquals(true, cleared)
+        assertEquals(false, selected)
+    }
+
+    @Test
+    fun downloadFolderShowsItsLocationAndOpensTheSystemPicker() {
+        var choose = false
+        val location = "Android/media/com.henriquesebastiao.downtify"
+        show(
+            state = SettingsUiState(offlineDirectory = location),
+            actions = SettingsActions(onChooseOfflineDirectory = { choose = true }),
+        )
+
+        compose.onNodeWithText(location).performScrollTo().assertExists()
+        compose.onNodeWithText("Download folder").performClick()
+        assertEquals(true, choose)
+    }
+
+    @Test
+    fun customDownloadFolderCanResetToTheDefault() {
+        var reset = false
+        show(
+            state = SettingsUiState(
+                settings = UserSettings(offlineDirectoryUri = "content://music/tree/primary%3AMusic"),
+                offlineDirectory = "Music",
+            ),
+            actions = SettingsActions(onResetOfflineDirectory = { reset = true }),
+        )
+
+        compose.onNodeWithText("Use default download folder").performScrollTo().performClick()
+        assertEquals(true, reset)
+    }
+
+    @Test
+    fun downloadFolderReportsMoving() {
+        show(state = SettingsUiState(locationChange = OfflineLocationChange.Moving))
+        compose.onNodeWithText("Moving offline music…").performScrollTo().assertExists()
+    }
+
+    @Test
+    fun downloadFolderReportsFailures() {
+        show(state = SettingsUiState(locationChange = OfflineLocationChange.Failed(Throwable("denied"))))
+        compose.onNodeWithText("Could not move offline music. Check folder access and try again.")
+            .performScrollTo().assertExists()
     }
 }

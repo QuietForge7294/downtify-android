@@ -14,6 +14,17 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object DownloadsRoute
 
+@Serializable data object MusicAiRoute
+
+@Serializable data class ForYouRoute(val cadence: String = "daily", val mood: String = "")
+
+@Serializable data class MusicDjRoute(val seed: String = "")
+
+@Serializable data class WeeklyDjPlaylistRoute(val theme: String, val copyId: String = "")
+
+/** The server's music trash (an admin's pairing, while the server has it on). */
+@Serializable data object TrashRoute
+
 @Serializable data object SettingsRoute
 
 @Serializable data object AboutRoute
@@ -38,9 +49,9 @@ import kotlinx.serialization.Serializable
 @Serializable data class SearchQueryRoute(val query: String)
 
 /** Tracks like one track, from YouTube Music's radio mix; blank until something is named. */
-@Serializable data class SimilarRoute(val artist: String = "", val track: String = "")
+@Serializable data class SimilarRoute(val artist: String = "", val track: String = "", val seed: String = "")
 
-/** The four top-level destinations of the navigation bar / rail. */
+/** The three top-level destinations of the navigation bar / rail. */
 enum class TopLevelDestination(
     val route: Any,
     @StringRes val label: Int,
@@ -50,5 +61,28 @@ enum class TopLevelDestination(
     Home(HomeRoute, R.string.nav_home, DowntifyIcons.Home, DowntifyIcons.HomeFilled),
     Search(SearchRoute, R.string.nav_search, DowntifyIcons.Search, DowntifyIcons.Search),
     Library(LibraryRoute, R.string.nav_library, DowntifyIcons.Library, DowntifyIcons.LibraryFilled),
+}
+
+/**
+ * The side menu's destinations (Home's menu button): what doesn't need a tab of its own. Each
+ * opens above Home, with a back button, as Discover does.
+ */
+enum class DrawerDestination(
+    val route: Any,
+    @StringRes val label: Int,
+    @DrawableRes val icon: Int,
+    @DrawableRes val selectedIcon: Int,
+    /** Shown only to an admin's pairing on a server that has the music trash on. */
+    val trashOnly: Boolean = false,
+    val musicAiOnly: Boolean = false,
+) {
     Downloads(DownloadsRoute, R.string.nav_downloads, DowntifyIcons.Downloads, DowntifyIcons.DownloadsFilled),
+    Trash(TrashRoute, R.string.nav_trash, DowntifyIcons.Delete, DowntifyIcons.Delete, trashOnly = true),
+    MusicAi(
+        MusicAiRoute,
+        R.string.nav_music_ai,
+        DowntifyIcons.Library,
+        DowntifyIcons.LibraryFilled,
+        musicAiOnly = true,
+    ),
 }

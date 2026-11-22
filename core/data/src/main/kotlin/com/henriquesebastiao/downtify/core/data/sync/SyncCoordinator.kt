@@ -3,7 +3,6 @@ package com.henriquesebastiao.downtify.core.data.sync
 import android.util.Log
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ProcessLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
 import com.henriquesebastiao.downtify.core.data.catalog.ServerQueueRepository
 import com.henriquesebastiao.downtify.core.data.di.ApplicationScope
 import com.henriquesebastiao.downtify.core.data.library.LibraryRepository
@@ -20,11 +19,15 @@ import javax.inject.Singleton
 import kotlin.math.min
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,8 +49,14 @@ class SyncCoordinator @Inject constructor(
     private val serverQueue: ServerQueueRepository,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
-    private val syncRequests = Channel<Boolean>(Channel.CONFLATED)
+    private val syncRequests = SyncRequests()
     private var started = false
+    private val mediaServiceActive = MutableStateFlow(false)
+
+    /** One shared sync loop while the phone UI or the single media service is active. */
+    fun setMediaServiceActive(active: Boolean) {
+        mediaServiceActive.value = active
+    }
 
     fun start() {
         if (started) return
@@ -55,9 +64,16 @@ class SyncCoordinator @Inject constructor(
         scope.launch {
             withContext(Dispatchers.IO) { server.ensureLoaded() }
             withContext(Dispatchers.Main) {
-                ProcessLifecycleOwner.get().lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    server.session.distinctUntilChangedBy { it?.token }.collectLatest { session ->
-                        if (session != null) withContext(Dispatchers.Default) { whilePaired(session) }
+                syncVisibility(
+                    ProcessLifecycleOwner.get().lifecycle.currentStateFlow.map {
+                        it.isAtLeast(Lifecycle.State.STARTED)
+                    },
+                    mediaServiceActive,
+                ).collectLatest { active ->
+                    if (active) {
+                        server.session.distinctUntilChangedBy { it?.token }.collectLatest { session ->
+                            if (session != null) withContext(Dispatchers.Default) { whilePaired(session) }
+                        }
                     }
                 }
             }
@@ -66,12 +82,12 @@ class SyncCoordinator @Inject constructor(
 
     /** Syncs as soon as possible ([refresh]: rescan the server's folder first). */
     fun requestSync(refresh: Boolean = false) {
-        syncRequests.trySend(refresh)
+        syncRequests.request(refresh)
     }
 
-    private suspend fun whilePaired(session: Session) = coroutineScope {
+    internal suspend fun whilePaired(session: Session) = coroutineScope {
         launch {
-            for (refresh in syncRequests) {
+            syncRequests.collect { refresh ->
                 if (library.sync(refresh)) server.markConnected() else server.markUnreachable()
             }
         }
@@ -80,18 +96,20 @@ class SyncCoordinator @Inject constructor(
             requestSync()
             listens.schedule()
         }
-        holdWebSocket(session)
+        holdWebSocket(session, initialSyncRequested = state == ConnectionState.Connected)
     }
 
-    private suspend fun holdWebSocket(session: Session) = coroutineScope {
+    private suspend fun holdWebSocket(session: Session, initialSyncRequested: Boolean) = coroutineScope {
         val clientId = settings.clientId()
         var attempt = 0
+        var connectedBefore = false
         while (isActive) {
             try {
                 live.events(session, clientId).collect { event ->
                     when (event) {
                         LiveEvent.Connected -> {
-                            if (attempt > 0) requestSync()
+                            if (!initialSyncRequested || connectedBefore || attempt > 0) requestSync()
+                            connectedBefore = true
                             attempt = 0
                             server.markConnected()
                             serverQueue.refresh()
@@ -122,3 +140,6 @@ class SyncCoordinator @Inject constructor(
         const val MAX_BACKOFF_MS = 120_000L
     }
 }
+
+internal fun syncVisibility(foreground: Flow<Boolean>, mediaService: Flow<Boolean>): Flow<Boolean> =
+    combine(foreground, mediaService) { phone, media -> phone || media }.distinctUntilChanged()

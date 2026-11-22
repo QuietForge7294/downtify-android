@@ -19,12 +19,16 @@ import com.henriquesebastiao.downtify.core.player.PlayerState
 import com.henriquesebastiao.downtify.core.player.PlayingStream
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -45,7 +49,10 @@ class PlayerViewModel @Inject constructor(
     server: ServerRepository,
     private val catalog: CatalogRepository,
     queue: ServerQueueRepository,
+    private val sleepTimer: com.henriquesebastiao.downtify.core.player.PlaybackSleepTimer,
 ) : ViewModel() {
+    val sleepDeadline = sleepTimer.deadline
+    val setSleepTimer: (Int?) -> Unit = sleepTimer::set
     val state: StateFlow<PlayerState> = player.state
 
     val hasMedia: StateFlow<Boolean> = player.hasMedia
@@ -86,9 +93,18 @@ class PlayerViewModel @Inject constructor(
     private val lyricsState = MutableStateFlow<LyricsState>(LyricsState.Loading)
     val lyrics: StateFlow<LyricsState> = lyricsState.asStateFlow()
 
+    /** How much later than their LRC the shown lyrics run, as set for that track on this phone. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val lyricsOffset: StateFlow<Long> = lyricsState
+        .map { (it as? LyricsState.Loaded)?.trackId }
+        .distinctUntilChanged()
+        .flatMapLatest { id -> id?.let(library::lyricsOffset) ?: flowOf(0L) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), 0L)
+
     fun togglePlayPause() = player.togglePlayPause()
     fun next() = player.next()
     fun previous() = player.previous()
+    val returnToClassic: (String) -> Unit = player::exitDj
     fun seekTo(positionMs: Long) = player.seekTo(positionMs)
     fun skipBack() = player.skipBack()
     fun skipForward() = player.skipForward()
@@ -129,6 +145,18 @@ class PlayerViewModel @Inject constructor(
         if (current is LyricsState.Loaded && current.trackId == id) return
         lyricsState.value = LyricsState.Loading
         viewModelScope.launch { lyricsState.value = LyricsState.Loaded(id, library.lyrics(id)) }
+    }
+
+    /** Moves the shown lyrics [byMs] later (earlier when negative), for an LRC timed to another cut. */
+    fun shiftLyrics(byMs: Long) {
+        val id = (lyricsState.value as? LyricsState.Loaded)?.trackId ?: return
+        viewModelScope.launch { library.shiftLyrics(id, byMs) }
+    }
+
+    /** Puts the shown lyrics back on their LRC's times. */
+    fun resetLyricsOffset() {
+        val id = (lyricsState.value as? LyricsState.Loaded)?.trackId ?: return
+        viewModelScope.launch { library.resetLyricsOffset(id) }
     }
 
     private companion object {

@@ -133,8 +133,7 @@ class SearchViewModel @Inject constructor(
         filter,
         library.library,
         library.playlists,
-        combine(library.likedIds, player.nowPlaying) { liked, playing -> liked to playing },
-    ) { q, f, snapshot, playlists, (liked, playing) ->
+    ) { q, f, snapshot, playlists ->
         val selected = SearchFilter.entries.firstOrNull { it.name == f } ?: SearchFilter.All
         val isLink = CatalogLinks.isLink(q)
         SearchUiState(
@@ -145,11 +144,8 @@ class SearchViewModel @Inject constructor(
             } else {
                 search(q, selected, snapshot, playlists)
             },
-            currentTrackId = playing.trackId,
-            isPlaying = playing.isPlaying,
             isLink = isLink,
             library = snapshot,
-            likedIds = liked.toSet(),
         )
     }.flowOn(Dispatchers.Default)
 
@@ -158,8 +154,9 @@ class SearchViewModel @Inject constructor(
         catalog.requestedAlbums,
         player.nowPlaying,
         remotePlayback.resolvingId,
-    ) { jobs, albums, playing, lookup ->
-        RemoteState(jobs, albums, playing.streamVideoId, lookup)
+        library.likedIds.map { it.toSet() },
+    ) { jobs, albums, playing, lookup, liked ->
+        RemoteState(jobs, albums, playing.streamVideoId, lookup, playing.trackId, playing.isPlaying, liked)
     }
 
     val uiState: StateFlow<SearchUiState> = combine(local, server, remote) { l, s, r ->
@@ -169,6 +166,9 @@ class SearchViewModel @Inject constructor(
             requestedAlbums = r.albums,
             playingStreamId = r.playing,
             resolvingStreamId = r.lookup,
+            currentTrackId = r.trackId,
+            isPlaying = r.isPlaying,
+            likedIds = r.likedIds,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), SearchUiState())
 
@@ -177,6 +177,9 @@ class SearchViewModel @Inject constructor(
         val albums: Map<String, List<String>>,
         val playing: String?,
         val lookup: String?,
+        val trackId: String?,
+        val isPlaying: Boolean,
+        val likedIds: Set<String>,
     )
 
     /** The text field reads this directly (not debounced) so typing stays instant. */

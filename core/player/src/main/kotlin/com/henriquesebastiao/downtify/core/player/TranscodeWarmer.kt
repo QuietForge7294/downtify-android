@@ -7,6 +7,7 @@ import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import com.henriquesebastiao.downtify.core.model.EpisodeIds
+import com.henriquesebastiao.downtify.core.model.MediaIds
 import com.henriquesebastiao.downtify.core.model.StreamIds
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +32,7 @@ internal class TranscodeWarmer(
     private val resolver: StreamResolver,
     private val client: OkHttpClient,
     private val scope: CoroutineScope,
+    private val enabled: () -> Boolean = { true },
 ) : Player.Listener {
     /** Addresses already warmed (or being warmed) this session. */
     private val warmed = LruCache<String, Boolean>(WARMED_CACHE_SIZE)
@@ -60,11 +62,15 @@ internal class TranscodeWarmer(
     }
 
     private fun warmNext() {
+        if (!enabled()) {
+            synchronized(lock) { inFlight?.cancel() }
+            return
+        }
         if (player.playbackState != Player.STATE_READY) return
         // The track that plays next in the real order: shuffle and repeat included.
         val next = player.nextMediaItemIndex.takeIf { it != C.INDEX_UNSET } ?: return
         val trackId = player.getMediaItemAt(next).mediaId
-        if (trackId.isEmpty() || EpisodeIds.isEpisode(trackId) || StreamIds.isStream(trackId)) return
+        if (!MediaIds.isLibrary(trackId)) return
         scope.launch(Dispatchers.IO) { warm(trackId) }
     }
 

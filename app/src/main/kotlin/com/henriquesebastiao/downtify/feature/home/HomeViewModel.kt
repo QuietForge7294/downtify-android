@@ -10,12 +10,15 @@ import com.henriquesebastiao.downtify.core.data.session.ServerRepository
 import com.henriquesebastiao.downtify.core.data.sync.SyncCoordinator
 import com.henriquesebastiao.downtify.core.model.Album
 import com.henriquesebastiao.downtify.core.model.PlaybackContextType
+import com.henriquesebastiao.downtify.core.model.Playlist
 import com.henriquesebastiao.downtify.core.model.RecentContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 
 enum class ServerStatus { Streaming, Syncing, Unreachable, DifferentServer }
@@ -27,6 +30,7 @@ data class HomeUiState(
     /** "Jump back in": recent contexts, or — before anything was played — Liked songs and the newest albums. */
     val jumpBackIn: List<RecentContext> = emptyList(),
     val recentlyAdded: List<Album> = emptyList(),
+    val favoritePlaylists: List<Playlist> = emptyList(),
     val refreshing: Boolean = false,
     val libraryEmpty: Boolean = false,
     /** What the server can do (`capabilities`): the shortcuts below "Recently added". */
@@ -43,11 +47,11 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     val uiState: StateFlow<HomeUiState> = combine(
-        combine(library.library, library.likedIds, ::Pair),
-        recents.recents(),
+        combine(library.library, library.likedIds, library.playlists, ::Triple),
+        recents.recents(RECENT_CONTEXT_LIMIT),
         library.syncStatus,
         combine(server.connection, server.session, server.serverInfo, ::Triple),
-    ) { (snapshot, likedIds), recentList, syncStatus, (connection, session, info) ->
+    ) { (snapshot, likedIds, playlists), recentList, syncStatus, (connection, session, info) ->
         val newest = snapshot?.albums.orEmpty().sortedByDescending { it.added }
         val jump = recentList.ifEmpty {
             buildList {
@@ -66,20 +70,24 @@ class HomeViewModel @Inject constructor(
                 connection == ConnectionState.Unreachable || syncStatus is SyncStatus.Failed -> ServerStatus.Unreachable
                 else -> ServerStatus.Streaming
             },
-            jumpBackIn = jump.take(JUMP_BACK_IN_SIZE),
+            jumpBackIn = jump.take(RECENT_CONTEXT_LIMIT),
             recentlyAdded = newest.take(RECENTLY_ADDED_SIZE),
+            favoritePlaylists = playlists.filter { it.favorite && !it.liked }.sortedBy { it.title.lowercase() },
             refreshing = syncStatus == SyncStatus.Syncing,
             libraryEmpty = snapshot?.isEmpty == true,
             showDiscover = info?.capabilities?.discover == true,
             showPodcasts = info?.capabilities?.podcasts == true,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), HomeUiState())
+    }.flowOn(
+        Dispatchers.Default,
+    ).stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), HomeUiState())
 
     /** Pull to refresh: the server rescans its folder, then the app syncs. */
-    fun refresh() = sync.requestSync(refresh = true)
+    fun refresh() = sync.requestSync()
 
     private companion object {
         const val JUMP_BACK_IN_SIZE = 6
+        const val RECENT_CONTEXT_LIMIT = 12
         const val RECENTLY_ADDED_SIZE = 12
         const val STOP_TIMEOUT_MS = 5_000L
     }

@@ -1,9 +1,8 @@
 package com.henriquesebastiao.downtify.feature.home
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,55 +15,72 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.henriquesebastiao.downtify.R
-import com.henriquesebastiao.downtify.core.designsystem.component.CoverArt
+import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
+import com.henriquesebastiao.downtify.core.designsystem.component.ArtworkTone
+import com.henriquesebastiao.downtify.core.designsystem.component.CircleButton
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyLogo
 import com.henriquesebastiao.downtify.core.designsystem.component.EmptyState
+import com.henriquesebastiao.downtify.core.designsystem.component.PhonePreviews
+import com.henriquesebastiao.downtify.core.designsystem.component.SectionCard
 import com.henriquesebastiao.downtify.core.designsystem.component.SectionHeader
+import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyShape
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
 import com.henriquesebastiao.downtify.core.model.Album
 import com.henriquesebastiao.downtify.core.model.PlaybackContextType
+import com.henriquesebastiao.downtify.core.model.Playlist
 import com.henriquesebastiao.downtify.core.model.RecentContext
+import com.henriquesebastiao.downtify.core.network.ServerUrls
+import com.henriquesebastiao.downtify.feature.musicai.MusicAiViewModel
 import com.henriquesebastiao.downtify.ui.common.CoverCard
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
+import com.henriquesebastiao.downtify.ui.common.LocalMusicAiCapabilities
 import com.henriquesebastiao.downtify.ui.common.PreviewData
 import com.henriquesebastiao.downtify.ui.common.albumSubtitle
-import java.time.LocalTime
+import com.henriquesebastiao.downtify.ui.common.plusBottomBars
+import com.henriquesebastiao.downtify.ui.common.similarityAvailable
 
 @Composable
 fun HomeRoute(
+    onOpenMenu: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenRecent: (RecentContext) -> Unit,
     onOpenAlbum: (String) -> Unit,
@@ -74,8 +90,23 @@ fun HomeRoute(
     onOpenSimilar: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
+    onOpenForYou: () -> Unit = {},
+    onOpenMoodPlaylist: (String, String) -> Unit = { _, _ -> },
+    onOpenDj: () -> Unit = {},
+    onOpenWeeklyDj: (String, String) -> Unit = { _, _ -> },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val musicAi: MusicAiViewModel = hiltViewModel()
+    val aiState by musicAi.state.collectAsStateWithLifecycle()
+    val aiCaps by musicAi.capabilities.collectAsStateWithLifecycle()
+    LaunchedEffect(aiCaps.features, aiCaps.homeCards) { musicAi.refreshHome() }
+    val lifecycle = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycle, musicAi) {
+        lifecycle.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            musicAi.refreshHome()
+            kotlinx.coroutines.awaitCancellation()
+        }
+    }
     HomeScreen(
         state,
         onOpenSettings,
@@ -87,10 +118,34 @@ fun HomeRoute(
         onOpenDiscover,
         onOpenPodcasts,
         onOpenSimilar,
+        onOpenMenu = onOpenMenu,
+        forYouContent = {
+            if (listOf("daily", "weekly", "personalization").any(aiCaps::enabled)) {
+                item(key = "daily-mixes") {
+                    com.henriquesebastiao.downtify.feature.musicai.DailyMusicShelf(
+                        aiState,
+                        aiCaps,
+                        onOpenMoodPlaylist,
+                        onOpenForYou,
+                    )
+                }
+            }
+            if (aiCaps.djWeeklySets) {
+                item(key = "weekly-dj-sets") {
+                    com.henriquesebastiao.downtify.feature.musicai.WeeklyDjSection(
+                        true,
+                        onOpenForYou,
+                        onOpenSet = onOpenWeeklyDj,
+                    )
+                }
+            }
+        },
+        onOpenDj = onOpenDj,
+        onRefreshForYou = musicAi::refreshHome,
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HomeScreen(
     state: HomeUiState,
@@ -103,60 +158,88 @@ fun HomeScreen(
     onOpenDiscover: () -> Unit = {},
     onOpenPodcasts: () -> Unit = {},
     onOpenSimilar: () -> Unit = {},
+    onOpenMenu: () -> Unit = {},
+    onOpenDj: () -> Unit = {},
+    forYouContent: (LazyListScope.() -> Unit)? = null,
+    onRefreshForYou: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0),
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    CircleButton(
+                        DowntifyIcons.Menu,
+                        stringResource(R.string.action_open_menu),
+                        onOpenMenu,
+                        Modifier.padding(start = Spacing.sm),
+                    )
+                },
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                     ) {
                         DowntifyLogo(size = 32.dp)
-                        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                        )
                     }
                 },
                 actions = {
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(
-                            painterResource(DowntifyIcons.Settings),
-                            contentDescription = stringResource(R.string.action_settings),
-                        )
-                    }
+                    CircleButton(
+                        DowntifyIcons.Settings,
+                        stringResource(R.string.action_settings),
+                        onOpenSettings,
+                        Modifier.padding(end = Spacing.sm),
+                    )
                 },
             )
         },
     ) { padding ->
         PullToRefreshBox(
             isRefreshing = state.refreshing,
-            onRefresh = onRefresh,
+            onRefresh = {
+                onRefresh()
+                onRefreshForYou()
+            },
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
-            LazyColumn(contentPadding = PaddingValues(bottom = Spacing.xl), modifier = Modifier.fillMaxSize()) {
-                item { Greeting(state) }
+            LazyColumn(
+                contentPadding = PaddingValues(bottom = Spacing.xl).plusBottomBars(),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                item(key = "status") {
+                    ServerStatusLine(state, Modifier.padding(horizontal = Spacing.screen, vertical = Spacing.sm))
+                }
+
                 when {
-                    state.loading -> item {
+                    state.loading -> item(key = "loading") {
                         Box(Modifier.fillMaxWidth().padding(Spacing.xxl), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
+                            LoadingIndicator()
                         }
                     }
 
-                    state.libraryEmpty -> item {
+                    state.libraryEmpty -> item(key = "empty") {
+                        if (state.favoritePlaylists.isNotEmpty()) HomeAccess(state, onOpenRecent)
                         EmptyState(
                             icon = DowntifyIcons.Library,
                             title = stringResource(R.string.home_empty_title),
                             body = stringResource(R.string.home_empty_body),
+                            hero = true,
                         )
                     }
 
                     else -> {
-                        if (state.jumpBackIn.isNotEmpty()) item { JumpBackIn(state.jumpBackIn, onOpenRecent) }
+                        if (state.jumpBackIn.isNotEmpty() || state.favoritePlaylists.isNotEmpty()) {
+                            item(key = "access") { HomeAccess(state, onOpenRecent) }
+                        }
+                        forYouContent?.invoke(this)
                         if (state.recentlyAdded.isNotEmpty()) {
-                            item {
-                                RecentlyAdded(state.recentlyAdded, onOpenAlbum, onSeeAll)
-                            }
+                            item(key = "recent") { RecentlyAdded(state.recentlyAdded, onOpenAlbum, onSeeAll) }
                         }
                     }
                 }
@@ -168,6 +251,7 @@ fun HomeScreen(
                             onOpenDiscover = onOpenDiscover,
                             onOpenPodcasts = onOpenPodcasts,
                             onOpenSimilar = onOpenSimilar,
+                            onOpenDj = onOpenDj,
                         )
                     }
                 }
@@ -176,7 +260,33 @@ fun HomeScreen(
     }
 }
 
-/** Where Discover, Podcasts and Similar live: the four tabs stay as designed. */
+/**
+ * The server's state: color, icon and words, as every status is shown. A line that wraps, not a
+ * tag: "another server answers here" says what to do about it, and that must not be cut off.
+ */
+@Composable
+private fun ServerStatusLine(state: HomeUiState, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    val (icon, tint, text) = when (state.status) {
+        ServerStatus.Streaming ->
+            Triple(DowntifyIcons.Cloud, scheme.primary, stringResource(R.string.home_streaming_from, state.serverName))
+
+        ServerStatus.Syncing ->
+            Triple(DowntifyIcons.Refresh, scheme.primary, stringResource(R.string.home_syncing, state.serverName))
+
+        ServerStatus.Unreachable ->
+            Triple(DowntifyIcons.Offline, scheme.outline, stringResource(R.string.home_unreachable, state.serverName))
+
+        ServerStatus.DifferentServer ->
+            Triple(DowntifyIcons.Warning, scheme.error, stringResource(R.string.home_different_server))
+    }
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+        Text(text, style = MaterialTheme.typography.bodyLarge, color = scheme.onSurfaceVariant)
+    }
+}
+
+/** Where Discover, Podcasts and Similar live: the tabs stay as designed. */
 @Composable
 private fun Shortcuts(
     showDiscover: Boolean,
@@ -184,6 +294,7 @@ private fun Shortcuts(
     onOpenDiscover: () -> Unit,
     onOpenPodcasts: () -> Unit,
     onOpenSimilar: () -> Unit,
+    onOpenDj: () -> Unit,
 ) {
     Column(
         Modifier.padding(horizontal = Spacing.screen).padding(top = Spacing.xl),
@@ -197,12 +308,14 @@ private fun Shortcuts(
                 onClick = onOpenDiscover,
             )
         }
-        Shortcut(
-            icon = DowntifyIcons.Graphic,
-            title = stringResource(R.string.home_shortcut_similar),
-            body = stringResource(R.string.home_shortcut_similar_body),
-            onClick = onOpenSimilar,
-        )
+        if (LocalMusicAiCapabilities.current.similarityAvailable()) {
+            Shortcut(
+                icon = DowntifyIcons.Graphic,
+                title = stringResource(R.string.home_shortcut_similar),
+                body = stringResource(R.string.home_shortcut_similar_body),
+                onClick = onOpenSimilar,
+            )
+        }
         if (showPodcasts) {
             Shortcut(
                 icon = DowntifyIcons.Podcasts,
@@ -211,146 +324,162 @@ private fun Shortcuts(
                 onClick = onOpenPodcasts,
             )
         }
+        if (LocalMusicAiCapabilities.current.version == 1) {
+            Shortcut(DowntifyIcons.Graphic, "DJ · Bêta", "Créer des mixes et mixer votre file", onOpenDj)
+        }
     }
 }
 
 @Composable
 private fun Shortcut(icon: Int, title: String, body: String, onClick: () -> Unit) {
-    Card(
+    SectionCard(
+        icon = icon,
+        title = title,
         onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            Modifier.heightIn(min = 72.dp).padding(horizontal = Spacing.lg, vertical = Spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
-        ) {
-            Box(
-                Modifier.size(48.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painterResource(icon),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-            }
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    body,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        trailing = {
             Icon(
                 painterResource(DowntifyIcons.ChevronRight),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-    }
-}
-
-@Composable
-private fun Greeting(state: HomeUiState) {
-    val hour = LocalTime.now().hour
-    val greeting = when (hour) {
-        in 5..11 -> R.string.home_good_morning
-        in 12..17 -> R.string.home_good_afternoon
-        else -> R.string.home_good_evening
-    }
-    Column(
-        Modifier.padding(horizontal = Spacing.screen, vertical = Spacing.sm),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        },
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Text(
-            stringResource(greeting),
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.semantics {
-                heading()
-            },
-        )
-        val (dot, text) = when (state.status) {
-            ServerStatus.Streaming ->
-                MaterialTheme.colorScheme.primary to
-                    stringResource(R.string.home_streaming_from, state.serverName)
+        Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
 
-            ServerStatus.Syncing ->
-                MaterialTheme.colorScheme.primary to
-                    stringResource(R.string.home_syncing, state.serverName)
-
-            ServerStatus.Unreachable ->
-                MaterialTheme.colorScheme.outline to
-                    stringResource(R.string.home_unreachable, state.serverName)
-
-            ServerStatus.DifferentServer ->
-                MaterialTheme.colorScheme.error to
-                    stringResource(R.string.home_different_server)
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            Box(Modifier.size(8.dp).background(dot, CircleShape))
-            Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+@Composable
+private fun HomeAccess(state: HomeUiState, onOpen: (RecentContext) -> Unit) {
+    val favorites = state.favoritePlaylists.map { playlist ->
+        RecentContext(PlaybackContextType.Playlist, playlist.name, playlist.title, playlist.trackIds.firstOrNull(), 0)
+    }
+    val playlists = state.favoritePlaylists.associateBy { it.name }
+    BoxWithConstraints {
+        val columns = if (maxWidth >= 480.dp) 3 else 2
+        val recentTitle = stringResource(R.string.home_jump_back_in)
+        val favoriteTitle = stringResource(R.string.favorite_playlists)
+        if (maxWidth >= 840.dp && state.jumpBackIn.isNotEmpty() && favorites.isNotEmpty()) {
+            Row(Modifier.fillMaxWidth()) {
+                QuickAccessSection(recentTitle, state.jumpBackIn, playlists, columns, onOpen, Modifier.weight(1f))
+                QuickAccessSection(favoriteTitle, favorites, playlists, columns, onOpen, Modifier.weight(1f))
+            }
+        } else {
+            Column {
+                if (state.jumpBackIn.isNotEmpty()) {
+                    QuickAccessSection(recentTitle, state.jumpBackIn, playlists, columns, onOpen)
+                }
+                if (favorites.isNotEmpty()) QuickAccessSection(favoriteTitle, favorites, playlists, columns, onOpen)
+            }
         }
     }
 }
 
 @Composable
-private fun JumpBackIn(items: List<RecentContext>, onOpen: (RecentContext) -> Unit) {
-    val covers = LocalCoverUrls.current
-    val label = stringResource(R.string.home_jump_back_in)
+private fun QuickAccessSection(
+    title: String,
+    entries: List<RecentContext>,
+    playlists: Map<String, Playlist>,
+    columns: Int,
+    onOpen: (RecentContext) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
     Column(
-        Modifier
-            .padding(horizontal = Spacing.screen, vertical = Spacing.md)
-            .semantics { heading() },
+        modifier.padding(horizontal = Spacing.screen, vertical = Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        items.chunked(2).forEach { row ->
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f).semantics {
+                    heading()
+                },
+            )
+            TextButton(onClick = { expanded = true }) { Text(stringResource(R.string.home_see_all)) }
+        }
+        entries.take(6).chunked(columns).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                row.forEach { item ->
-                    val title = if (item.type ==
-                        PlaybackContextType.Liked
-                    ) {
-                        stringResource(R.string.liked_songs)
-                    } else {
-                        item.title
-                    }
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        shape = MaterialTheme.shapes.medium,
-                        modifier = Modifier.weight(1f).height(56.dp).clickable { onOpen(item) },
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            CoverArt(
-                                url = covers.track(item.coverTrackId, 150),
-                                contentDescription = null,
-                                shape = RectangleShape,
-                                placeholderIcon = when (item.type) {
-                                    PlaybackContextType.Liked -> DowntifyIcons.FavoriteFilled
-                                    PlaybackContextType.Artist -> DowntifyIcons.Artist
-                                    PlaybackContextType.Playlist -> DowntifyIcons.Playlist
-                                    else -> DowntifyIcons.Album
-                                },
-                                modifier = Modifier.size(56.dp),
-                            )
-                            Text(
-                                title,
-                                style = MaterialTheme.typography.titleSmall,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(end = Spacing.sm),
-                            )
-                        }
+                row.forEach { entry -> QuickAccessTile(entry, playlists, onOpen, Modifier.weight(1f)) }
+                repeat(columns - row.size) { Box(Modifier.weight(1f)) }
+            }
+        }
+    }
+    if (expanded) {
+        AlertDialog(
+            onDismissRequest = { expanded = false },
+            title = { Text(title) },
+            text = {
+                LazyColumn(
+                    Modifier.heightIn(max = 480.dp),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    items(entries) { entry ->
+                        QuickAccessTile(entry, playlists, {
+                            expanded = false
+                            onOpen(it)
+                        }, Modifier.fillMaxWidth())
                     }
                 }
-                if (row.size == 1) Box(Modifier.weight(1f))
-            }
+            },
+            confirmButton = {
+                TextButton(onClick = { expanded = false }) { Text(stringResource(R.string.action_close)) }
+            },
+        )
+    }
+}
+
+/** A recent album, artist or playlist as a 64 dp tile: its cover in a squircle, its name on two lines. */
+@Composable
+private fun QuickAccessTile(
+    entry: RecentContext,
+    playlists: Map<String, Playlist>,
+    onOpen: (RecentContext) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val covers = LocalCoverUrls.current
+    val playlist = if (entry.type == PlaybackContextType.Playlist) playlists[entry.refId] else null
+    val title = when (entry.type) {
+        PlaybackContextType.Liked -> stringResource(R.string.liked_songs)
+        PlaybackContextType.Songs -> stringResource(R.string.library_songs)
+        else -> entry.title.ifEmpty { stringResource(R.string.library_songs) }
+    }
+    Surface(
+        onClick = { onOpen(entry) },
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = MaterialTheme.shapes.large,
+        modifier = modifier.height(64.dp),
+    ) {
+        Row(
+            Modifier.padding(start = Spacing.sm, end = Spacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            Artwork(
+                url = if (playlist != null) {
+                    covers.playlist(playlist, playlist.trackIds.firstOrNull())
+                } else {
+                    covers.track(entry.coverTrackId, ServerUrls.COVER_SMALL)
+                },
+                contentDescription = null,
+                shape = if (entry.type == PlaybackContextType.Artist) CircleShape else DowntifyShape.ArtworkThumb,
+                placeholderIcon = when (entry.type) {
+                    PlaybackContextType.Liked -> DowntifyIcons.FavoriteFilled
+                    PlaybackContextType.Artist -> DowntifyIcons.Artist
+                    PlaybackContextType.Playlist -> DowntifyIcons.Playlist
+                    PlaybackContextType.Songs -> DowntifyIcons.Song
+                    else -> DowntifyIcons.Album
+                },
+                tone = if (entry.type == PlaybackContextType.Liked) ArtworkTone.Primary else ArtworkTone.Neutral,
+                modifier = Modifier.size(48.dp),
+            )
+            Text(
+                title,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -366,7 +495,7 @@ private fun RecentlyAdded(albums: List<Album>, onOpenAlbum: (String) -> Unit, on
         )
         LazyRow(
             contentPadding = PaddingValues(horizontal = Spacing.screen),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             items(albums, key = { it.id }) { album ->
                 CoverCard(
@@ -374,8 +503,7 @@ private fun RecentlyAdded(albums: List<Album>, onOpenAlbum: (String) -> Unit, on
                     subtitle = albumSubtitle(album),
                     coverUrl = covers.track(album.coverTrackId),
                     onClick = { onOpenAlbum(album.id) },
-                    shape = MaterialTheme.shapes.extraLarge,
-                    titleColor = Color.Unspecified,
+                    shape = DowntifyShape.Artwork,
                     modifier = Modifier.width(172.dp),
                 )
             }
@@ -383,18 +511,37 @@ private fun RecentlyAdded(albums: List<Album>, onOpenAlbum: (String) -> Unit, on
     }
 }
 
-@PreviewLightDark
+private val previewState = HomeUiState(
+    loading = false,
+    serverName = "nas.local",
+    jumpBackIn = listOf(RecentContext(PlaybackContextType.Liked, "", "", null, 0)) +
+        PreviewData.albums.map { RecentContext(PlaybackContextType.Album, it.id, it.title, null, 0) },
+    recentlyAdded = PreviewData.albums,
+    showDiscover = true,
+    showPodcasts = true,
+)
+
+@PhonePreviews
 @Composable
 private fun HomePreview() {
     DowntifyTheme {
         HomeScreen(
-            state = HomeUiState(
-                loading = false,
-                serverName = "nas.local",
-                jumpBackIn = listOf(RecentContext(PlaybackContextType.Liked, "", "", null, 0)) +
-                    PreviewData.albums.map { RecentContext(PlaybackContextType.Album, it.id, it.title, null, 0) },
-                recentlyAdded = PreviewData.albums,
-            ),
+            state = previewState,
+            onOpenSettings = {},
+            onOpenRecent = {},
+            onOpenAlbum = {},
+            onSeeAll = {},
+            onRefresh = {},
+        )
+    }
+}
+
+@PhonePreviews
+@Composable
+private fun HomeEmptyPreview() {
+    DowntifyTheme {
+        HomeScreen(
+            state = HomeUiState(loading = false, serverName = "nas.local", libraryEmpty = true),
             onOpenSettings = {},
             onOpenRecent = {},
             onOpenAlbum = {},

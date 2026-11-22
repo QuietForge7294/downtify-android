@@ -1,30 +1,54 @@
 # Downtify for Android
 
-The official Android client for [Downtify](https://github.com/henriquesebastiao/downtify), the self-hosted music server. It finds your server on the home network (or takes an address you type), pairs with it, syncs the library and streams it — original quality on Wi-Fi, transcoded on mobile data — with the system media notification, lock screen and Bluetooth controls.
-
-Status: **phase 4** (connect & pair, library sync, browsing, streaming, play reports, offline downloads, server search with previews and download requests, Discover, podcasts). Casting, widgets and Android Auto come later — see [docs/roadmap.md](docs/roadmap.md).
+The official Android client for [Downtify](https://github.com/henriquesebastiao/downtify), the self-hosted music server. It finds your server on the home network (or takes an address you type), signs in with your Downtify account, syncs the library and streams it — original quality on Wi-Fi, transcoded on mobile data — with the system media notification, lock screen and Bluetooth controls.
 
 > [!IMPORTANT]
 > This app is currently in the development and testing phase; it will contain bugs. Integration with Downtify is also still being developed and tested.
 
 ## Screenshots
 
-<img width="30%" vspace="20" src="https://github.com/user-attachments/assets/2faac8b4-1567-49d5-ac2c-44451cc8a0bc" />
-<img width="30%" vspace="20" src="https://github.com/user-attachments/assets/b25e5433-80c6-4ffb-a74e-1f9152b53782" />
-<img width="30%" vspace="20" src="https://github.com/user-attachments/assets/e4196813-6b84-4061-a544-d373cd6c928a" />
+<img width="30%" vspace="20" src="https://github.com/user-attachments/assets/dd1fc199-a8d1-454b-84c6-3fbb96822c7a" />
+<img width="30%" vspace="20" src="https://github.com/user-attachments/assets/8ea1042a-a4dc-416d-9752-8939f55741e4" />
+<img width="30%" vspace="20" src="https://github.com/user-attachments/assets/c86efa10-362d-4794-a19a-a5097a0fc084" />
+
+# Download
+
+Downtify Android is available on GitHub Releases page.  
+
+[<img height="75" src="https://github.com/user-attachments/assets/ea9ecc83-372a-4ef5-8595-1423873f2faf" />](https://github.com/henriquesebastiao/downtify-android/releases)
+[<img height="75" src="https://github.com/user-attachments/assets/33762cb0-6efe-4082-bd45-56c49fb0cc27" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.henriquesebastiao.downtify%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fhenriquesebastiao%2Fdowntify-android%22%2C%22author%22%3A%22henriquesebastiao%22%2C%22name%22%3A%22Downtify%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Afalse%2C%5C%22includeDrafts%5C%22%3Afalse%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22filterReleaseTitlesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22invertReleaseTitlesFilter%5C%22%3Afalse%2C%5C%22filterReleaseNotesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22invertReleaseNotesFilter%5C%22%3Afalse%2C%5C%22verifyLatestTag%5C%22%3Afalse%2C%5C%22sortMethodChoice%5C%22%3A%5C%22date%5C%22%2C%5C%22useLatestAssetDateAsReleaseDate%5C%22%3Afalse%2C%5C%22releaseTitleAsVersion%5C%22%3Afalse%2C%5C%22versionExtractionRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22matchGroupToUse%5C%22%3A%5C%22%5C%22%2C%5C%22versionDetection%5C%22%3Atrue%2C%5C%22releaseDateAsVersion%5C%22%3Afalse%2C%5C%22useVersionCodeAsOSVersion%5C%22%3Afalse%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22invertAPKFilter%5C%22%3Afalse%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22includeZips%5C%22%3Afalse%2C%5C%22zippedApkFilterRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22includeTarballs%5C%22%3Afalse%2C%5C%22tarballedApkFilterRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22minimumUpdateAgeDays%5C%22%3A%5C%22%5C%22%2C%5C%22exemptFromBackgroundUpdates%5C%22%3Afalse%2C%5C%22skipUpdateNotifications%5C%22%3Afalse%2C%5C%22refreshBeforeDownload%5C%22%3Afalse%2C%5C%22detectionDateAsReleaseDate%5C%22%3Afalse%2C%5C%22trackOnly%5C%22%3Afalse%2C%5C%22appName%5C%22%3A%5C%22%5C%22%2C%5C%22appAuthor%5C%22%3A%5C%22%5C%22%2C%5C%22shizukuPretendToBeGooglePlay%5C%22%3Afalse%2C%5C%22allowInsecure%5C%22%3Afalse%2C%5C%22allowedSigningCertHashes%5C%22%3A%5C%22%5C%22%2C%5C%22about%5C%22%3A%5C%22%5C%22%2C%5C%22updateHealthStaleRelease%5C%22%3A%5C%22%5C%22%2C%5C%22updateHealthStaleVersion%5C%22%3A%5C%22%5C%22%2C%5C%22updateHealthFailedChecks%5C%22%3A%5C%22%5C%22%2C%5C%22updateHealthArchived%5C%22%3A%5C%22%5C%22%2C%5C%22updateHealthFilteredReleases%5C%22%3A%5C%22%5C%22%2C%5C%22github-creds%5C%22%3A%5C%22%5C%22%2C%5C%22GHReqPrefix%5C%22%3A%5C%22%5C%22%2C%5C%22checkRepoRename%5C%22%3Afalse%7D%22%2C%22overrideSource%22%3A%22GitHub%22%7D
+)
+
+## Android Auto
+
+Android Auto can browse playlists, liked songs, artists, albums, tracks and completed offline downloads through the app's media library. Set up and sync the app on the phone first, then open **Downtify** in Android Auto's launcher. A separate test build may be named **Downtify Preview**.
+
+**Installing an APK from GitHub, Obtainium or a download link:** Android Auto may hide it until its own **Unknown sources** developer option is enabled. Allowing Android to install APKs is a different setting. While parked:
+
+1. Open Android Auto settings on the phone and scroll to **Version**. Tap it to show the version/permission information, then tap that section ten times to enable developer settings; confirm if asked.
+2. In the overflow menu, open **Developer settings** and enable **Unknown sources**.
+3. Open **Customize launcher**, check **Downtify** (or the installed test build's name), then reconnect Android Auto.
+
+This is an Android Auto installation-source requirement; signing an APK or changing the app's code cannot remove it. Google's supported alternative is installation from a trusted source, such as Google Play, including an internal test track. See the [official testing requirements](https://developer.android.com/training/cars/testing#unknown-sources). This does not announce a Play Store release of Downtify.
+
+Opening the library does not start music. Android Auto/your receiver chooses the last media source and requests playback; Downtify does not force itself over another player. See [Android Auto setup, troubleshooting and validation](docs/android-auto.md) for missing apps, resumption and tests.
 
 ## Languages, fonts and theme
 
 - **Languages:** the same eight as the Downtify web app — Bulgarian, English, French, Greek, Hungarian, Portuguese (Brazil), Spanish and Turkish. The app follows the phone's language and falls back to English when it isn't one of these. On Android 13+ the language can also be set per app (**Settings › Appearance › Language** opens Android's own screen for it).
-- **Fonts** (Settings › Appearance › Font): Downtify's own (Sora and DM Sans), the system font, or Google Sans Flex (its rounded cut, as on Pixel phones). Google fonts are fetched by Play services; without it the system font is used.
+- **Fonts** (Settings › Appearance › Font): Google Sans Flex in its rounded cut, as on Pixel phones (the default), Downtify classic (Sora and DM Sans) or the system font. Google fonts are fetched by Play services; without it the system font is used.
 - **Theme:** follow system, dark or light, optional wallpaper colors (Android 12+) and **Pure black** for OLED screens in the dark theme.
 - **About** (Settings › About Downtify): version (tap to copy), bug reports, source code, the GPL-3.0 license, the terms and disclaimer, and ways to support the project.
+
+## Playback level
+
+Settings → Playback → loudness normalization offers Normal, Louder and Maximum, with measured peak protection. See [playback level](docs/volume-and-server-pause.md).
 
 ## Requirements
 
 - JDK 17 or newer (the build targets Java 17).
 - Android SDK with platform 37 (`compileSdk`/`targetSdk` 37, `minSdk` 26). Gradle installs missing platforms on first build when `sdk.dir` in `local.properties` points at a writable SDK.
-- A Downtify server **3.1.0 or newer** (mobile API v1, pairing).
+- A Downtify server **3.1.0 or newer** (mobile API v1, pairing). Signing in with a username and password needs a server newer than 3.7.0 (`password_sign_in` in `GET /api/server/info`); older ones pair with a code.
 
 ## Build
 
@@ -43,14 +67,16 @@ The debug build installs as `com.henriquesebastiao.downtify.debug`, so it sits n
 1. Run Downtify (`make run` or Docker). Note the address you open it at in a browser, e.g. `http://192.168.1.20:8000`.
 2. Open the app. Allow **nearby devices / local network** access when asked (Android 17+ needs it to reach anything on your home network).
 3. Pick the server under **Found on this network**, or type its address. `192.168.1.20:8000` is enough; `http://` is added for you. HTTPS addresses work too, including behind a reverse proxy with a private CA installed on the phone.
-4. On the web page, signed in as the account the phone should belong to, open **Settings → Apps → Pair a phone**. Scan the QR code, or type the 8-character code.
+4. Sign in with the username and password you use on the web page. The phone becomes one of that account's paired apps; the password isn't kept on the phone.
+
+   Or pair instead, without typing the password: on the web page, signed in as the account the phone should belong to, open **Settings → Apps → Pair a phone**, then scan the QR code (from the first screen, or **Use a pairing code instead**) or type the 8-character code. A server with sign-in turned off, or older than app sign-in, goes straight to the code.
 
 Notes:
 
 - **Docker:** the default bridge network doesn't carry mDNS, so the server won't show up under "Found on this network". Type the address, or run the container with `network_mode: host`.
 - **Emulator:** the host machine is `10.0.2.2` (`http://10.0.2.2:8000`).
-- **Plain http** is allowed for any address, because self-hosted servers are usually `http://` on the LAN and Android's network security config can't express "private addresses only". Over http the device token travels unencrypted: fine at home, not across the internet. The connect screen warns when you type a plain-http public address. See `app/src/main/res/xml/network_security_config.xml`.
-- **Unpairing** from the web (Settings → Apps → the phone → Unpair) stops playback and sends the app back to the connect screen.
+- **Plain http** is allowed for any address, because self-hosted servers are usually `http://` on the LAN and Android's network security config can't express "private addresses only". Over http the password and the device token travel unencrypted: fine at home, not across the internet. The connect and sign-in steps warn about a plain-http public address. See `app/src/main/res/xml/network_security_config.xml`.
+- **Unpairing** from the web (Settings → Apps → the phone → Unpair) stops playback and sends the app back to the connect screen. **Sign out** in the app's Settings forgets the token on the phone; the web page keeps listing the phone until it's unpaired there.
 
 ## Project layout
 
@@ -66,6 +92,126 @@ Notes:
 
 Conventions for working on the code are in [CLAUDE.md](CLAUDE.md). The server contract the app implements lives in the server repository: `docs/mobile-client-contract.md`.
 
+## Credits
+
+The app follows Material 3 Expressive. Several of its components take their design from [PixelPlayer](https://github.com/PixelPlayerHQ/PixelPlayer), a Material 3 Expressive music player for Android by [theovilardo](https://github.com/theovilardo) and [contributors](https://github.com/PixelPlayerHQ/PixelPlayer/graphs/contributors). Its free and open-source edition is [PixelPlayerOSS](https://github.com/PixelPlayerHQ/PixelPlayerOSS), under GPL-3.0. Thank you for the inspiration.
+
+Inspired by PixelPlayer:
+
+- the type scale with Google Sans Flex's rounded cut, the large page titles and the wide hero title;
+- page headers with round back and action buttons, the tinted Library header and its pill tabs;
+- grouped lists with large outer and small inner corners, and the settings' value tags;
+- the floating navigation bar, with the option of a full-width one;
+- the side menu opened from Home's menu button;
+- the library's one-row title, its icon buttons, its sort sheet and its scrollbar;
+- the song that's playing drawn as a pill with a round cover;
+- the mini player:
+  - joined to the floating bar as one group;
+  - its title sliding when it doesn't fit;
+  - its previous, play/pause and next buttons;
+- Now Playing and the mini player in the colors of the cover.
+
+These are designs, not code: Downtify implements them in its own components (`:core:designsystem`) and includes no PixelPlayer source.
+
 ## License
 
 GPL-3.0 — see [LICENSE](LICENSE).
+
+Android Auto stability: see [the diagnostic and receiver acceptance checklist](docs/android-auto.md#stability-follow-up-full-phone-freeze-report). Launcher visibility and unit tests alone do not validate a full-phone freeze fix.
+
+## Experimental local music AI and DJ beta
+
+The optional `beta` build keeps the `.debug` application identity, enables R8 and
+resource shrinking, and is not debuggable. Packagers can set
+`musicAiBetaVersionCode` and `musicAiBetaVersionName` as Gradle properties to
+number their beta APK independently of the stable release. The version code must
+increase to update an installed build, and its signing certificate must match.
+These properties only affect beta APK outputs; stable release numbering is kept.
+
+**All server AI modules and the additional unqualified-DJ trial default off
+for new installations/accounts.** Existing explicit preferences are preserved.
+
+My music keeps the normal library visible. Four daily playlist cards sit under
+favorite playlists: Relaxation, Focus, Motivation and Calm. See all opens daily
+and weekly selections. The daily cards use local vector artwork with mood colors.
+Each selection opens the same native playlist screen as a saved playlist.
+Save a named, stable copy from its header; automatic renewal never changes it. A dedicated DJ shortcut sits beside Discover, Similar
+tracks and Podcasts. Song/player menus distinguish a classic mix from a DJ mix;
+the current queue retains its DJ button.
+
+One application-scoped coordinator owns preparation and transitions into the
+existing Media3 foreground service and MediaSession. Pause is local and
+immediate; delayed renderer statuses cannot restart playback. Generations,
+account ownership and request cancellation fence obsolete preparations. Leaving
+DJ maps the dominant audible title back to its original source time.
+
+Known capabilities and home cards have a small private cache scoped to the
+pairing. Foreground/cache invalidation replaces redundant timers. Commands,
+catalog queries, images and audio use separate network dispatchers. Error
+messages distinguish connection, authentication, incompatible responses,
+disabled features, missing analysis and a busy engine. Home sorting runs off
+the main thread.
+
+The optimized beta build is non-debuggable and enables R8/resource shrinking;
+it uses a profileable manifest for physical-device benchmarks. Its audio
+allocator target is 64 MiB across the two local decoders. Live HLS uses a separate
+64 MiB transient disk cache for immutable, authenticated segments; manifests stay fresh.
+These are configured budgets, not measured phone memory, battery or temperature.
+Server mixing remains the initial choice. **This device · Beta** enables a local
+dual-deck prototype for the current queue, using the same player and audio session.
+**Transitions** applies simple local fades with an independent 1–12 second setting.
+**DJ · Beta** respects the remembered rhythmic engine choice (server or this device).
+Device DJ consumes beat-aligned transition plans from existing, source-verified
+server analyses, for the current track and at most three following occurrences.
+It passes these plans and revisions to the dual-deck engine; missing, stale or
+unsuitable analyses never become a fade labelled as rhythmic DJ. Normal playback
+continues and an explicit server fallback is offered. Choosing simple transitions
+does not overwrite the rhythmic engine preference.
+
+Device plans require optional protocol `dj.local_plans_version=1`. Account, server,
+queue/source generation and source revisions fence their in-memory cache and late
+responses. Requests follow queue/source changes or an explicit retry, without a
+periodic catalog scan or model process. Plans adjust tempo by at most ±4%, preserve
+pitch and return to nominal speed before arming the next plan. This is not a claim
+of DJ equalisation, stem separation or professional mix quality. On-device
+Beat This!/ONNX inference is **not integrated**, and no AI model is downloaded.
+Shuffle, repeat-one, remote streams and nonstandard playback speed retain ordinary
+playback with an availability explanation. Phone quality, latency, temperature,
+battery and the one-hour physical-device acceptance remain unqualified.
+
+DJ sets now appear in the mini player and open Now Playing after joining. Direct
+controls are shown only after this device joins, avoiding a server-only resume.
+The beta3 queue rechecks server capabilities and reports the actual availability
+reason. Preparation can be cancelled, and a pending relay is distinct from active
+DJ playback. The song-menu action uses the selected engine and shows persistent
+progress, errors and an entry to the common player instead of an optimistic toast.
+All 114 player-module tests and 216 app tests passed, with three app tests
+explicitly skipped. They include seven mini-player checks and native shuffle
+restoration through the dual-deck facade. Detekt and formatting passed;
+these checks do not replace physical-device acceptance.
+
+Corrective player tests cover 25 repeated mode cycles, local pause intent,
+stale status fencing and dominant-title/source-time mapping. Server/web checks
+and a synthetic 50,000-entry home comparison are documented in the matching
+[server PR](https://github.com/henriquesebastiao/downtify/pull/547).
+Actual Pixel startup/latency, Bluetooth/background/network recovery, thermal
+behavior, comparative listening and the sustained one-hour qualification are
+still pending. This remains a draft beta. See [behavior and limits](docs/music-ai.md).
+
+The beta9 candidate (versionCode 18) removes the silent classic-queue fallback on
+DJ Next errors. Next and Previous use the shared session player, keep pause intent
+and report unavailable markers; returning to classic playback is an explicit
+action. Position-aware navigation is sent only when the server advertises
+`dj_navigation`; older servers keep receiving the legacy command. Duplicate
+occurrences retain separate mix markers. See the [controller checks and remaining
+physical acceptance](docs/android-auto.md). This candidate does not establish
+first-sound P95, battery behavior or one-hour real-time musical qualification.
+
+Weekly DJ cards now open a dedicated playlist page in the normal navigation,
+keeping the shared player available. The page shows the cover, duration, state
+and tracks of the selected set. Listening, preparation and saving a named audio
+copy are explicit actions; simply opening a card does none of them. Only that
+set's details are fetched, and obsolete responses are retired when the selection,
+account or feature availability changes. See the [weekly DJ playlist checks](docs/testing/weekly-dj-playlist.md)
+and [copy-dialog regression](docs/testing/weekly-dj-copy-dialog.md). These source
+checks do not qualify an APK, phone performance, Android Auto or rendered audio.

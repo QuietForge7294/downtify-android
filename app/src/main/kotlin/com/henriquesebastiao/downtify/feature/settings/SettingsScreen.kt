@@ -5,6 +5,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -14,24 +16,27 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,39 +44,54 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.henriquesebastiao.downtify.BuildConfig
 import com.henriquesebastiao.downtify.R
+import com.henriquesebastiao.downtify.core.data.offline.OfflineLocationChange
 import com.henriquesebastiao.downtify.core.data.session.ConnectionState
 import com.henriquesebastiao.downtify.core.data.settings.ThemeMode
 import com.henriquesebastiao.downtify.core.data.settings.UserSettings
+import com.henriquesebastiao.downtify.core.designsystem.component.ChoiceGroup
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyLogo
-import com.henriquesebastiao.downtify.core.designsystem.component.StatusPill
+import com.henriquesebastiao.downtify.core.designsystem.component.PageHeader
+import com.henriquesebastiao.downtify.core.designsystem.component.PhonePreviews
+import com.henriquesebastiao.downtify.core.designsystem.component.SectionCard
+import com.henriquesebastiao.downtify.core.designsystem.component.Tag
+import com.henriquesebastiao.downtify.core.designsystem.component.TagTone
 import com.henriquesebastiao.downtify.core.designsystem.theme.DmSans
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
+import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyType
 import com.henriquesebastiao.downtify.core.designsystem.theme.GoogleSansFlex
 import com.henriquesebastiao.downtify.core.designsystem.theme.Spacing
+import com.henriquesebastiao.downtify.core.designsystem.theme.withDataValues
 import com.henriquesebastiao.downtify.core.model.AppFont
+import com.henriquesebastiao.downtify.core.model.NormalizationLevel
 import com.henriquesebastiao.downtify.core.model.OfflinePlanner
 import com.henriquesebastiao.downtify.core.model.StreamFormat
 import com.henriquesebastiao.downtify.core.model.StreamQuality
 import com.henriquesebastiao.downtify.core.model.Transcoding
 import com.henriquesebastiao.downtify.core.model.formatBytes
+import com.henriquesebastiao.downtify.feature.player.PlaybackMixMode
+import com.henriquesebastiao.downtify.feature.player.PlaybackMixSelector
+import com.henriquesebastiao.downtify.feature.player.QueueDjViewModel
 import com.henriquesebastiao.downtify.ui.common.GroupTitle
 import com.henriquesebastiao.downtify.ui.common.GroupedList
 import com.henriquesebastiao.downtify.ui.common.GroupedRow
 import com.henriquesebastiao.downtify.ui.common.RowAction
+import com.henriquesebastiao.downtify.ui.common.chooseClientCertificate
+import kotlin.math.roundToInt
 
 @Composable
 fun SettingsRoute(
@@ -79,23 +99,61 @@ fun SettingsRoute(
     onOpenAbout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
+    onOpenAi: () -> Unit = {},
+    playback: QueueDjViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val device by playback.localDevice.collectAsStateWithLifecycle()
+    val mode by playback.mixMode.collectAsStateWithLifecycle()
+    val readiness by playback.localReadiness.collectAsStateWithLifecycle()
+    val seconds by playback.transitionSeconds.collectAsStateWithLifecycle()
+    val message by playback.message.collectAsStateWithLifecycle()
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        uri?.let { viewModel.setOfflineDirectory(it.toString()) }
+    }
     SettingsScreen(
+        playbackMode = mode,
+        playbackDevice = device,
+        localReadiness = readiness,
+        onPlaybackDevice = playback::chooseDevice,
+        onLocalRetry = playback::retryLocalPlans,
+        onServerFallback = playback::useServerFallback,
+        transitionSeconds = seconds,
+        playbackMessage = message,
+        onPlaybackMode = playback::selectMode,
+        onTransitionSeconds = playback::setTransitionSeconds,
         state = state,
         actions = SettingsActions(
             onBack = onBack,
             onWifiQuality = viewModel::setWifiQuality,
             onMobileQuality = viewModel::setMobileQuality,
+            onNormalizeVolume = viewModel::setNormalizeVolume,
+            onNormalizationLevel = viewModel::setNormalizationLevel,
             onTheme = viewModel::setTheme,
             onDynamicColor = viewModel::setDynamicColor,
             onAmoled = viewModel::setAmoled,
             onFont = viewModel::setFont,
+            onFloatingNavBar = viewModel::setFloatingNavBar,
             onOpenAbout = onOpenAbout,
+            onOpenAi = onOpenAi,
             onOpenLanguage = { openAppLanguageSettings(context) },
             onDownloadWifiOnly = viewModel::setDownloadWifiOnly,
             onOfflineLimit = viewModel::setOfflineLimit,
+            onChooseOfflineDirectory = { folderPicker.launch(null) },
+            onResetOfflineDirectory = { viewModel.setOfflineDirectory(null) },
+            onReadAhead = viewModel::setReadAhead,
+            onStreamCacheMb = viewModel::setStreamCacheMb,
+            onReadAheadMobile = viewModel::setReadAheadMobile,
+            onSelectClientCertificate = {
+                chooseClientCertificate(
+                    context = context,
+                    currentAlias = state.clientCertificate,
+                    addressOrUrl = state.baseUrl,
+                    onSelected = viewModel::setClientCertificate,
+                )
+            },
+            onClearClientCertificate = { viewModel.setClientCertificate(null) },
             onUnpair = viewModel::unpair,
             onOpenWeb = {
                 runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, state.baseUrl.toUri())) }
@@ -109,37 +167,68 @@ data class SettingsActions(
     val onBack: () -> Unit = {},
     val onWifiQuality: (StreamQuality) -> Unit = {},
     val onMobileQuality: (StreamQuality) -> Unit = {},
+    val onNormalizeVolume: (Boolean) -> Unit = {},
+    val onNormalizationLevel: (NormalizationLevel) -> Unit = {},
     val onTheme: (ThemeMode) -> Unit = {},
     val onDynamicColor: (Boolean) -> Unit = {},
     val onAmoled: (Boolean) -> Unit = {},
     val onFont: (AppFont) -> Unit = {},
+    val onFloatingNavBar: (Boolean) -> Unit = {},
     val onOpenAbout: () -> Unit = {},
+    val onOpenAi: () -> Unit = {},
     val onOpenLanguage: () -> Unit = {},
     val onDownloadWifiOnly: (Boolean) -> Unit = {},
     val onOfflineLimit: (Long) -> Unit = {},
+    val onChooseOfflineDirectory: () -> Unit = {},
+    val onResetOfflineDirectory: () -> Unit = {},
+    val onReadAhead: (Int) -> Unit = {},
+    val onStreamCacheMb: (Int) -> Unit = {},
+    val onReadAheadMobile: (Boolean) -> Unit = {},
+    val onSelectClientCertificate: () -> Unit = {},
+    val onClearClientCertificate: () -> Unit = {},
     val onUnpair: () -> Unit = {},
     val onOpenWeb: () -> Unit = {},
 )
 
-private enum class SettingsDialog { WifiQuality, MobileQuality, Theme, Font, OfflineLimit, Unpair }
+private enum class SettingsDialog {
+    WifiQuality,
+    MobileQuality,
+    Font,
+    OfflineLimit,
+    ReadAhead,
+    StreamCache,
+    ClientCertificate,
+    Unpair,
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, modifier: Modifier = Modifier) {
+fun SettingsScreen(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    modifier: Modifier = Modifier,
+    playbackMode: PlaybackMixMode = PlaybackMixMode.Disabled,
+    transitionSeconds: Int = 5,
+    playbackMessage: String = "",
+    onPlaybackMode: (PlaybackMixMode) -> Unit = {},
+    onTransitionSeconds: (Int) -> Unit = {},
+    playbackDevice: Boolean = false,
+    localReadiness: com.henriquesebastiao.downtify.core.player.LocalDjReadiness =
+        com.henriquesebastiao.downtify.core.player.LocalDjReadiness(),
+    onPlaybackDevice: (Boolean) -> Unit = {},
+    onLocalRetry: () -> Unit = {},
+    onServerFallback: () -> Unit = {},
+) {
     var dialog by rememberSaveable { mutableStateOf<SettingsDialog?>(null) }
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = actions.onBack) {
-                        Icon(
-                            painterResource(DowntifyIcons.Back),
-                            contentDescription = stringResource(R.string.action_back),
-                        )
-                    }
-                },
+            PageHeader(
+                title = stringResource(R.string.settings_title),
+                onBack = actions.onBack,
+                backLabel = stringResource(R.string.action_back),
+                scrollBehavior = scrollBehavior,
             )
         },
     ) { padding ->
@@ -151,8 +240,50 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, modifier: M
         ) {
             ServerCard(state, onChangeServer = { dialog = SettingsDialog.Unpair }, onOpenWeb = actions.onOpenWeb)
 
+            SectionCard(
+                icon = DowntifyIcons.Graphic,
+                title = "IA",
+                onClick = actions.onOpenAi,
+                trailing = { Tag("Expérimental", tone = TagTone.Secondary) },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.screen, vertical = Spacing.sm),
+            ) { Text("Playlists personnalisées et DJ en temps réel") }
+
             GroupTitle(stringResource(R.string.settings_playback))
-            GroupedList(playbackRows(state) { dialog = it })
+            GroupedList(playbackRows(state, actions) { dialog = it })
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = Spacing.screen, vertical = Spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text("Transitions et DJ", style = MaterialTheme.typography.titleMedium)
+                PlaybackMixSelector(playbackMode, onPlaybackMode)
+                com.henriquesebastiao.downtify.feature.player.RhythmicDjEngine(playbackDevice, onPlaybackDevice)
+                if (playbackDevice && playbackMode == PlaybackMixMode.Dj) {
+                    com.henriquesebastiao.downtify.feature.player.LocalDjFeedback(
+                        localReadiness,
+                        onLocalRetry,
+                        onServerFallback,
+                    )
+                }
+                Text("Durée du fondu local : $transitionSeconds s", style = MaterialTheme.typography.bodyMedium)
+                var sliding by androidx.compose.runtime.remember(transitionSeconds) {
+                    mutableStateOf(transitionSeconds.toFloat())
+                }
+                Slider(
+                    value = sliding,
+                    onValueChange = { sliding = it },
+                    onValueChangeFinished = { onTransitionSeconds(sliding.roundToInt()) },
+                    valueRange = 1f..12f,
+                    steps = 10,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    stringResource(R.string.music_dj_modes_description),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                if (playbackMessage.isNotBlank()) Text(playbackMessage, style = MaterialTheme.typography.bodySmall)
+            }
+            Spacer(Modifier.height(Spacing.lg))
+            GroupedList(bufferRows(state, actions) { dialog = it })
 
             GroupTitle(stringResource(R.string.settings_downloads))
             GroupedList(downloadRows(state, actions) { dialog = it })
@@ -166,6 +297,7 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, modifier: M
                     GroupedRow(
                         title = stringResource(R.string.settings_about_entry),
                         summary = stringResource(R.string.settings_app_version, BuildConfig.VERSION_NAME),
+                        summaryValues = listOf(BuildConfig.VERSION_NAME),
                         icon = DowntifyIcons.Info,
                         action = RowAction.Click(actions.onOpenAbout, DowntifyIcons.ChevronRight),
                     ),
@@ -176,10 +308,23 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, modifier: M
             GroupedList(
                 listOf(
                     GroupedRow(
+                        title = stringResource(R.string.settings_client_certificate),
+                        summary = state.clientCertificate ?: stringResource(R.string.settings_client_certificate_none),
+                        summaryValues = listOfNotNull(state.clientCertificate),
+                        icon = DowntifyIcons.Terms,
+                        action = RowAction.Click({
+                            if (state.clientCertificate != null) {
+                                dialog = SettingsDialog.ClientCertificate
+                            } else {
+                                actions.onSelectClientCertificate()
+                            }
+                        }),
+                    ),
+                    GroupedRow(
                         title = stringResource(R.string.settings_unpair),
                         summary = stringResource(R.string.settings_unpair_body),
                         icon = DowntifyIcons.Unpair,
-                        titleColor = MaterialTheme.colorScheme.error,
+                        destructive = true,
                         action = RowAction.Click({ dialog = SettingsDialog.Unpair }),
                     ),
                 ),
@@ -194,6 +339,7 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, modifier: M
             options = state.qualityOptions,
             selected = state.settings.wifiQuality,
             label = { qualityLabel(it) },
+            values = { qualityValues(it) },
             onSelect = actions.onWifiQuality,
             onDismiss = { dialog = null },
         )
@@ -203,16 +349,8 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, modifier: M
             options = state.qualityOptions,
             selected = state.settings.mobileQuality,
             label = { qualityLabel(it) },
+            values = { qualityValues(it) },
             onSelect = actions.onMobileQuality,
-            onDismiss = { dialog = null },
-        )
-
-        SettingsDialog.Theme -> ChoiceDialog(
-            title = stringResource(R.string.settings_theme),
-            options = ThemeMode.entries,
-            selected = state.settings.theme,
-            label = { stringResource(it.label) },
-            onSelect = actions.onTheme,
             onDismiss = { dialog = null },
         )
 
@@ -231,8 +369,45 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, modifier: M
             options = UserSettings.OFFLINE_LIMITS,
             selected = state.settings.offlineLimitBytes,
             label = { limitLabel(it) },
+            values = { if (it == OfflinePlanner.UNLIMITED) emptyList() else listOf(limitLabel(it)) },
             onSelect = actions.onOfflineLimit,
             onDismiss = { dialog = null },
+        )
+
+        SettingsDialog.ReadAhead -> ChoiceDialog(
+            title = stringResource(R.string.settings_read_ahead),
+            options = listOf(0, 1, 2, 3),
+            selected = state.settings.readAhead.tracks,
+            label = { readAheadLabel(it) },
+            onSelect = actions.onReadAhead,
+            onDismiss = { dialog = null },
+        )
+
+        SettingsDialog.StreamCache -> CacheLimitDialog(
+            state.settings.readAhead.cacheMb,
+            actions.onStreamCacheMb,
+            onDismiss = { dialog = null },
+        )
+
+        SettingsDialog.ClientCertificate -> AlertDialog(
+            onDismissRequest = { dialog = null },
+            icon = { Icon(painterResource(DowntifyIcons.Terms), contentDescription = null) },
+            title = { Text(stringResource(R.string.settings_client_certificate)) },
+            text = {
+                Text(stringResource(R.string.settings_client_certificate_active, state.clientCertificate.orEmpty()))
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    dialog = null
+                    actions.onSelectClientCertificate()
+                }) { Text(stringResource(R.string.settings_client_certificate_change)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    dialog = null
+                    actions.onClearClientCertificate()
+                }) { Text(stringResource(R.string.settings_client_certificate_remove)) }
+            },
         )
 
         SettingsDialog.Unpair -> AlertDialog(
@@ -255,92 +430,136 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, modifier: M
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * The paired server, the screen's one hero card: its name, its address in the data style, and its
+ * state as tags (color, icon and words) that wrap between each other, never inside one.
+ */
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ServerCard(state: SettingsUiState, onChangeServer: () -> Unit, onOpenWeb: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        shape = MaterialTheme.shapes.large,
+    val scheme = MaterialTheme.colorScheme
+    SectionCard(
+        hero = true,
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.screen, vertical = Spacing.sm),
     ) {
-        Column(Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                DowntifyLogo(size = 40.dp)
-                Column(Modifier.weight(1f)) {
-                    Text(state.serverName, style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        state.address,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            DowntifyLogo(size = 48.dp)
+            Column(Modifier.weight(1f)) {
+                Text(
+                    state.serverName,
+                    style = MaterialTheme.typography.titleLargeEmphasized,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    state.address,
+                    style = DowntifyType.dataMedium,
+                    color = scheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
-            // Status, version and account: one line that wraps between items, never inside one.
-            val details = listOfNotNull(
-                state.version.takeIf { it.isNotBlank() }?.let { stringResource(R.string.settings_server_version, it) },
-                state.username.takeIf { it.isNotBlank() }?.let { stringResource(R.string.settings_signed_in_as, it) },
-            ).joinToString(" · ")
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                verticalArrangement = Arrangement.spacedBy(Spacing.xs),
-                itemVerticalAlignment = Alignment.CenterVertically,
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            ConnectionTag(state.connection)
+            if (state.version.isNotBlank()) {
+                Tag(stringResource(R.string.settings_server_version, state.version))
+            }
+        }
+        if (state.username.isNotBlank()) {
+            Text(
+                stringResource(R.string.settings_signed_in_as, state.username),
+                style = MaterialTheme.typography.bodyMedium,
+                color = scheme.onSurfaceVariant,
+            )
+        }
+        // Stacked: the labels are long in some languages and would wrap inside a half-width button.
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            OutlinedButton(
+                onClick = onChangeServer,
+                shapes = ButtonDefaults.shapes(),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
             ) {
-                ConnectionPill(state.connection)
-                if (details.isNotEmpty()) {
-                    Text(
-                        details,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text(stringResource(R.string.settings_change_server))
             }
-            // Stacked: the labels are long in some languages and would wrap inside a half-width button.
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                OutlinedButton(onClick = onChangeServer, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.settings_change_server))
-                }
-                OutlinedButton(onClick = onOpenWeb, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.settings_open_web))
-                }
+            OutlinedButton(
+                onClick = onOpenWeb,
+                shapes = ButtonDefaults.shapes(),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) {
+                Icon(
+                    painterResource(DowntifyIcons.OpenInNew),
+                    contentDescription = null,
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                )
+                Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                Text(stringResource(R.string.settings_open_web))
             }
         }
     }
 }
 
 @Composable
-private fun ConnectionPill(connection: ConnectionState) {
-    val scheme = MaterialTheme.colorScheme
+private fun ConnectionTag(connection: ConnectionState) {
     when (connection) {
-        ConnectionState.Connected -> StatusPill(stringResource(R.string.settings_connected))
+        ConnectionState.Connected ->
+            Tag(stringResource(R.string.settings_connected), icon = DowntifyIcons.CheckCircle, tone = TagTone.Primary)
 
-        ConnectionState.Unknown -> StatusPill(
-            stringResource(R.string.settings_checking),
-            container = scheme.surfaceContainerHighest,
-            content = scheme.onSurfaceVariant,
-            dot = scheme.outline,
-        )
+        ConnectionState.Unknown ->
+            Tag(stringResource(R.string.settings_checking), icon = DowntifyIcons.Refresh)
 
-        ConnectionState.Unreachable -> StatusPill(
-            stringResource(R.string.settings_unreachable),
-            container = scheme.surfaceContainerHighest,
-            content = scheme.onSurfaceVariant,
-            dot = scheme.outline,
-        )
+        ConnectionState.Unreachable ->
+            Tag(stringResource(R.string.settings_unreachable), icon = DowntifyIcons.Offline)
 
-        ConnectionState.DifferentServer -> StatusPill(
-            stringResource(R.string.settings_different_server),
-            container = scheme.errorContainer,
-            content = scheme.onErrorContainer,
-            dot = scheme.error,
-        )
+        ConnectionState.DifferentServer ->
+            Tag(stringResource(R.string.settings_different_server), icon = DowntifyIcons.Warning, tone = TagTone.Error)
     }
 }
 
 @Composable
-private fun playbackRows(state: SettingsUiState, open: (SettingsDialog) -> Unit): List<GroupedRow> = listOf(
+private fun playbackRows(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    open: (SettingsDialog) -> Unit,
+): List<GroupedRow> = listOfNotNull(
+    GroupedRow(
+        title = stringResource(R.string.settings_normalize_volume),
+        summary = stringResource(R.string.settings_normalize_volume_hint),
+        icon = DowntifyIcons.Graphic,
+        action = RowAction.Toggle(state.settings.normalizeVolume, actions.onNormalizeVolume),
+    ),
+    if (state.settings.normalizeVolume) {
+        GroupedRow(
+            title = stringResource(R.string.settings_normalization_level),
+            summary = stringResource(R.string.settings_normalization_level_hint),
+            action = RowAction.Control {
+                ChoiceGroup(
+                    options = NormalizationLevel.entries,
+                    selected = state.settings.normalizationLevel,
+                    label = { level ->
+                        stringResource(
+                            when (level) {
+                                NormalizationLevel.Normal -> R.string.settings_normalization_normal
+                                NormalizationLevel.Louder -> R.string.settings_normalization_louder
+                                NormalizationLevel.Maximum -> R.string.settings_normalization_maximum
+                            },
+                        )
+                    },
+                    onSelect = actions.onNormalizationLevel,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                )
+            },
+        )
+    } else {
+        null
+    },
     GroupedRow(
         title = stringResource(R.string.settings_quality_wifi),
         summary = qualitySummary(state.settings.wifiQuality),
+        summaryValues = qualityValues(state.settings.wifiQuality),
         icon = DowntifyIcons.Wifi,
         action = RowAction.Click({ open(SettingsDialog.WifiQuality) }),
     ),
@@ -351,6 +570,7 @@ private fun playbackRows(state: SettingsUiState, open: (SettingsDialog) -> Unit)
         } else {
             stringResource(R.string.settings_quality_no_transcoding)
         },
+        summaryValues = if (state.transcoding.available) qualityValues(state.settings.mobileQuality) else emptyList(),
         icon = DowntifyIcons.Cellular,
         enabled = state.transcoding.available,
         action = RowAction.Click({ open(SettingsDialog.MobileQuality) }),
@@ -362,24 +582,115 @@ private fun downloadRows(
     state: SettingsUiState,
     actions: SettingsActions,
     open: (SettingsDialog) -> Unit,
+): List<GroupedRow> {
+    val moving = state.locationChange is OfflineLocationChange.Moving
+    val directorySummary = when (state.locationChange) {
+        OfflineLocationChange.Moving -> stringResource(R.string.settings_offline_directory_moving)
+        is OfflineLocationChange.Failed -> stringResource(R.string.settings_offline_directory_error)
+        OfflineLocationChange.Idle -> state.offlineDirectory
+    }
+    return listOfNotNull(
+        GroupedRow(
+            title = stringResource(R.string.settings_download_wifi_only),
+            summary = stringResource(R.string.settings_download_wifi_only_body),
+            icon = DowntifyIcons.Downloads,
+            action = RowAction.Toggle(state.settings.downloadWifiOnly, actions.onDownloadWifiOnly),
+        ),
+        GroupedRow(
+            title = stringResource(R.string.settings_offline_directory),
+            summary = directorySummary,
+            summaryValues = listOfNotNull(
+                state.offlineDirectory.takeIf { state.locationChange is OfflineLocationChange.Idle },
+            ),
+            icon = DowntifyIcons.Storage,
+            enabled = !moving,
+            action = RowAction.Click(actions.onChooseOfflineDirectory, DowntifyIcons.ChevronRight),
+        ),
+        if (state.settings.offlineDirectoryUri != null) {
+            GroupedRow(
+                title = stringResource(R.string.settings_offline_directory_reset),
+                icon = DowntifyIcons.Downloads,
+                enabled = !moving,
+                action = RowAction.Click(actions.onResetOfflineDirectory),
+            )
+        } else {
+            null
+        },
+        GroupedRow(
+            title = stringResource(R.string.settings_offline_limit),
+            summary = stringResource(
+                R.string.settings_offline_limit_summary,
+                limitLabel(state.settings.offlineLimitBytes),
+                formatBytes(state.offlineUsedBytes),
+            ),
+            summaryValues = listOfNotNull(
+                limitLabel(state.settings.offlineLimitBytes).takeIf {
+                    state.settings.offlineLimitBytes != OfflinePlanner.UNLIMITED
+                },
+                formatBytes(state.offlineUsedBytes),
+            ),
+            icon = DowntifyIcons.Storage,
+            action = RowAction.Click({ open(SettingsDialog.OfflineLimit) }),
+        ),
+    )
+}
+
+@Composable
+private fun bufferRows(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    open: (SettingsDialog) -> Unit,
 ): List<GroupedRow> = listOf(
     GroupedRow(
-        title = stringResource(R.string.settings_download_wifi_only),
-        summary = stringResource(R.string.settings_download_wifi_only_body),
+        title = stringResource(R.string.settings_read_ahead),
+        summary = readAheadLabel(state.settings.readAhead.tracks),
         icon = DowntifyIcons.Downloads,
-        action = RowAction.Toggle(state.settings.downloadWifiOnly, actions.onDownloadWifiOnly),
+        action = RowAction.Click({ open(SettingsDialog.ReadAhead) }),
     ),
     GroupedRow(
-        title = stringResource(R.string.settings_offline_limit),
-        summary = stringResource(
-            R.string.settings_offline_limit_summary,
-            limitLabel(state.settings.offlineLimitBytes),
-            formatBytes(state.offlineUsedBytes),
-        ),
+        title = stringResource(R.string.settings_stream_cache),
+        summary = stringResource(R.string.settings_stream_cache_size, state.settings.readAhead.cacheMb),
+        summaryValues = listOf(stringResource(R.string.settings_stream_cache_size, state.settings.readAhead.cacheMb)),
         icon = DowntifyIcons.Storage,
-        action = RowAction.Click({ open(SettingsDialog.OfflineLimit) }),
+        action = RowAction.Click({ open(SettingsDialog.StreamCache) }),
+    ),
+    GroupedRow(
+        title = stringResource(R.string.settings_read_ahead_mobile),
+        summary = stringResource(R.string.settings_read_ahead_mobile_body),
+        icon = DowntifyIcons.Cellular,
+        enabled = state.settings.readAhead.tracks > 0,
+        action = RowAction.Toggle(state.settings.readAhead.mobile, actions.onReadAheadMobile),
     ),
 )
+
+/** The cache size on a stepped slider (10 to 200 MB), the value over it; nothing is saved until Apply. */
+@Composable
+private fun CacheLimitDialog(current: Int, onSelect: (Int) -> Unit, onDismiss: () -> Unit) {
+    var value by rememberSaveable(current) { mutableStateOf(current.toFloat()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_stream_cache)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
+                Text(stringResource(R.string.settings_stream_cache_body))
+                Tag(
+                    stringResource(R.string.settings_stream_cache_size, value.roundToInt()),
+                    tone = TagTone.Secondary,
+                )
+                Slider(value = value, onValueChange = { value = it }, valueRange = 10f..200f, steps = 18)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onSelect(value.roundToInt())
+                onDismiss()
+            }) {
+                Text(stringResource(R.string.settings_cache_apply))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
 
 @Composable
 private fun appearanceRows(
@@ -390,11 +701,29 @@ private fun appearanceRows(
     add(
         GroupedRow(
             title = stringResource(R.string.settings_theme),
-            summary = stringResource(state.settings.theme.label),
+            summary = stringResource(R.string.settings_theme_body),
             icon = DowntifyIcons.DarkMode,
-            action = RowAction.Click({ open(SettingsDialog.Theme) }),
+            action = RowAction.Control {
+                ChoiceGroup(
+                    options = listOf(ThemeMode.System, ThemeMode.Light, ThemeMode.Dark),
+                    selected = state.settings.theme,
+                    label = { stringResource(it.label) },
+                    onSelect = actions.onTheme,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                )
+            },
         ),
     )
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        add(
+            GroupedRow(
+                title = stringResource(R.string.settings_dynamic_color),
+                summary = stringResource(R.string.settings_dynamic_color_body),
+                icon = DowntifyIcons.Palette,
+                action = RowAction.Toggle(state.settings.dynamicColor, actions.onDynamicColor),
+            ),
+        )
+    }
     add(
         GroupedRow(
             title = stringResource(R.string.settings_amoled),
@@ -411,16 +740,14 @@ private fun appearanceRows(
             action = RowAction.Click({ open(SettingsDialog.Font) }),
         ),
     )
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        add(
-            GroupedRow(
-                title = stringResource(R.string.settings_dynamic_color),
-                summary = stringResource(R.string.settings_dynamic_color_body),
-                icon = DowntifyIcons.Palette,
-                action = RowAction.Toggle(state.settings.dynamicColor, actions.onDynamicColor),
-            ),
-        )
-    }
+    add(
+        GroupedRow(
+            title = stringResource(R.string.settings_floating_nav_bar),
+            summary = stringResource(R.string.settings_floating_nav_bar_body),
+            icon = DowntifyIcons.FloatingBar,
+            action = RowAction.Toggle(state.settings.floatingNavBar, actions.onFloatingNavBar),
+        ),
+    )
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         add(
             GroupedRow(
@@ -456,6 +783,7 @@ private fun <T> ChoiceDialog(
     label: @Composable (T) -> String,
     onSelect: (T) -> Unit,
     onDismiss: () -> Unit,
+    values: @Composable (T) -> List<String> = { emptyList() },
     labelFont: (T) -> FontFamily? = { null },
 ) {
     AlertDialog(
@@ -471,13 +799,14 @@ private fun <T> ChoiceDialog(
                                 onSelect(option)
                                 onDismiss()
                             }
-                            .padding(vertical = Spacing.md),
+                            .heightIn(min = 48.dp)
+                            .padding(vertical = Spacing.sm),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
                     ) {
                         RadioButton(selected = option == selected, onClick = null)
                         Text(
-                            label(option),
+                            withDataValues(label(option), values(option)),
                             style = MaterialTheme.typography.bodyLarge,
                             fontFamily = labelFont(option),
                         )
@@ -501,6 +830,18 @@ private fun qualityLabel(quality: StreamQuality): String = if (quality.isOrigina
     stringResource(R.string.settings_quality_original)
 } else {
     stringResource(R.string.settings_quality_label, quality.format.displayName, quality.bitrate)
+}
+
+/** A transcoded quality's format and bitrate, in tabular figures; the " · " between them isn't. */
+@Composable
+private fun qualityValues(quality: StreamQuality): List<String> =
+    if (quality.isOriginal) emptyList() else qualityLabel(quality).split(" · ")
+
+@Composable
+private fun readAheadLabel(tracks: Int): String = if (tracks == 0) {
+    stringResource(R.string.settings_read_ahead_off)
+} else {
+    stringResource(R.string.settings_read_ahead_count, tracks)
 }
 
 private val StreamFormat.displayName: String
@@ -533,7 +874,7 @@ private val ThemeMode.label: Int
         ThemeMode.Light -> R.string.settings_theme_light
     }
 
-@PreviewLightDark
+@PhonePreviews
 @Composable
 private fun SettingsPreview() {
     DowntifyTheme {
@@ -541,6 +882,7 @@ private fun SettingsPreview() {
         SettingsScreen(
             state = SettingsUiState(
                 serverName = "nas.local",
+                username = "admin",
                 address = "192.168.1.20:8000",
                 version = "3.2.0",
                 apiVersion = 1,

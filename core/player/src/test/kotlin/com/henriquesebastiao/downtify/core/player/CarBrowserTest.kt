@@ -1,0 +1,388 @@
+package com.henriquesebastiao.downtify.core.player
+
+import android.os.Bundle
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaConstants
+import androidx.media3.session.MediaLibraryService.LibraryParams
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
+import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionError
+import com.henriquesebastiao.downtify.core.data.library.LibraryRepository
+import com.henriquesebastiao.downtify.core.data.library.LibrarySnapshot
+import com.henriquesebastiao.downtify.core.data.offline.OfflineRepository
+import com.henriquesebastiao.downtify.core.data.offline.OfflineState
+import com.henriquesebastiao.downtify.core.model.Playlist
+import com.henriquesebastiao.downtify.core.model.Track
+import com.henriquesebastiao.downtify.core.network.session.Session
+import com.henriquesebastiao.downtify.core.network.session.SessionStore
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
+
+@UnstableApi
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
+class CarBrowserTest {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+    private val session = mockk<MediaLibrarySession>(relaxed = true)
+    private val controller = mockk<MediaSession.ControllerInfo>(relaxed = true)
+    private val paired =
+        MutableStateFlow<Session?>(Session("https://fixture.test", "server", "Test", "device", "fixture"))
+    private val snapshot = MutableStateFlow<LibrarySnapshot?>(null)
+    private lateinit var browser: CarBrowser
+    private lateinit var repository: LibraryRepository
+    private lateinit var offline: OfflineRepository
+    private lateinit var sessions: SessionStore
+    private lateinit var artwork: SessionArtworkCache
+
+    @Before fun setUp() {
+        repository = mockk<LibraryRepository>()
+        every { repository.library } returns snapshot
+        every { repository.playlists } returns MutableStateFlow(listOf(Playlist("Test", false, "", listOf("b", "a"))))
+        every { repository.likedIds } returns MutableStateFlow(listOf("a"))
+        offline = mockk<OfflineRepository>()
+        every { offline.state } returns MutableStateFlow<OfflineState?>(null)
+        sessions = mockk<SessionStore>()
+        every { sessions.current } answers { paired.value }
+        every { sessions.session } returns paired
+        coEvery { sessions.ensureLoaded() } returns Unit
+        artwork = mockk<SessionArtworkCache>()
+        coEvery { artwork.cached(any(), any()) } returns null
+        coEvery { artwork.prepare(any(), any(), any()) } returns null
+        browser = CarBrowser(RuntimeEnvironment.getApplication(), repository, offline, sessions, artwork, scope)
+        browser.observe(session)
+        snapshot.value = LibrarySnapshot(listOf(track("a"), track("b")))
+    }
+
+    @After fun tearDown() {
+        scope.cancel()
+    }
+
+    @Test fun `root completes immediately even when the library is unavailable and unpaired`() {
+        snapshot.value = null
+        paired.value = null
+        val result = browser.onGetLibraryRoot(session, controller, null)
+        assertTrue(result.isDone)
+        assertEquals(CarLibrary.ROOT, result.get().value!!.mediaId)
+    }
+
+    @Test fun `root is browsable and never starts audio`() {
+        val root = browser.onGetLibraryRoot(session, controller, null).get(5, TimeUnit.SECONDS)
+        assertEquals(CarLibrary.ROOT, root.value!!.mediaId)
+        assertFalse(root.value!!.mediaMetadata.isPlayable!!)
+        assertEquals(
+            4,
+            browser.onGetChildren(session, controller, CarLibrary.ROOT, 0, 20, null)
+                .get(5, TimeUnit.SECONDS).value!!.size,
+        )
+    }
+
+    @Test fun `root announces search and keeps all categories accessible on limited receivers`() {
+        val params = LibraryParams.Builder().setExtras(
+            Bundle().apply {
+                putInt(MediaConstants.EXTRAS_KEY_ROOT_CHILDREN_LIMIT, 2)
+            },
+        ).build()
+        val root = browser.onGetLibraryRoot(session, controller, params).get(5, TimeUnit.SECONDS)
+        assertTrue(root.params!!.extras.getBoolean("android.media.browse.SEARCH_SUPPORTED"))
+        val children = browser.onGetChildren(session, controller, CarLibrary.ROOT, 0, 20, null)
+            .get(5, TimeUnit.SECONDS).value!!
+        assertEquals(1, children.size)
+        val categories = browser.onGetChildren(session, controller, children.single().mediaId, 0, 20, null)
+            .get(5, TimeUnit.SECONDS).value!!
+        assertEquals(4, categories.size)
+    }
+
+    @Test fun `explicit multi item queue preserves its own order and selected index`() {
+        val items =
+            mutableListOf(MediaItem.Builder().setMediaId("b").build(), MediaItem.Builder().setMediaId("a").build())
+        val result = browser.onSetMediaItems(session, controller, items, 1, 9000).get(5, TimeUnit.SECONDS)
+        assertEquals(listOf("b", "a"), result.mediaItems.map { it.mediaId })
+        assertEquals(1, result.startIndex)
+        assertEquals(9000L, result.startPositionMs)
+    }
+
+    @Test fun `artist folders keep grid style while shuffle rows remain playable list actions`() {
+        val artist = browser.onGetChildren(session, controller, CarLibrary.ARTISTS, 0, 20, null)
+            .get(5, TimeUnit.SECONDS).value!!.single()
+        assertEquals(
+            MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM,
+            artist.mediaMetadata.extras!!.getInt(MediaConstants.EXTRAS_KEY_CONTENT_STYLE_BROWSABLE),
+        )
+        val shuffled = browser.onGetChildren(session, controller, CarLibrary.FAVORITES, 0, 20, null)
+            .get(5, TimeUnit.SECONDS).value!!.single { it.mediaId.startsWith(CarLibrary.SHUFFLE_PREFIX) }
+        assertTrue(shuffled.mediaMetadata.isPlayable == true)
+        val styles = listOf(
+            MediaConstants.EXTRAS_KEY_CONTENT_STYLE_BROWSABLE,
+            MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE,
+        )
+        for (key in styles) {
+            assertEquals(
+                MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM,
+                shuffled.mediaMetadata.extras!!.getInt(key),
+            )
+        }
+    }
+
+    @Test fun `external controllers can connect and non app controllers cannot impersonate the app`() {
+        every { controller.uid } returns 200
+        every { controller.packageName } returns "untrusted.example"
+        every { controller.isTrusted } returns false
+        assertTrue(ControllerAccess.canConnect(controller, "app.example", 100))
+        assertFalse(ControllerAccess.isApp(controller, "app.example", 100))
+        every { controller.uid } returns 100
+        every { controller.packageName } returns "app.example"
+        assertTrue(ControllerAccess.isApp(controller, "app.example", 100))
+    }
+
+    @Test fun `known playlist row expands to the same ordered player queue`() {
+        val folder = browser.onGetChildren(session, controller, CarLibrary.PLAYLISTS, 0, 20, null)
+            .get(5, TimeUnit.SECONDS).value!!.single()
+        val rows = browser.onGetChildren(session, controller, folder.mediaId, 0, 20, null)
+            .get(5, TimeUnit.SECONDS).value!!
+        val row = rows.first {
+            it.mediaMetadata.isPlayable == true && !it.mediaId.startsWith(CarLibrary.SHUFFLE_PREFIX)
+        }
+        val result = browser.onSetMediaItems(session, controller, mutableListOf(row), 0, 5000)
+            .get(5, TimeUnit.SECONDS)
+        assertEquals(listOf("b", "a"), result.mediaItems.map { it.mediaId })
+        assertEquals(0, result.startIndex)
+        assertEquals(5000L, result.startPositionMs)
+    }
+
+    @Test fun `suggested root returns collections and selecting a card restores its complete playlist`() {
+        val params = LibraryParams.Builder().setSuggested(true).build()
+        val root = browser.onGetLibraryRoot(session, controller, params).get().value!!
+        val choices = browser.onGetChildren(session, controller, root.mediaId, 0, 10, params)
+            .get(5, TimeUnit.SECONDS).value!!
+        assertEquals(3, choices.size)
+        assertTrue(choices.all { it.mediaMetadata.isPlayable == true && it.mediaMetadata.isBrowsable == false })
+        val selected = browser.onSetMediaItems(session, controller, choices.toMutableList(), 1, 0)
+            .get(5, TimeUnit.SECONDS)
+        assertEquals(listOf("b", "a"), selected.mediaItems.map { it.mediaId })
+        assertEquals(0, selected.startIndex)
+    }
+
+    @Test fun `a ten item car page restores all 300 or 1000 playlist occurrences`() {
+        for (count in listOf(300, 1_000)) {
+            val ids = List(count) { if (it % 11 == 0) "a" else "b" }
+            val paged = largePlaylistBrowser(ids)
+            val range = secondPlaylistRange(paged)
+            val ten = paged.onGetChildren(session, controller, range.mediaId, 0, 11, null)
+                .get(5, TimeUnit.SECONDS).value!!.filterNot { it.mediaId.startsWith(CarLibrary.SHUFFLE_PREFIX) }
+            assertEquals(10, ten.size)
+            val result = paged.onSetMediaItems(session, controller, ten.toMutableList(), 7, 9000)
+                .get(5, TimeUnit.SECONDS)
+            assertEquals(ids, result.mediaItems.map { it.mediaId })
+            assertEquals(107, result.startIndex)
+            assertEquals(9000L, result.startPositionMs)
+        }
+    }
+
+    @Test fun `a raw ten item car page excludes the shuffle action from the selected offset`() {
+        for (count in listOf(300, 1_000)) {
+            val ids = List(count) { if (it % 11 == 0) "a" else "b" }
+            val paged = largePlaylistBrowser(ids)
+            val range = secondPlaylistRange(paged)
+            val raw = paged.onGetChildren(session, controller, range.mediaId, 0, 10, null)
+                .get(5, TimeUnit.SECONDS).value!!
+            assertEquals(10, raw.size)
+            assertTrue(raw.first().mediaId.startsWith(CarLibrary.SHUFFLE_PREFIX))
+            val result = paged.onSetMediaItems(session, controller, raw.toMutableList(), 7, 9000)
+                .get(5, TimeUnit.SECONDS)
+            assertEquals(ids, result.mediaItems.map { it.mediaId })
+            assertEquals(106, result.startIndex)
+            assertEquals(9000L, result.startPositionMs)
+        }
+    }
+
+    @Test fun `selecting shuffle in a raw car range restores the full repeated playlist and context`() {
+        for (count in listOf(300, 1_000)) {
+            val ids = List(count) { if (it % 11 == 0) "a" else "b" }
+            val paged = largePlaylistBrowser(ids)
+            val range = secondPlaylistRange(paged)
+            val raw = paged.onGetChildren(session, controller, range.mediaId, 0, 10, null)
+                .get(5, TimeUnit.SECONDS).value!!
+            assertTrue(raw.first().mediaId.startsWith(CarLibrary.SHUFFLE_PREFIX))
+            val result = paged.onSetMediaItems(session, controller, raw.toMutableList(), 0, 0)
+                .get(5, TimeUnit.SECONDS)
+            val resolved = result.mediaItems.map { it.mediaId }
+            assertEquals(count, resolved.size)
+            assertEquals(ids.groupingBy { it }.eachCount(), resolved.groupingBy { it }.eachCount())
+            assertTrue(resolved.none { it.startsWith(CarLibrary.SHUFFLE_PREFIX) })
+            assertEquals(0, result.startIndex)
+            assertEquals(0L, result.startPositionMs)
+            verify { session.player.playlistMetadata = match { MediaItems.contextOf(it)?.refId == "Long" } }
+        }
+    }
+
+    @Test fun `external URI never overrides the catalog audio source`() {
+        val forged = MediaItem.Builder().setMediaId("a").setUri("https://untrusted.test/audio").build()
+        val result = browser.onSetMediaItems(session, controller, mutableListOf(forged), 0, C.TIME_UNSET)
+            .get(5, TimeUnit.SECONDS)
+        assertEquals(MediaItems.uriFor("a"), result.mediaItems.single().localConfiguration!!.uri)
+        assertNotEquals(forged.localConfiguration!!.uri, result.mediaItems.single().localConfiguration!!.uri)
+    }
+
+    @Test fun `revocation while constructing a car queue rejects the previous account result`() {
+        val tasks = ArrayBlockingQueue<Runnable>(1)
+        val paused = object : CoroutineDispatcher() {
+            override fun dispatch(context: CoroutineContext, block: Runnable) {
+                check(tasks.offer(block))
+            }
+        }
+        val gated = CarBrowser(
+            RuntimeEnvironment.getApplication(),
+            repository,
+            offline,
+            sessions,
+            artwork,
+            scope,
+            playbackDispatcher = paused,
+        )
+        gated.observe(session)
+        val result = gated.onSetMediaItems(
+            session,
+            controller,
+            mutableListOf(MediaItem.Builder().setMediaId("a").build()),
+            0,
+            0,
+        )
+        val work = requireNotNull(tasks.poll(5, TimeUnit.SECONDS)) { "Queue construction did not start" }
+        assertFalse(result.isDone)
+        paired.value = null
+        work.run()
+        val error = org.junit.Assert.assertThrows(ExecutionException::class.java) {
+            result.get(5, TimeUnit.SECONDS)
+        }
+        assertTrue(error.cause is IllegalArgumentException)
+    }
+
+    @Test(expected = ExecutionException::class)
+    fun `unknown external ID cannot become an arbitrary library request`() {
+        browser.onSetMediaItems(
+            session,
+            controller,
+            mutableListOf(MediaItem.Builder().setMediaId("missing").build()),
+            0,
+            C.TIME_UNSET,
+        ).get(5, TimeUnit.SECONDS)
+    }
+
+    @Test fun `unpaired controller receives an authentication error`() {
+        paired.value = null
+        val root = browser.onGetLibraryRoot(session, controller, null).get(5, TimeUnit.SECONDS)
+        assertTrue(root.value != null)
+        assertEquals(
+            SessionError.ERROR_SESSION_AUTHENTICATION_EXPIRED,
+            browser.onGetChildren(
+                session,
+                controller,
+                CarLibrary.ROOT,
+                0,
+                100,
+                null,
+            ).get(5, TimeUnit.SECONDS).resultCode,
+        )
+    }
+
+    @Test fun `voice search resolves one library track without an online search`() {
+        val request = MediaItem.RequestMetadata.Builder().setSearchQuery("needle").build()
+        val item = MediaItem.Builder().setRequestMetadata(request).build()
+        val result = browser.onSetMediaItems(session, controller, mutableListOf(item), 0, C.TIME_UNSET)
+            .get(5, TimeUnit.SECONDS)
+        assertEquals("a", result.mediaItems[result.startIndex].mediaId)
+    }
+
+    @Test(expected = ExecutionException::class)
+    fun `ambiguous voice search does not choose an arbitrary track`() {
+        val request = MediaItem.RequestMetadata.Builder().setSearchQuery("Artist").build()
+        browser.onSetMediaItems(
+            session,
+            controller,
+            mutableListOf(MediaItem.Builder().setRequestMetadata(request).build()),
+            0,
+            C.TIME_UNSET,
+        )
+            .get(5, TimeUnit.SECONDS)
+    }
+
+    @Test fun `invalid parent and invalid page return explicit errors`() {
+        assertEquals(
+            SessionError.ERROR_BAD_VALUE,
+            browser.onGetChildren(session, controller, "unknown", 0, 20, null).get(5, TimeUnit.SECONDS).resultCode,
+        )
+        assertEquals(
+            SessionError.ERROR_BAD_VALUE,
+            browser.onGetChildren(
+                session,
+                controller,
+                CarLibrary.TRACKS,
+                -1,
+                20,
+                null,
+            ).get(5, TimeUnit.SECONDS).resultCode,
+        )
+    }
+
+    @Test fun `search results use library IDs and include no authenticated image URL`() {
+        val result = browser.onGetSearchResult(session, controller, "Artist", 0, 20, null).get(5, TimeUnit.SECONDS)
+        assertEquals(2, result.value!!.count { it.mediaMetadata.isPlayable == true })
+        result.value!!.forEach { assertNull(it.mediaMetadata.artworkUri) }
+    }
+
+    private fun largePlaylistBrowser(ids: List<String>): CarBrowser {
+        val repository = mockk<LibraryRepository>()
+        every { repository.library } returns MutableStateFlow(snapshot.value)
+        every { repository.playlists } returns MutableStateFlow(listOf(Playlist("Long", false, "", ids)))
+        every { repository.likedIds } returns MutableStateFlow(emptyList())
+        return CarBrowser(RuntimeEnvironment.getApplication(), repository, offline, sessions, artwork, scope).also {
+            it.observe(session)
+        }
+    }
+
+    private fun secondPlaylistRange(paged: CarBrowser): MediaItem {
+        val folder = paged.onGetChildren(session, controller, CarLibrary.PLAYLISTS, 0, 10, null)
+            .get(5, TimeUnit.SECONDS).value!!.single()
+        return paged.onGetChildren(session, controller, folder.mediaId, 0, 10, null)
+            .get(5, TimeUnit.SECONDS).value!!.filter { it.mediaMetadata.isBrowsable == true }[1]
+    }
+
+    private fun track(id: String) = Track(
+        id, "$id.flac",
+        if (id ==
+            "a"
+        ) {
+            "Unique needle"
+        } else {
+            "Other title"
+        },
+        "Artist", listOf("Artist"), "Album", "Artist",
+        "album", "artist", if (id == "a") 1 else 2, "2026", 120.0, "flac", 0, 44100, 2, 100, 0, false, emptyList(),
+    )
+}
