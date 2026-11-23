@@ -1,14 +1,12 @@
 package com.henriquesebastiao.downtify.feature.home
 
-import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiCapabilitiesDto
+import com.henriquesebastiao.downtify.core.network.dto.MusicAiPlaylistDto
 import com.henriquesebastiao.downtify.feature.musicai.DailyMusicShelf
 import com.henriquesebastiao.downtify.feature.musicai.MusicAiUiState
 import org.junit.Assert.assertEquals
@@ -22,13 +20,21 @@ import org.robolectric.annotation.Config
 class DailyMusicShelfTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun `four pending cards stay usable and motivation preserves the energy id`() {
+    private val ready = listOf(
+        MusicAiPlaylistDto("daily", "detente", "2026-11-23", 40, title = "Détente"),
+        MusicAiPlaylistDto("daily", "concentration", "2026-11-23", 40, title = "Concentration"),
+        MusicAiPlaylistDto("daily", "energie", "2026-11-23", 40, title = "Motivation"),
+        MusicAiPlaylistDto("daily", "calme", "2026-11-23", 40, title = "Calme"),
+    )
+
+    @Test fun readyCardsOpenAndPendingPlaylistsStayHidden() {
+        val pending = MusicAiPlaylistDto("daily", "pending", "2026-11-23", 0, title = "Mix en attente")
         var selected: Pair<String, String>? = null
         var all = 0
         compose.setContent {
             DowntifyTheme {
                 DailyMusicShelf(
-                    MusicAiUiState(),
+                    MusicAiUiState(playlists = ready + pending),
                     MusicAiCapabilitiesDto(version = 1, features = mapOf("daily" to true)),
                     onOpen = { cadence, mood -> selected = cadence to mood },
                     onSeeAll = { all++ },
@@ -36,28 +42,27 @@ class DailyMusicShelfTest {
             }
         }
         listOf("Détente", "Concentration", "Motivation", "Calme").forEach { compose.onNodeWithText(it).assertExists() }
-        compose.onAllNodesWithText("En préparation").assertCountEquals(4)
+        compose.onNodeWithText("Mix en attente").assertDoesNotExist()
+        compose.onNodeWithText("En préparation").assertDoesNotExist()
         compose.onNodeWithText("Motivation").performClick()
         assertEquals("daily" to "energie", selected)
         compose.onNodeWithText("Tout voir").performClick()
         assertEquals(1, all)
     }
 
-    @Test fun `disabled modules keep their playlist cards inactive`() {
+    @Test fun disabledModulesHideEvenReadyPlaylists() {
         var opened = false
         compose.setContent {
             DowntifyTheme {
                 DailyMusicShelf(
-                    MusicAiUiState(),
+                    MusicAiUiState(playlists = ready),
                     MusicAiCapabilitiesDto(version = 1),
                     onOpen = { _, _ -> opened = true },
                     onSeeAll = {},
                 )
             }
         }
-        listOf("Détente", "Concentration", "Motivation", "Calme").forEach {
-            compose.onNodeWithText(it).assertIsNotEnabled()
-        }
+        (ready.map { it.title } + "Tout voir").forEach { compose.onNodeWithText(it).assertDoesNotExist() }
         assertEquals(false, opened)
     }
 }
