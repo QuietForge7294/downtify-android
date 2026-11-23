@@ -13,8 +13,8 @@ class MoodNameTest {
         assertEquals("Pop · national", moodName("pop-nat"))
         assertEquals("Rap & Hip-Hop · international", moodName("rap-intl"))
         assertEquals("Électro · national", moodName("electro-nat"))
-        assertNull(moodName("pop-unknown"))
-        assertNull(moodName("inconnu"))
+        assertEquals("Pop Unknown", moodName("pop-unknown"))
+        assertEquals("Inconnu", moodName("inconnu"))
     }
 
     @Test

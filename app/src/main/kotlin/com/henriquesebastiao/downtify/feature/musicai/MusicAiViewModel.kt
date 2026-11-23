@@ -78,6 +78,9 @@ class MusicAiViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            capabilities.collect { MoodCatalog.install(it.moodsMeta) }
+        }
+        viewModelScope.launch {
             music.session.drop(1).collect {
                 job?.cancel()
                 mutable.value = MusicAiUiState()

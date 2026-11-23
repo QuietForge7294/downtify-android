@@ -29,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
 import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiCapabilitiesDto
+import com.henriquesebastiao.downtify.core.network.dto.MusicAiPlaylistDto
 import com.henriquesebastiao.downtify.core.player.LocalDjMode
 import com.henriquesebastiao.downtify.feature.player.PlaybackMixMode
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
@@ -41,10 +42,18 @@ private val dailyMoods = listOf(
     "calme" to "Calme",
 )
 
-/** Weekly genres the server advertises, including `-nat` / `-intl` variants. */
-private fun genreMoods(caps: MusicAiCapabilitiesDto): List<String> {
-    val advertised = caps.moods.filter(::isGenreMood)
-    return advertised.ifEmpty { genreMoodNames }
+/**
+ * Weekly mixes to show, in server order. Mixes already produced by the server
+ * come first, so a brand-new genre appears as a new line without an app update;
+ * advertised themes fill the shelf before their first generation.
+ */
+internal fun weeklyMoods(
+    playlists: List<MusicAiPlaylistDto>,
+    caps: MusicAiCapabilitiesDto,
+): List<String> {
+    val created = playlists.filter { it.cadence == "weekly" }.map { it.mood }.distinct()
+    val fallback = caps.moods.filter(::isGenreMood).ifEmpty { genreMoodNames }
+    return created + fallback.filterNot { it in created }
 }
 
 @Composable
@@ -70,7 +79,7 @@ fun DailyMusicShelf(
             },
             style = MaterialTheme.typography.bodySmall,
         )
-        HomeMixRows(genreMoods(caps), "weekly", state, caps, onOpen)
+        HomeMixRows(weeklyMoods(state.playlists, caps), "weekly", state, caps, onOpen)
         if (state.message.isNotBlank()) Text(state.message, style = MaterialTheme.typography.bodySmall)
     }
 }

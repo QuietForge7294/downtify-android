@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiCapabilitiesDto
+import com.henriquesebastiao.downtify.core.network.dto.MusicAiMoodMetaDto
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiPlaylistDto
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiTrackDto
 
@@ -48,27 +49,80 @@ internal val moodNames = mapOf(
     "jazz" to "Jazz",
 )
 
-/** Weekly genre themes served by the server, before any language split. */
+/** Weekly genre themes known to this build when the server sends no descriptors. */
 internal val genreMoodNames = listOf("rap", "rock", "electro", "pop", "jazz")
 
-/** The label of a mix mood, including the `-nat` / `-intl` locale variants. */
+/**
+ * Mood descriptors advertised by the server (`moods_meta`). A mix added on the
+ * server therefore appears with its own label and colour, with no new APK.
+ */
+internal object MoodCatalog {
+    @Volatile
+    internal var values: List<MusicAiMoodMetaDto> = emptyList()
+
+    fun install(meta: List<MusicAiMoodMetaDto>) {
+        values = meta
+    }
+
+    fun label(mood: String): String? = values.firstOrNull { it.name == mood }?.label
+
+    fun genre(mood: String): Boolean? =
+        values.firstOrNull { it.name == mood }?.group?.let { it == "weekly" }
+
+    fun color(mood: String): Color? = hexColor(values.firstOrNull { it.name == mood }?.color)
+}
+
+internal fun hexColor(value: String?): Color? {
+    val hex = value?.trim()?.removePrefix("#") ?: return null
+    if (hex.length != 6) return null
+    val rgb = hex.toLongOrNull(16) ?: return null
+    return Color(0xFF000000L or rgb)
+}
+
+/**
+ * Label of any mix theme: the server label first, a known name second, then a
+ * readable form of the slug. A brand-new theme is never rendered blank.
+ */
 internal fun moodName(mood: String): String? {
+    MoodCatalog.label(mood)?.let { return it }
     moodNames[mood]?.let { return it }
     val suffix = when {
         mood.endsWith("-nat") -> "national"
         mood.endsWith("-intl") -> "international"
-        else -> return null
+        else -> null
     }
-    val base = mood.substringBeforeLast('-')
-    val name = moodNames[base] ?: return null
-    return "$name · $suffix"
+    val base = if (suffix == null) mood else mood.substringBeforeLast('-')
+    if (base.isBlank()) return null
+    val name = moodNames[base] ?: readableSlug(base)
+    return if (suffix == null) name else "$name · $suffix"
 }
 
-internal fun isGenreMood(mood: String): Boolean =
-    mood.substringBefore('-') in genreMoodNames
+private fun readableSlug(slug: String): String =
+    slug.split('-', '_')
+        .filter { it.isNotBlank() }
+        .joinToString(" ") { part -> part.replaceFirstChar { it.titlecase() } }
 
-internal fun moodColor(mood: String) =
-    moodColors[mood] ?: moodColors[mood.substringBefore('-')]
+internal fun isGenreMood(mood: String): Boolean =
+    MoodCatalog.genre(mood) ?: (mood.substringBefore('-') in genreMoodNames)
+
+internal fun moodColor(mood: String): Color? {
+    MoodCatalog.color(mood)?.let { return it }
+    moodColors[mood]?.let { return it }
+    moodColors[mood.substringBefore('-')]?.let { return it }
+    return if (MoodCatalog.label(mood) != null) fallbackMoodColor(mood) else null
+}
+
+/** Stable colour for a theme the server introduced after this build. */
+private fun fallbackMoodColor(mood: String): Color {
+    val palette = listOf(
+        Color(0xFF0F766E),
+        Color(0xFF7C3AED),
+        Color(0xFFB45309),
+        Color(0xFF1D4ED8),
+    )
+    return palette[(mood.hashCode() and Int.MAX_VALUE) % palette.size]
+}
+
 internal val moodColors = mapOf(
     "calme" to Color(0xFF4F46E5),
     "concentration" to Color(0xFF334155),
@@ -80,6 +134,7 @@ internal val moodColors = mapOf(
     "rock" to Color(0xFFB91C1C),
     "electro" to Color(0xFF0369A1),
     "pop" to Color(0xFFBE185D),
+    "jazz" to Color(0xFF7C3AED),
 )
 internal fun mixTitle(cadence: String, mood: String) =
     "${if (cadence == "daily") "Mix du jour" else "Mix de la semaine"} · ${moodName(mood).orEmpty()}"
@@ -287,7 +342,7 @@ private fun MusicMixCard(
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
-                    moodName(card.mood).orEmpty(),
+                    card.title.ifBlank { moodName(card.mood).orEmpty() },
                     color = Color.White,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
