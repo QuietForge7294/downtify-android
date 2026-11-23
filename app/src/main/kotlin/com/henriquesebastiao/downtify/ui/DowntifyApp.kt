@@ -363,11 +363,6 @@ private fun AppNavHost(navController: NavHostController, onOpenMenu: () -> Unit)
                     navController.navigate(com.henriquesebastiao.downtify.ui.navigation.ForYouRoute(cadence, mood))
                 },
                 onOpenDj = { navController.navigate(com.henriquesebastiao.downtify.ui.navigation.MusicDjRoute()) },
-                onOpenWeeklyDj = { theme, copy ->
-                    navController.navigate(
-                        com.henriquesebastiao.downtify.ui.navigation.WeeklyDjPlaylistRoute(theme, copy),
-                    )
-                },
             )
         }
         composable<SearchDestination> {
@@ -403,9 +398,6 @@ private fun AppNavHost(navController: NavHostController, onOpenMenu: () -> Unit)
             val args = entry.toRoute<com.henriquesebastiao.downtify.ui.navigation.ForYouRoute>()
             com.henriquesebastiao.downtify.feature.musicai.MusicPlaylistsRoute(
                 navController::popBackStack,
-                {
-                    navController.navigate(com.henriquesebastiao.downtify.ui.navigation.MusicAiRoute)
-                },
                 args.cadence,
                 args.mood,
                 onOpenPlaylist = { c, m ->
@@ -413,11 +405,6 @@ private fun AppNavHost(navController: NavHostController, onOpenMenu: () -> Unit)
                 },
                 onArtist = toArtist,
                 onAlbum = toAlbum,
-                onOpenWeeklyDj = { theme, copy ->
-                    navController.navigate(
-                        com.henriquesebastiao.downtify.ui.navigation.WeeklyDjPlaylistRoute(theme, copy),
-                    )
-                },
             )
         }
         composable<com.henriquesebastiao.downtify.ui.navigation.WeeklyDjPlaylistRoute> { entry ->
@@ -436,6 +423,9 @@ private fun AppNavHost(navController: NavHostController, onOpenMenu: () -> Unit)
                     navController.navigate(com.henriquesebastiao.downtify.ui.navigation.MusicAiRoute)
                 },
                 args.seed,
+                onOpenWeeklyDj = { theme, copy ->
+                    navController.navigate(com.henriquesebastiao.downtify.ui.navigation.WeeklyDjPlaylistRoute(theme, copy))
+                },
             )
         }
         composable<DiscoverDestination> {

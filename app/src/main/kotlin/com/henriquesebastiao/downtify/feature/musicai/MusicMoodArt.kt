@@ -28,7 +28,7 @@ internal fun MusicMoodArt(
     subtitle: String = "",
     compact: Boolean = false,
 ) {
-    val tint = moodColors[mood] ?: Color(0xFF0F766E)
+    val tint = moodColor(mood) ?: Color(0xFF0F766E)
     val dark = Color(tint.red * .48f, tint.green * .48f, tint.blue * .48f)
     Box(modifier.background(Brush.linearGradient(listOf(tint, dark)))) {
         Canvas(Modifier.fillMaxSize()) {
@@ -57,7 +57,7 @@ internal fun MusicMoodArt(
             )
             Spacer(Modifier.weight(1f))
             Text(
-                moodNames[mood] ?: "Pour vous",
+                moodName(mood) ?: "Pour vous",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.headlineMedium,

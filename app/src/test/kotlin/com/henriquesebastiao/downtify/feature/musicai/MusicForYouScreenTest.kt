@@ -1,20 +1,13 @@
 package com.henriquesebastiao.downtify.feature.musicai
 
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.henriquesebastiao.downtify.core.designsystem.theme.DowntifyTheme
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiCapabilitiesDto
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiPlaylistDto
-import com.henriquesebastiao.downtify.core.network.dto.MusicAiStatusDto
-import com.henriquesebastiao.downtify.core.network.dto.MusicAiTrackDto
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -25,82 +18,36 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 class MusicForYouScreenTest {
     @get:Rule val compose = createComposeRule()
-    private val mix = MusicAiPlaylistDto("daily", "calme", "2026-11-06", 40)
-    private val track = MusicAiTrackDto("synthetic-one", "Synthetic title", "Synthetic artist")
-    private val caps =
-        MusicAiCapabilitiesDto(
-            version = 1,
-            features = mapOf("daily" to true, "personalization" to true),
-            model = MusicAiStatusDto(ready = true),
-        )
 
-    @Test fun openingAMixShowsItsTracksAndReturningKeepsTheCards() {
-        var state by mutableStateOf(MusicAiUiState(playlists = listOf(mix)))
-        var played = ""
+    @Test fun homeShowsFourPerSectionAndKeepsNavigationSimple() {
+        val caps = MusicAiCapabilitiesDto(version = 1, features = mapOf("daily" to true, "weekly" to true))
+        val cards = (1..5).flatMap { number ->
+            listOf(
+                MusicAiPlaylistDto("daily", "daily-$number", "2026-11-23", 40, title = "Jour $number"),
+                MusicAiPlaylistDto("weekly", "weekly-$number", "2026-11-23", 25, title = "Semaine $number"),
+            )
+        } + listOf("rap", "rock", "pop", "jazz", "electro").mapIndexed { index, genre ->
+            MusicAiPlaylistDto("weekly", genre, "2026-11-23", 25, title = "Genre " + (index + 1))
+        }
+        var selected = ""
+        var opened = false
         compose.setContent {
             DowntifyTheme {
                 LazyColumn {
-                    musicForYouItems(
-                        state,
-                        caps,
-                        MusicForYouActions(
-                            mood = { cadence, mood ->
-                                state =
-                                    state.copy(tracks = listOf(track), source = cadence, selectedMood = mood)
-                            },
-                            clearSelection = { state = state.copy(tracks = emptyList()) },
-                            play = { value, _ -> played = value.id },
-                        ),
-                    )
+                    item {
+                        DailyMusicShelf(MusicAiUiState(playlists = cards), caps, { cadence, mood ->
+                            selected = "$cadence:$mood"
+                        }, { opened = true })
+                    }
                 }
             }
         }
-        compose.onNodeWithText("Calme").performClick()
-        compose.onAllNodesWithText("Mix du jour · Calme").assertCountEquals(2)
-        compose.onNodeWithText("Calme").assertDoesNotExist()
-        compose.onNodeWithText("Tout écouter").performClick()
-        assertEquals(track.id, played)
-        compose.onNodeWithText("← Tous mes mixes").performClick()
-        compose.onNodeWithText("Calme").assertExists()
-    }
-
-    @Test fun disablingTheModuleHidesExistingCardsAndPlaybackCommands() {
-        val state =
-            MusicAiUiState(playlists = listOf(mix), tracks = listOf(track), source = "daily", selectedMood = "calme")
-        compose.setContent {
-            DowntifyTheme {
-                LazyColumn { musicForYouItems(state, caps.copy(features = emptyMap()), MusicForYouActions()) }
-            }
+        compose.onNodeWithText("Jour 1").performClick()
+        assertEquals("daily:daily-1", selected)
+        compose.onNodeWithText("Tout voir").performClick()
+        assertEquals(true, opened)
+        listOf("Jour 5", "Semaine 5", "Genre 5", "Pour vous DJ", "En préparation", "Actualiser").forEach {
+            compose.onNodeWithText(it).assertDoesNotExist()
         }
-        compose.onNodeWithText("Calme").assertDoesNotExist()
-        compose.onNodeWithText("Tout écouter").assertDoesNotExist()
-        compose.onNodeWithText("À écouter maintenant").assertDoesNotExist()
-    }
-
-    @Test fun renewalIsExplicitAndRequiresAnEnabledServerCapability() {
-        var current by mutableStateOf(caps)
-        var busy by mutableStateOf(false)
-        var requests = 0
-        compose.setContent {
-            DowntifyTheme {
-                LazyColumn {
-                    musicForYouItems(
-                        MusicAiUiState(busy = busy),
-                        current,
-                        MusicForYouActions(renew = { requests++ }),
-                    )
-                }
-            }
-        }
-        compose.onNodeWithText("Renouveler mes mixes").assertDoesNotExist()
-        compose.runOnIdle { current = caps.copy(playlistRefresh = true) }
-        assertEquals(0, requests)
-        compose.onNodeWithText("Renouveler mes mixes").performClick()
-        assertEquals(1, requests)
-        compose.runOnIdle { busy = true }
-        compose.onNodeWithText("Renouveler mes mixes").performClick()
-        assertEquals(1, requests)
-        compose.runOnIdle { current = current.copy(features = emptyMap()) }
-        compose.onNodeWithText("Renouveler mes mixes").assertDoesNotExist()
     }
 }

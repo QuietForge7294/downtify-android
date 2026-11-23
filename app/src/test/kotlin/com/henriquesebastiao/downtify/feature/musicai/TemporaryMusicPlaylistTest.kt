@@ -50,7 +50,7 @@ class TemporaryMusicPlaylistTest {
         compose.onNodeWithContentDescription("Shuffle").performClick()
         verify(exactly = 1) { model.playSelection(0, true) }
         compose.onNodeWithText("Download").assertDoesNotExist()
-        compose.onNodeWithText("Enregistrer en playlist").assertHasClickAction()
+        compose.onNodeWithText("Enregistrer dans une playlist").assertHasClickAction()
         verify(exactly = 0) { model.save(any()) }
     }
 
@@ -77,7 +77,7 @@ class TemporaryMusicPlaylistTest {
         compose.onNodeWithContentDescription("Play $title").assertExists()
         compose.onNodeWithContentDescription("Shuffle").assertExists()
         compose.onNodeWithText("Download").assertDoesNotExist()
-        compose.onNodeWithText("Enregistrer en playlist").performClick()
+        compose.onNodeWithText("Enregistrer dans une playlist").performClick()
         compose.onNodeWithText("Nom de la playlist").performTextReplacement("Ma sélection calme")
         compose.onNodeWithText("Enregistrer", useUnmergedTree = true).performClick()
         verify(exactly = 1) { model.save("Ma sélection calme") }

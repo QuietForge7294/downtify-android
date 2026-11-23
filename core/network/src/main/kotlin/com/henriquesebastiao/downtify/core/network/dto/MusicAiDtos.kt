@@ -14,6 +14,18 @@ import kotlinx.serialization.Serializable
     @SerialName("local_plans_version") val localPlansVersion: Int = 0,
 )
 
+/**
+ * One theme advertised by the server. `group` is `weekly` for genre mixes, so
+ * a new genre only needs a server entry: the app renders whatever it receives.
+ */
+@Serializable data class MusicAiMoodMetaDto(
+    val name: String,
+    val label: String = "",
+    val color: String = "",
+    val group: String = "",
+    val base: String = "",
+)
+
 @Serializable data class MusicAiCapabilitiesDto(
     val version: Int = 0,
     val administrator: Boolean = false,
@@ -22,6 +34,7 @@ import kotlinx.serialization.Serializable
     val model: MusicAiStatusDto = MusicAiStatusDto(),
     val dj: MusicAiStatusDto = MusicAiStatusDto(),
     val moods: List<String> = emptyList(),
+    @SerialName("moods_meta") val moodsMeta: List<MusicAiMoodMetaDto> = emptyList(),
     @SerialName("home_cards") val homeCards: Boolean = false,
     @SerialName("dj_request_cancel") val djRequestCancel: Boolean = false,
     @SerialName("dj_light_status") val djLightStatus: Boolean = false,

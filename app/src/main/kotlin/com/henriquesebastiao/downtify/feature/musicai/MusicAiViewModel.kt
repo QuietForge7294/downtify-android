@@ -179,7 +179,7 @@ class MusicAiViewModel @Inject constructor(
                     cadence = cadence,
                     selectedMood = mood,
                     selectionId = java.util.UUID.randomUUID().toString(),
-                    message = if (tracks.isEmpty()) "Cette playlist est en préparation." else "",
+                    message = if (tracks.isEmpty()) "Ce mix n’est plus disponible." else "",
                 )
             }
         }
