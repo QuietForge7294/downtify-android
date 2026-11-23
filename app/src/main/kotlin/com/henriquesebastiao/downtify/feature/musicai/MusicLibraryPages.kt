@@ -41,7 +41,11 @@ private val dailyMoods = listOf(
     "calme" to "Calme",
 )
 
-private val genreMoods = listOf("rock", "rap", "pop", "electro")
+/** Weekly genres the server advertises, including `-nat` / `-intl` variants. */
+private fun genreMoods(caps: MusicAiCapabilitiesDto): List<String> {
+    val advertised = caps.moods.filter(::isGenreMood)
+    return advertised.ifEmpty { genreMoodNames }
+}
 
 @Composable
 fun DailyMusicShelf(
@@ -66,7 +70,7 @@ fun DailyMusicShelf(
             },
             style = MaterialTheme.typography.bodySmall,
         )
-        HomeMixRows(genreMoods, "weekly", state, caps, onOpen)
+        HomeMixRows(genreMoods(caps), "weekly", state, caps, onOpen)
         if (state.message.isNotBlank()) Text(state.message, style = MaterialTheme.typography.bodySmall)
     }
 }

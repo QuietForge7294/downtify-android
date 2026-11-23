@@ -45,7 +45,30 @@ internal val moodNames = mapOf(
     "rock" to "Rock",
     "electro" to "Électro",
     "pop" to "Pop",
+    "jazz" to "Jazz",
 )
+
+/** Weekly genre themes served by the server, before any language split. */
+internal val genreMoodNames = listOf("rap", "rock", "electro", "pop", "jazz")
+
+/** The label of a mix mood, including the `-nat` / `-intl` locale variants. */
+internal fun moodName(mood: String): String? {
+    moodNames[mood]?.let { return it }
+    val suffix = when {
+        mood.endsWith("-nat") -> "national"
+        mood.endsWith("-intl") -> "international"
+        else -> return null
+    }
+    val base = mood.substringBeforeLast('-')
+    val name = moodNames[base] ?: return null
+    return "$name · $suffix"
+}
+
+internal fun isGenreMood(mood: String): Boolean =
+    mood.substringBefore('-') in genreMoodNames
+
+internal fun moodColor(mood: String) =
+    moodColors[mood] ?: moodColors[mood.substringBefore('-')]
 internal val moodColors = mapOf(
     "calme" to Color(0xFF4F46E5),
     "concentration" to Color(0xFF334155),
@@ -59,7 +82,7 @@ internal val moodColors = mapOf(
     "pop" to Color(0xFFBE185D),
 )
 internal fun mixTitle(cadence: String, mood: String) =
-    "${if (cadence == "daily") "Mix du jour" else "Mix de la semaine"} · ${moodNames[mood].orEmpty()}"
+    "${if (cadence == "daily") "Mix du jour" else "Mix de la semaine"} · ${moodName(mood).orEmpty()}"
 private fun selectionTitle(state: MusicAiUiState) =
     if (state.selectedMood.isBlank()) "À écouter maintenant" else mixTitle(state.source, state.selectedMood)
 
@@ -169,7 +192,7 @@ private fun LazyListScope.musicCatalogItems(
         }
     }
     val cards = state.playlists.filter {
-        it.cadence == state.cadence && caps.enabled(it.cadence) && it.mood in moodNames
+        it.cadence == state.cadence && caps.enabled(it.cadence) && moodName(it.mood) != null
     }
     if (cards.isEmpty() && !state.busy) {
         item("ai-empty") {
@@ -234,7 +257,7 @@ private fun MusicMixCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val color = moodColors[card.mood] ?: MaterialTheme.colorScheme.primary
+    val color = moodColor(card.mood) ?: MaterialTheme.colorScheme.primary
     Card(onClick = onClick, enabled = enabled, modifier = modifier) {
         Box(
             Modifier.fillMaxWidth().height(165.dp).background(
@@ -264,7 +287,7 @@ private fun MusicMixCard(
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
-                    moodNames[card.mood].orEmpty(),
+                    moodName(card.mood).orEmpty(),
                     color = Color.White,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
