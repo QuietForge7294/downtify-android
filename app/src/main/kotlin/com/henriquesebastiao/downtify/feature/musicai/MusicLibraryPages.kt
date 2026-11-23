@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,13 +30,13 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
-import com.henriquesebastiao.downtify.core.network.dto.MusicAiCapabilitiesDto
 import com.henriquesebastiao.downtify.core.network.ServerUrls
+import com.henriquesebastiao.downtify.core.network.dto.MusicAiCapabilitiesDto
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiMoodMetaDto
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiPlaylistDto
 import com.henriquesebastiao.downtify.core.player.LocalDjMode
@@ -148,7 +148,14 @@ fun MusicPlaylistsRoute(
         }
     }
     if (mood.isNotBlank()) {
-        TemporaryMusicPlaylist(viewModel, state, onBack, onArtist, onAlbum, caps.moodsMeta.firstOrNull { it.name == mood })
+        TemporaryMusicPlaylist(
+            viewModel,
+            state,
+            onBack,
+            onArtist,
+            onAlbum,
+            caps.moodsMeta.firstOrNull { it.name == mood },
+        )
         return
     }
     val groups = remember(state.playlists, caps) { mixGroups(state.playlists, caps) }
@@ -163,8 +170,12 @@ fun MusicPlaylistsRoute(
         ) {
             groups.forEachIndexed { index, cards ->
                 if (cards.isNotEmpty()) {
-                    item("header-$index") { Text(mixSectionTitles[index], style = MaterialTheme.typography.titleMedium) }
-                    items(cards.chunked(2), key = { "$index:${it.first().mood}" }) { MixRow(it, metadata, onOpenPlaylist) }
+                    item("header-$index") {
+                        Text(mixSectionTitles[index], style = MaterialTheme.typography.titleMedium)
+                    }
+                    items(cards.chunked(2), key = { "$index:${it.first().mood}" }) {
+                        MixRow(it, metadata, onOpenPlaylist)
+                    }
                 }
             }
             if (groups.all { it.isEmpty() } && !state.busy) {

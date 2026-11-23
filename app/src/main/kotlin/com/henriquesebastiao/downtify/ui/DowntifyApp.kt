@@ -424,7 +424,9 @@ private fun AppNavHost(navController: NavHostController, onOpenMenu: () -> Unit)
                 },
                 args.seed,
                 onOpenWeeklyDj = { theme, copy ->
-                    navController.navigate(com.henriquesebastiao.downtify.ui.navigation.WeeklyDjPlaylistRoute(theme, copy))
+                    navController.navigate(
+                        com.henriquesebastiao.downtify.ui.navigation.WeeklyDjPlaylistRoute(theme, copy),
+                    )
                 },
             )
         }

@@ -61,13 +61,12 @@ internal fun moodName(mood: String, meta: MusicAiMoodMetaDto? = null): String? {
     return if (suffix == null) name else "$name · $suffix"
 }
 
-private fun readableSlug(slug: String): String =
-    slug.split('-', '_')
-        .filter { it.isNotBlank() }
-        .joinToString(" ") { part -> part.replaceFirstChar { it.titlecase() } }
+private fun readableSlug(slug: String): String = slug.split('-', '_')
+    .filter { it.isNotBlank() }
+    .joinToString(" ") { part -> part.replaceFirstChar { it.titlecase() } }
 
-internal fun isGenreMood(mood: String, meta: MusicAiMoodMetaDto? = null): Boolean =
-    meta?.group?.let { it == "weekly" } ?: (mood.substringBeforeLast("-nat").substringBeforeLast("-intl") in genreMoodNames)
+internal fun isGenreMood(mood: String, meta: MusicAiMoodMetaDto? = null): Boolean = meta?.group?.let { it == "weekly" }
+    ?: (mood.substringBeforeLast("-nat").substringBeforeLast("-intl") in genreMoodNames)
 
 internal fun moodColor(mood: String, meta: MusicAiMoodMetaDto? = null): Color? {
     hexColor(meta?.color)?.let { return it }

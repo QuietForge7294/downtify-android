@@ -37,7 +37,9 @@ internal fun TemporaryMusicPlaylist(
     val collection by viewModel.collectionState.collectAsStateWithLifecycle()
     var showSave by rememberSaveable(state.selectionId) { mutableStateOf(false) }
     var name by rememberSaveable(state.selectionId) {
-        mutableStateOf(if (state.selectedMood.isBlank()) "Pour vous" else moodName(state.selectedMood, metadata).orEmpty())
+        mutableStateOf(
+            if (state.selectedMood.isBlank()) "Pour vous" else moodName(state.selectedMood, metadata).orEmpty(),
+        )
     }
     CollectionScreen(
         state = collection,
