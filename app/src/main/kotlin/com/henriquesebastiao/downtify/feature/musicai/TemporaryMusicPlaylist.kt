@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.henriquesebastiao.downtify.core.network.dto.MusicAiMoodMetaDto
 import com.henriquesebastiao.downtify.feature.collection.CollectionScreen
 import com.henriquesebastiao.downtify.feature.trash.LocalMoveToTrash
 import com.henriquesebastiao.downtify.ui.common.TrackActions
@@ -31,11 +32,12 @@ internal fun TemporaryMusicPlaylist(
     onBack: () -> Unit,
     onArtist: (String) -> Unit,
     onAlbum: (String) -> Unit,
+    metadata: MusicAiMoodMetaDto? = null,
 ) {
     val collection by viewModel.collectionState.collectAsStateWithLifecycle()
     var showSave by rememberSaveable(state.selectionId) { mutableStateOf(false) }
     var name by rememberSaveable(state.selectionId) {
-        mutableStateOf(if (state.selectedMood.isBlank()) "Pour vous" else mixTitle(state.source, state.selectedMood))
+        mutableStateOf(if (state.selectedMood.isBlank()) "Pour vous" else moodName(state.selectedMood, metadata).orEmpty())
     }
     CollectionScreen(
         state = collection,
@@ -64,13 +66,9 @@ internal fun TemporaryMusicPlaylist(
             Column {
                 Button(onClick = {
                     showSave = true
-                }, enabled = state.tracks.isNotEmpty() && !state.busy) { Text("Enregistrer en playlist") }
+                }, enabled = state.tracks.isNotEmpty() && !state.busy) { Text("Enregistrer dans une playlist") }
                 if (state.message.isNotBlank()) {
                     Text(state.message, style = MaterialTheme.typography.bodySmall)
-                } else if (state.tracks.isEmpty() &&
-                    !state.busy
-                ) {
-                    Text("Cette playlist est en préparation.", style = MaterialTheme.typography.bodySmall)
                 }
             }
         },
@@ -79,10 +77,9 @@ internal fun TemporaryMusicPlaylist(
         AlertDialog(
             onDismissRequest = { showSave = false },
             properties = DialogProperties(usePlatformDefaultWidth = false),
-            title = { Text("Enregistrer en playlist") },
+            title = { Text("Enregistrer dans une playlist") },
             text = {
                 Column {
-                    Text("Une copie de ces titres sera conservée. Le prochain renouvellement ne la modifiera pas.")
                     OutlinedTextField(value = name, onValueChange = {
                         name = it.take(120)
                     }, label = { Text("Nom de la playlist") }, singleLine = true)

@@ -3,55 +3,40 @@ package com.henriquesebastiao.downtify.feature.musicai
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiCapabilitiesDto
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiMoodMetaDto
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiPlaylistDto
-import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
-/** A mix added on the server must show up without shipping a new APK. */
 class ServerDrivenMixTest {
-    @After
-    fun reset() = MoodCatalog.install(emptyList())
+    private val techno = MusicAiMoodMetaDto("techno", "Techno nouveau", "#123456", "weekly", "techno")
+    private val caps = MusicAiCapabilitiesDto(
+        version = 1,
+        features = mapOf("daily" to true, "weekly" to true),
+        moods = listOf("pop", "rock"),
+        moodsMeta = listOf(techno),
+    )
 
-    @Test
-    fun `a new server mix has a readable label and its own colour`() {
-        MoodCatalog.install(
-            listOf(
-                MusicAiMoodMetaDto("techno", "Techno", "#0F172A", "weekly", "techno"),
-                MusicAiMoodMetaDto("techno-nat", "Techno · national", "#0F172A", "weekly", "techno"),
-            ),
+    @Test fun groupsOnlyPlayableCardsAndKeepsOnePerTheme() {
+        val daily = MusicAiPlaylistDto("daily", "calme", "2026-11-23", 40)
+        val weekly = MusicAiPlaylistDto("weekly", "calme", "2026-11-23", 25)
+        val genre = MusicAiPlaylistDto("weekly", "techno", "2026-11-16", 25, state = "previous")
+        val pending = genre.copy(period = "2026-11-23", count = 0, state = "preparing")
+        val older = daily.copy(period = "2026-11-21")
+        assertEquals(
+            listOf(listOf(daily), listOf(weekly), listOf(genre)),
+            mixGroups(listOf(older, pending, weekly, genre, daily), caps),
         )
+    }
+
+    @Test fun metadataComesFromTheCurrentSession() {
+        assertEquals("Techno nouveau", moodName("techno", techno))
         assertEquals("Techno", moodName("techno"))
-        assertEquals("Techno · national", moodName("techno-nat"))
-        assertTrue(isGenreMood("techno"))
-        assertTrue(isGenreMood("techno-nat"))
-        assertNotNull(moodColor("techno"))
-        assertEquals(moodColor("techno"), moodColor("techno-nat"))
+        assertNotEquals(moodColor("techno", techno), moodColor("techno"))
     }
 
-    @Test
-    fun `an unknown theme still renders a readable label`() {
-        MoodCatalog.install(emptyList())
-        assertEquals("Dubstep", moodName("dubstep"))
-        assertEquals("Dubstep · international", moodName("dubstep-intl"))
-        assertFalse(isGenreMood("inconnu"))
-    }
-
-    @Test
-    fun `the shelf lists mixes created by the server first`() {
-        val caps = MusicAiCapabilitiesDto(moods = listOf("calme", "pop", "rock"))
-        val playlists = listOf(
-            MusicAiPlaylistDto(cadence = "weekly", mood = "techno", period = "2026-W47", count = 25),
-            MusicAiPlaylistDto(cadence = "daily", mood = "calme", period = "2026-11-23", count = 40),
-        )
-        assertEquals(listOf("techno", "pop", "rock"), weeklyMoods(playlists, caps))
-    }
-
-    @Test
-    fun `the shelf falls back to advertised genres before the first generation`() {
-        val caps = MusicAiCapabilitiesDto(moods = listOf("detente", "jazz-nat", "jazz-intl"))
-        assertEquals(listOf("jazz-nat", "jazz-intl"), weeklyMoods(emptyList(), caps))
+    @Test fun oldServersUseKnownGenreNamesAndRespectDisabledFeatures() {
+        val jazz = MusicAiPlaylistDto("weekly", "jazz-nat", "2026-11-23", 25)
+        assertEquals(listOf(jazz), mixGroups(listOf(jazz), caps.copy(moodsMeta = emptyList()))[2])
+        assertEquals(emptyList<MusicAiPlaylistDto>(), mixGroups(listOf(jazz), caps.copy(features = emptyMap()))[2])
     }
 }

@@ -93,20 +93,15 @@ fun HomeRoute(
     onOpenForYou: () -> Unit = {},
     onOpenMoodPlaylist: (String, String) -> Unit = { _, _ -> },
     onOpenDj: () -> Unit = {},
-    onOpenWeeklyDj: (String, String) -> Unit = { _, _ -> },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val musicAi: MusicAiViewModel = hiltViewModel()
     val aiState by musicAi.state.collectAsStateWithLifecycle()
     val aiCaps by musicAi.capabilities.collectAsStateWithLifecycle()
-    LaunchedEffect(aiCaps.features, aiCaps.homeCards) { musicAi.refreshHome() }
-    LaunchedEffect(aiCaps.moodsMeta) {
-        com.henriquesebastiao.downtify.feature.musicai.MoodCatalog.install(aiCaps.moodsMeta)
-    }
     val lifecycle = LocalLifecycleOwner.current
     LaunchedEffect(lifecycle, musicAi) {
         lifecycle.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            musicAi.refreshHome()
+            musicAi.refreshPlaylists()
             kotlinx.coroutines.awaitCancellation()
         }
     }
@@ -133,18 +128,9 @@ fun HomeRoute(
                     )
                 }
             }
-            if (aiCaps.djWeeklySets) {
-                item(key = "weekly-dj-sets") {
-                    com.henriquesebastiao.downtify.feature.musicai.WeeklyDjSection(
-                        true,
-                        onOpenForYou,
-                        onOpenSet = onOpenWeeklyDj,
-                    )
-                }
-            }
         },
         onOpenDj = onOpenDj,
-        onRefreshForYou = musicAi::refreshHome,
+        onRefreshForYou = musicAi::refreshPlaylists,
     )
 }
 

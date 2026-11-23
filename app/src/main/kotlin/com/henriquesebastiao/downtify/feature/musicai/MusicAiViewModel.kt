@@ -78,9 +78,6 @@ class MusicAiViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            capabilities.collect { MoodCatalog.install(it.moodsMeta) }
-        }
-        viewModelScope.launch {
             music.session.drop(1).collect {
                 job?.cancel()
                 mutable.value = MusicAiUiState()
@@ -182,7 +179,7 @@ class MusicAiViewModel @Inject constructor(
                     cadence = cadence,
                     selectedMood = mood,
                     selectionId = java.util.UUID.randomUUID().toString(),
-                    message = if (tracks.isEmpty()) "Cette playlist est en préparation." else "",
+                    message = if (tracks.isEmpty()) "Ce mix n’est plus disponible." else "",
                 )
             }
         }

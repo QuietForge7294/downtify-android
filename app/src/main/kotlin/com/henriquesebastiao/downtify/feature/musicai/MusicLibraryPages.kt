@@ -4,12 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -20,41 +22,45 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.henriquesebastiao.downtify.core.designsystem.component.Artwork
-import com.henriquesebastiao.downtify.core.designsystem.component.DowntifyIcons
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiCapabilitiesDto
+import com.henriquesebastiao.downtify.core.network.ServerUrls
+import com.henriquesebastiao.downtify.core.network.dto.MusicAiMoodMetaDto
 import com.henriquesebastiao.downtify.core.network.dto.MusicAiPlaylistDto
 import com.henriquesebastiao.downtify.core.player.LocalDjMode
 import com.henriquesebastiao.downtify.feature.player.PlaybackMixMode
 import com.henriquesebastiao.downtify.ui.common.LocalCoverUrls
 import com.henriquesebastiao.downtify.ui.common.plusBottomBars
+import kotlinx.coroutines.awaitCancellation
 
-private val dailyMoods = listOf(
-    "detente" to "Détente",
-    "concentration" to "Concentration",
-    "energie" to "Motivation",
-    "calme" to "Calme",
-)
-
-/**
- * Weekly mixes to show, in server order. Mixes already produced by the server
- * come first, so a brand-new genre appears as a new line without an app update;
- * advertised themes fill the shelf before their first generation.
- */
-internal fun weeklyMoods(
+internal fun mixGroups(
     playlists: List<MusicAiPlaylistDto>,
     caps: MusicAiCapabilitiesDto,
-): List<String> {
-    val created = playlists.filter { it.cadence == "weekly" }.map { it.mood }.distinct()
-    val fallback = caps.moods.filter(::isGenreMood).ifEmpty { genreMoodNames }
-    return created + fallback.filterNot { it in created }
+): List<List<MusicAiPlaylistDto>> {
+    val metadata = caps.moodsMeta.associateBy { it.name }
+    val available = playlists
+        .filter { it.count > 0 && it.state in setOf("ready", "previous") && caps.enabled(it.cadence) }
+        .sortedWith(compareByDescending<MusicAiPlaylistDto> { it.period }.thenByDescending { it.created })
+        .distinctBy { it.cadence to it.mood }
+    val (genres, weekly) = available.filter { it.cadence == "weekly" }.partition {
+        isGenreMood(it.mood, metadata[it.mood])
+    }
+    return listOf(available.filter { it.cadence == "daily" }, weekly, genres)
 }
+
+private val mixSectionTitles = listOf("Pour vous aujourd’hui", "Pour vous cette semaine", "Vos genres")
 
 @Composable
 fun DailyMusicShelf(
@@ -63,60 +69,57 @@ fun DailyMusicShelf(
     onOpen: (String, String) -> Unit,
     onSeeAll: () -> Unit,
 ) {
+    val groups = remember(state.playlists, caps) { mixGroups(state.playlists, caps) }
+    if (groups.all { it.isEmpty() }) return
+    val metadata = remember(caps.moodsMeta) { caps.moodsMeta.associateBy { it.name } }
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("Pour vous", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
             TextButton(onClick = onSeeAll) { Text("Tout voir") }
         }
-        Text("Selon votre humeur", style = MaterialTheme.typography.titleSmall)
-        HomeMixRows(dailyMoods.map { it.first }, "daily", state, caps, onOpen)
-        Text("Vos genres", style = MaterialTheme.typography.titleSmall)
-        Text(
-            if (caps.enabled("personalization")) {
-                "Vos écoutes affinent vos sélections. Aimez vos titres préférés pour préciser vos goûts."
-            } else {
-                "Activez la personnalisation dans les préférences IA pour adapter les mixes à vos goûts."
-            },
-            style = MaterialTheme.typography.bodySmall,
-        )
-        HomeMixRows(weeklyMoods(state.playlists, caps), "weekly", state, caps, onOpen)
-        if (state.message.isNotBlank()) Text(state.message, style = MaterialTheme.typography.bodySmall)
+        groups.forEachIndexed { index, cards ->
+            if (cards.isNotEmpty()) {
+                Text(mixSectionTitles[index], style = MaterialTheme.typography.titleSmall)
+                cards.take(4).chunked(2).forEach { MixRow(it, metadata, onOpen) }
+            }
+        }
     }
 }
 
 @Composable
-private fun HomeMixRows(
-    moods: List<String>,
-    cadence: String,
-    state: MusicAiUiState,
-    caps: MusicAiCapabilitiesDto,
+private fun MixRow(
+    cards: List<MusicAiPlaylistDto>,
+    metadata: Map<String, MusicAiMoodMetaDto>,
     onOpen: (String, String) -> Unit,
 ) {
-    moods.chunked(2).forEach { pair ->
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            pair.forEach { mood ->
-                val card = state.playlists.firstOrNull { it.cadence == cadence && it.mood == mood }
-                val ready = caps.enabled(cadence) && card != null && card.count > 0
-                Surface(
-                    onClick = { onOpen(cadence, mood) },
-                    enabled = caps.enabled(cadence),
-                    shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.weight(1f).height(112.dp),
-                ) {
-                    MusicMoodArt(
-                        mood,
-                        cadence,
-                        compact = true,
-                        subtitle = when {
-                            !caps.enabled(cadence) -> "À activer dans IA"
-                            ready && card.state == "previous" -> "${card.count} titres · renouvellement en cours"
-                            ready -> "${card.count} titres · à écouter"
-                            else -> "En préparation"
-                        },
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (card in cards) {
+            val theme = metadata[card.mood]
+            val color = moodColor(card.mood, theme) ?: MaterialTheme.colorScheme.surfaceVariant
+            val title = card.title.ifBlank { moodName(card.mood, theme).orEmpty() }
+            val cover = LocalCoverUrls.current.track(card.coverTrackIds.firstOrNull(), ServerUrls.COVER_SMALL)
+            Surface(
+                onClick = { onOpen(card.cadence, card.mood) },
+                shape = MaterialTheme.shapes.medium,
+                color = color,
+                modifier = Modifier.weight(1f),
+            ) {
+                Row(Modifier.heightIn(min = 64.dp).padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (cover != null) {
+                        Artwork(cover, null, Modifier.size(48.dp))
+                    }
+                    Text(
+                        title,
+                        Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = if (color.luminance() > 0.179f) Color.Black else Color.White,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
         }
+        if (cards.size == 1) Spacer(Modifier.weight(1f))
     }
 }
 
@@ -124,57 +127,49 @@ private fun HomeMixRows(
 @Composable
 fun MusicPlaylistsRoute(
     onBack: () -> Unit,
-    onSettings: () -> Unit,
     cadence: String = "daily",
     mood: String = "",
     viewModel: MusicAiViewModel = hiltViewModel(),
-    onOpenPlaylist: (String, String) -> Unit = { c, m -> viewModel.mood(c, m) },
+    onOpenPlaylist: (String, String) -> Unit = { c, m -> viewModel.openPlaylist(c, m) },
     onArtist: (String) -> Unit = {},
     onAlbum: (String) -> Unit = {},
-    onOpenWeeklyDj: (String, String) -> Unit = { _, _ -> },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val caps by viewModel.capabilities.collectAsStateWithLifecycle()
-    LaunchedEffect(cadence, mood) {
-        if (mood.isBlank()) viewModel.refreshPlaylists() else viewModel.openPlaylist(cadence, mood)
+    val lifecycle = LocalLifecycleOwner.current
+    LaunchedEffect(cadence, mood, lifecycle, viewModel) {
+        if (mood.isNotBlank()) {
+            viewModel.openPlaylist(cadence, mood)
+        } else {
+            lifecycle.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.refreshPlaylists()
+                awaitCancellation()
+            }
+        }
     }
-    if (mood.isNotBlank() || state.tracks.isNotEmpty()) {
-        TemporaryMusicPlaylist(
-            viewModel,
-            state,
-            if (mood.isBlank()) viewModel::clearSelection else onBack,
-            onArtist,
-            onAlbum,
-        )
+    if (mood.isNotBlank()) {
+        TemporaryMusicPlaylist(viewModel, state, onBack, onArtist, onAlbum, caps.moodsMeta.firstOrNull { it.name == mood })
         return
     }
+    val groups = remember(state.playlists, caps) { mixGroups(state.playlists, caps) }
+    val metadata = remember(caps.moodsMeta) { caps.moodsMeta.associateBy { it.name } }
     Scaffold(topBar = {
         TopAppBar(title = { Text("Pour vous") }, navigationIcon = { TextButton(onClick = onBack) { Text("Retour") } })
     }) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(bottom = 16.dp).plusBottomBars(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp).plusBottomBars(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (caps.djWeeklySets) {
-                item("weekly-dj-sets") {
-                    WeeklyDjSection(featured = false, onOpenSet = onOpenWeeklyDj)
+            groups.forEachIndexed { index, cards ->
+                if (cards.isNotEmpty()) {
+                    item("header-$index") { Text(mixSectionTitles[index], style = MaterialTheme.typography.titleMedium) }
+                    items(cards.chunked(2), key = { "$index:${it.first().mood}" }) { MixRow(it, metadata, onOpenPlaylist) }
                 }
             }
-            musicForYouItems(
-                state,
-                caps,
-                MusicForYouActions(
-                    viewModel::refreshPlaylists,
-                    viewModel::forYou,
-                    viewModel::selectCadence,
-                    onOpenPlaylist,
-                    viewModel::play,
-                    viewModel::save,
-                    onSettings,
-                    viewModel::clearSelection,
-                    viewModel::renewPlaylists,
-                ),
-            )
+            if (groups.all { it.isEmpty() } && !state.busy) {
+                item("empty-mixes") { Text(state.message.ifBlank { "Aucun mix disponible pour le moment." }) }
+            }
         }
     }
 }
@@ -186,6 +181,7 @@ fun MusicStudioRoute(
     onSettings: () -> Unit,
     seed: String = "",
     viewModel: MusicDjViewModel = hiltViewModel(),
+    onOpenWeeklyDj: (String, String) -> Unit = { _, _ -> },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val caps by viewModel.capabilities.collectAsStateWithLifecycle()
@@ -213,6 +209,9 @@ fun MusicStudioRoute(
             contentPadding = PaddingValues(16.dp).plusBottomBars(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (caps.weeklySetsEnabled()) {
+                item("weekly-dj-sets") { WeeklyDjSection(featured = false, onOpenSet = onOpenWeeklyDj) }
+            }
             item {
                 Text(
                     "Créez un mix préparé ou continu à partir de votre musique. " +
